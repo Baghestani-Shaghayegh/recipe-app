@@ -3,6 +3,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useColorScheme } from 'react-native';
 
 import { Colors } from '@/constants/theme';
+import { KitchenProvider } from '@/store/kitchen';
 import { RecipesProvider } from '@/store/recipes';
 
 export default function RootLayout() {
@@ -14,14 +15,31 @@ export default function RootLayout() {
     <ThemeProvider
       value={{
         ...base,
-        colors: { ...base.colors, primary: c.accent, background: c.background, card: c.background, text: c.text, border: c.border },
+        colors: {
+          ...base.colors,
+          primary: c.accent,
+          background: c.background,
+          card: c.background,
+          text: c.text,
+          border: c.border,
+        },
       }}>
       <RecipesProvider>
-        <Stack screenOptions={{ headerShadowVisible: false, headerTintColor: c.accent, headerTitleStyle: { color: c.text } }}>
-          <Stack.Screen name="index" options={{ title: 'My Recipes' }} />
-          <Stack.Screen name="recipe/[id]" options={{ title: '' }} />
-          <Stack.Screen name="recipe/edit" options={{ title: 'New recipe', presentation: 'modal' }} />
-        </Stack>
+        <KitchenProvider>
+          <Stack
+            screenOptions={{
+              headerShadowVisible: false,
+              headerTintColor: c.accent,
+              headerTitleStyle: { color: c.text },
+            }}>
+            <Stack.Screen name="(tabs)" options={{ headerShown: false, title: 'Recipes' }} />
+            <Stack.Screen name="recipe/[id]" options={{ title: '' }} />
+            <Stack.Screen
+              name="recipe/edit"
+              options={{ title: 'New recipe', presentation: 'modal' }}
+            />
+          </Stack>
+        </KitchenProvider>
       </RecipesProvider>
       <StatusBar style="auto" />
     </ThemeProvider>

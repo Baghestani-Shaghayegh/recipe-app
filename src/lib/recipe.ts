@@ -82,5 +82,7 @@ export function filterRecipes(recipes: Recipe[], f: RecipeFilters): Recipe[] {
 export function allTags(recipes: Recipe[]): string[] {
   const counts = new Map<string, number>();
   for (const r of recipes) for (const t of r.tags) counts.set(t, (counts.get(t) ?? 0) + 1);
-  return [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).map(([t]) => t);
+  return [...counts.entries()]
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+    .map(([t]) => t);
 }

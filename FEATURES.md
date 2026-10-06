@@ -103,7 +103,7 @@ These are the core of the app. Build them first, in roughly this order.
 | Phase | What | Why |
 |-------|------|-----|
 | 1 ✅ | Recipes, categories, search/filter | The base everything else uses |
-| 2 | "Make next" list + My Pantry + recommendations | Small effort, big value |
+| 2 ✅ | "Make next" list + My Pantry + recommendations | Small effort, big value |
 | 3 | Nutrition | Needs an outside API |
 | 4 | Instagram import | Hardest part; needs Meta API + AI parsing |
 | 5 | Nice-to-haves | Pick by what you miss most while using it |

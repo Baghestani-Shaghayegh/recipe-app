@@ -4,21 +4,26 @@ import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-na
 
 import { Button, confirm, SectionTitle } from '@/components/ui';
 import { MaxContentWidth, Spacing, useTheme } from '@/constants/theme';
+import { isStaple, pantryHas } from '@/lib/pantry';
 import { deleteRecipePhoto } from '@/lib/photos';
 import { formatMinutes, totalMinutes } from '@/lib/recipe';
+import { useKitchen } from '@/store/kitchen';
 import { useRecipes } from '@/store/recipes';
 
 export default function RecipeDetailScreen() {
   const c = useTheme();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { recipes, loaded, deleteRecipe } = useRecipes();
+  const { pantry, isInMakeNext, toggleMakeNext, markCooked, cooked } = useKitchen();
   const recipe = recipes.find((r) => r.id === id);
 
   if (!recipe) {
     return (
       <View style={[styles.center, { backgroundColor: c.background }]}>
         <Stack.Screen options={{ title: '' }} />
-        {loaded ? <Text style={{ color: c.textSecondary }}>This recipe doesn’t exist anymore.</Text> : null}
+        {loaded ? (
+          <Text style={{ color: c.textSecondary }}>This recipe doesn’t exist anymore.</Text>
+        ) : null}
       </View>
     );
   }
@@ -30,6 +35,19 @@ export default function RecipeDetailScreen() {
     total !== undefined ? ['Total', formatMinutes(total)] : undefined,
     recipe.servings !== undefined ? ['Serves', String(recipe.servings)] : undefined,
   ].filter((f): f is string[] => !!f);
+
+  const inMakeNext = isInMakeNext(recipe.id);
+  const timesCooked = cooked.filter((e) => e.recipeId === recipe.id);
+  const lastCooked = timesCooked[0]
+    ? new Date(timesCooked[0].cookedAt).toLocaleDateString(undefined, {
+        month: 'short',
+        day: 'numeric',
+      })
+    : undefined;
+  const ingredientStatus = (name: string) =>
+    !pantry.length || isStaple(name) ? 'unknown' : pantryHas(pantry, name) ? 'have' : 'missing';
+  const counted = recipe.ingredients.filter((i) => ingredientStatus(i.name) !== 'unknown');
+  const haveCount = counted.filter((i) => ingredientStatus(i.name) === 'have').length;
 
   const onDelete = async () => {
     if (await confirm('Delete recipe?', `“${recipe.title}” will be removed.`, 'Delete')) {
@@ -76,15 +94,54 @@ export default function RecipeDetailScreen() {
         </View>
       ) : null}
 
+      <View style={styles.block}>
+        <View style={styles.buttons}>
+          <View style={styles.flex}>
+            <Button
+              label={inMakeNext ? '✓ In make next' : '+ Add to make next'}
+              variant={inMakeNext ? 'secondary' : 'primary'}
+              onPress={() => toggleMakeNext(recipe.id)}
+            />
+          </View>
+          <View style={styles.flex}>
+            <Button
+              label="I cooked this"
+              variant="secondary"
+              onPress={() => markCooked(recipe.id)}
+            />
+          </View>
+        </View>
+        {timesCooked.length ? (
+          <Text style={[styles.meta, { color: c.textSecondary }]}>
+            Cooked {timesCooked.length === 1 ? 'once' : `${timesCooked.length} times`} · last on{' '}
+            {lastCooked}
+          </Text>
+        ) : null}
+      </View>
+
       {recipe.ingredients.length ? (
         <View style={styles.block}>
           <SectionTitle>Ingredients</SectionTitle>
-          {recipe.ingredients.map((ing, i) => (
-            <View key={i} style={styles.row}>
-              <Text style={[styles.bullet, { color: c.accent }]}>•</Text>
-              <Text style={[styles.body, { color: c.text }]}>{ing.text}</Text>
-            </View>
-          ))}
+          {counted.length ? (
+            <Text style={[styles.meta, { color: c.textSecondary }]}>
+              You have {haveCount} of {counted.length} in your pantry
+            </Text>
+          ) : null}
+          {recipe.ingredients.map((ing, i) => {
+            const status = ingredientStatus(ing.name);
+            return (
+              <View key={i} style={styles.row}>
+                <Text
+                  style={[styles.bullet, { color: status === 'have' ? c.accent : c.textSecondary }]}
+                  accessibilityLabel={
+                    status === 'have' ? 'In pantry' : status === 'missing' ? 'Missing' : undefined
+                  }>
+                  {status === 'have' ? '✓' : status === 'missing' ? '○' : '•'}
+                </Text>
+                <Text style={[styles.body, { color: c.text }]}>{ing.text}</Text>
+              </View>
+            );
+          })}
         </View>
       ) : null}
 
@@ -146,7 +203,9 @@ const styles = StyleSheet.create({
   factLabel: { fontSize: 13 },
   factValue: { fontSize: 16, fontWeight: '700' },
   row: { flexDirection: 'row', gap: Spacing.three, alignItems: 'flex-start' },
-  bullet: { fontSize: 18, lineHeight: 24 },
+  bullet: { fontSize: 16, lineHeight: 24, minWidth: 18, textAlign: 'center' },
+  buttons: { flexDirection: 'row', gap: Spacing.two },
+  flex: { flex: 1 },
   stepNumber: { fontSize: 16, fontWeight: '800', lineHeight: 24, minWidth: 18 },
   body: { flex: 1, fontSize: 16, lineHeight: 24 },
   link: { fontSize: 15 },

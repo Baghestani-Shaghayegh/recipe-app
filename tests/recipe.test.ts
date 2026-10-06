@@ -57,7 +57,11 @@ test('format minutes', () => {
 });
 
 test('parse tags', () => {
-  assert.deepEqual(parseTags(' Spicy, quick ,, spicy,Vegetarian '), ['spicy', 'quick', 'vegetarian']);
+  assert.deepEqual(parseTags(' Spicy, quick ,, spicy,Vegetarian '), [
+    'spicy',
+    'quick',
+    'vegetarian',
+  ]);
 });
 
 test('no filters returns everything', () => {

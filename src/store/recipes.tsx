@@ -1,10 +1,9 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, useCallback, useContext, useMemo } from 'react';
 
 import { parseIngredientList } from '@/lib/ingredients';
 import type { Recipe } from '@/lib/recipe';
 
-const STORAGE_KEY = 'recipes.v1';
+import { usePersistedState } from './persisted';
 
 export type RecipeInput = Omit<Recipe, 'id' | 'createdAt' | 'updatedAt'>;
 
@@ -70,40 +69,35 @@ function sampleRecipes(): Recipe[] {
 }
 
 export function RecipesProvider({ children }: { children: React.ReactNode }) {
-  const [recipes, setRecipes] = useState<Recipe[]>([]);
-  const [loaded, setLoaded] = useState(false);
+  const [recipes, setRecipes, loaded] = usePersistedState<Recipe[]>('recipes.v1', sampleRecipes);
 
-  useEffect(() => {
-    AsyncStorage.getItem(STORAGE_KEY)
-      .then((json) => setRecipes(json === null ? sampleRecipes() : (JSON.parse(json) as Recipe[])))
-      .catch((e) => console.warn('Could not load recipes', e))
-      .finally(() => setLoaded(true));
-  }, []);
+  const addRecipe = useCallback(
+    (input: RecipeInput) => {
+      const now = Date.now();
+      const recipe: Recipe = { ...input, id: newId(), createdAt: now, updatedAt: now };
+      setRecipes((prev) => [recipe, ...prev]);
+      return recipe;
+    },
+    [setRecipes],
+  );
 
-  // Save after every change, but never before the first load (it would wipe saved data).
-  useEffect(() => {
-    if (!loaded) return;
-    AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(recipes)).catch((e) =>
-      console.warn('Could not save recipes', e),
-    );
-  }, [recipes, loaded]);
+  const updateRecipe = useCallback(
+    (id: string, input: RecipeInput) => {
+      setRecipes((prev) =>
+        prev.map((r) =>
+          r.id === id ? { ...input, id, createdAt: r.createdAt, updatedAt: Date.now() } : r,
+        ),
+      );
+    },
+    [setRecipes],
+  );
 
-  const addRecipe = useCallback((input: RecipeInput) => {
-    const now = Date.now();
-    const recipe: Recipe = { ...input, id: newId(), createdAt: now, updatedAt: now };
-    setRecipes((prev) => [recipe, ...prev]);
-    return recipe;
-  }, []);
-
-  const updateRecipe = useCallback((id: string, input: RecipeInput) => {
-    setRecipes((prev) =>
-      prev.map((r) => (r.id === id ? { ...input, id, createdAt: r.createdAt, updatedAt: Date.now() } : r)),
-    );
-  }, []);
-
-  const deleteRecipe = useCallback((id: string) => {
-    setRecipes((prev) => prev.filter((r) => r.id !== id));
-  }, []);
+  const deleteRecipe = useCallback(
+    (id: string) => {
+      setRecipes((prev) => prev.filter((r) => r.id !== id));
+    },
+    [setRecipes],
+  );
 
   const value = useMemo(
     () => ({ recipes, loaded, addRecipe, updateRecipe, deleteRecipe }),

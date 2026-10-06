@@ -58,7 +58,8 @@ export function Button({
         styles.button,
         {
           backgroundColor: bg,
-          borderColor: variant === 'primary' ? c.accent : variant === 'danger' ? c.danger : c.border,
+          borderColor:
+            variant === 'primary' ? c.accent : variant === 'danger' ? c.danger : c.border,
           opacity: disabled ? 0.5 : pressed ? 0.7 : 1,
         },
       ]}>

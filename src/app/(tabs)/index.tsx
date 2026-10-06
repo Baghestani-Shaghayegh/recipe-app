@@ -1,5 +1,5 @@
-import { Image } from 'expo-image';
-import { router, Stack } from 'expo-router';
+import { router } from 'expo-router';
+import { Tabs } from 'expo-router/js-tabs';
 import { useMemo, useState } from 'react';
 import {
   ActivityIndicator,
@@ -12,18 +12,10 @@ import {
   View,
 } from 'react-native';
 
+import { RecipeCard } from '@/components/recipe-card';
 import { Button, Chip } from '@/components/ui';
 import { MaxContentWidth, Spacing, useTheme } from '@/constants/theme';
-import {
-  allTags,
-  CATEGORIES,
-  filterRecipes,
-  formatMinutes,
-  TIME_FILTERS,
-  totalMinutes,
-  type Category,
-  type Recipe,
-} from '@/lib/recipe';
+import { allTags, CATEGORIES, filterRecipes, TIME_FILTERS, type Category } from '@/lib/recipe';
 import { useRecipes } from '@/store/recipes';
 
 export default function RecipeListScreen() {
@@ -75,7 +67,10 @@ export default function RecipeListScreen() {
         clearButtonMode="while-editing"
         style={[styles.search, { color: c.text, backgroundColor: c.card, borderColor: c.border }]}
       />
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipRow}>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.chipRow}>
         {CATEGORIES.map((cat) => (
           <Chip
             key={cat}
@@ -85,7 +80,10 @@ export default function RecipeListScreen() {
           />
         ))}
       </ScrollView>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipRow}>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.chipRow}>
         {TIME_FILTERS.map((t) => (
           <Chip
             key={t.maxMinutes}
@@ -110,7 +108,7 @@ export default function RecipeListScreen() {
 
   return (
     <View style={[styles.screen, { backgroundColor: c.background }]}>
-      <Stack.Screen options={{ headerRight: addButton }} />
+      <Tabs.Screen options={{ headerRight: addButton }} />
       <FlatList
         data={visible}
         keyExtractor={(r) => r.id}
@@ -141,43 +139,6 @@ export default function RecipeListScreen() {
   );
 }
 
-function RecipeCard({ recipe }: { recipe: Recipe }) {
-  const c = useTheme();
-  const minutes = totalMinutes(recipe);
-  const meta = [recipe.category, minutes !== undefined ? formatMinutes(minutes) : undefined]
-    .filter(Boolean)
-    .join(' · ');
-
-  return (
-    <Pressable
-      onPress={() => router.push({ pathname: '/recipe/[id]', params: { id: recipe.id } })}
-      accessibilityRole="button"
-      style={({ pressed }) => [
-        styles.card,
-        { backgroundColor: c.card, borderColor: c.border, opacity: pressed ? 0.8 : 1 },
-      ]}>
-      {recipe.photoUri ? (
-        <Image source={{ uri: recipe.photoUri }} style={styles.thumb} contentFit="cover" />
-      ) : (
-        <View style={[styles.thumb, styles.thumbPlaceholder, { backgroundColor: c.chip }]}>
-          <Text style={styles.thumbEmoji}>🍽️</Text>
-        </View>
-      )}
-      <View style={styles.cardBody}>
-        <Text style={[styles.cardTitle, { color: c.text }]} numberOfLines={2}>
-          {recipe.title}
-        </Text>
-        {meta ? <Text style={[styles.cardMeta, { color: c.textSecondary }]}>{meta}</Text> : null}
-        {recipe.tags.length ? (
-          <Text style={[styles.cardTags, { color: c.accent }]} numberOfLines={1}>
-            {recipe.tags.map((t) => `#${t}`).join('  ')}
-          </Text>
-        ) : null}
-      </View>
-    </Pressable>
-  );
-}
-
 const styles = StyleSheet.create({
   screen: { flex: 1 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
@@ -199,19 +160,6 @@ const styles = StyleSheet.create({
   },
   chipRow: { gap: Spacing.two },
   clear: { fontSize: 14, fontWeight: '600' },
-  card: {
-    flexDirection: 'row',
-    borderWidth: 1,
-    borderRadius: 14,
-    overflow: 'hidden',
-  },
-  thumb: { width: 96, height: 96 },
-  thumbPlaceholder: { alignItems: 'center', justifyContent: 'center' },
-  thumbEmoji: { fontSize: 32 },
-  cardBody: { flex: 1, padding: Spacing.three, gap: Spacing.one, justifyContent: 'center' },
-  cardTitle: { fontSize: 17, fontWeight: '700' },
-  cardMeta: { fontSize: 14 },
-  cardTags: { fontSize: 13, fontWeight: '500' },
   empty: { alignItems: 'center', gap: Spacing.three, paddingVertical: Spacing.six },
   emptyTitle: { fontSize: 20, fontWeight: '700' },
   emptyText: { fontSize: 15, textAlign: 'center' },

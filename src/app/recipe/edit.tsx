@@ -183,13 +183,31 @@ function EditForm({ existing }: { existing?: Recipe }) {
 
         <View style={styles.numbers}>
           <View style={styles.number}>
-            <Field label="Prep (min)" value={prep} onChangeText={setPrep} keyboardType="number-pad" placeholder="10" />
+            <Field
+              label="Prep (min)"
+              value={prep}
+              onChangeText={setPrep}
+              keyboardType="number-pad"
+              placeholder="10"
+            />
           </View>
           <View style={styles.number}>
-            <Field label="Cook (min)" value={cook} onChangeText={setCook} keyboardType="number-pad" placeholder="30" />
+            <Field
+              label="Cook (min)"
+              value={cook}
+              onChangeText={setCook}
+              keyboardType="number-pad"
+              placeholder="30"
+            />
           </View>
           <View style={styles.number}>
-            <Field label="Servings" value={servings} onChangeText={setServings} keyboardType="number-pad" placeholder="4" />
+            <Field
+              label="Servings"
+              value={servings}
+              onChangeText={setServings}
+              keyboardType="number-pad"
+              placeholder="4"
+            />
           </View>
         </View>
 
@@ -211,7 +229,13 @@ function EditForm({ existing }: { existing?: Recipe }) {
           placeholder={'Preheat the oven to 180°C.\nMix the dry ingredients.'}
         />
 
-        <Field label="Notes" value={notes} onChangeText={setNotes} multiline placeholder="Use less sugar next time" />
+        <Field
+          label="Notes"
+          value={notes}
+          onChangeText={setNotes}
+          multiline
+          placeholder="Use less sugar next time"
+        />
 
         <Field
           label="Source link"

@@ -1,6 +1,6 @@
 import { Image } from 'expo-image';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
@@ -14,6 +14,7 @@ import {
 import { Button, Chip, Field } from '@/components/ui';
 import { MaxContentWidth, Spacing, useTheme } from '@/constants/theme';
 import { parseIngredientList } from '@/lib/ingredients';
+import { estimateNutrition, type Nutrients } from '@/lib/nutrition';
 import { deleteRecipePhoto, pickRecipePhoto } from '@/lib/photos';
 import { CATEGORIES, parseTags, type Category, type Recipe } from '@/lib/recipe';
 import { useRecipes, type RecipeInput } from '@/store/recipes';
@@ -25,7 +26,22 @@ function parseWholeNumber(text: string): number | undefined {
   return /^\d+$/.test(t) ? Number(t) : NaN;
 }
 
+/** Like parseWholeNumber but allows decimals ("12.5" or "12,5"). */
+function parseDecimal(text: string): number | undefined {
+  const t = text.trim().replace(',', '.');
+  if (!t) return undefined;
+  return /^\d+(\.\d+)?$/.test(t) ? Number(t) : NaN;
+}
+
 const numText = (n: number | undefined) => (n === undefined ? '' : String(n));
+
+const NUTRIENT_FIELDS = [
+  { key: 'kcal', label: 'Calories', placeholder: '350' },
+  { key: 'protein', label: 'Protein (g)', placeholder: '20' },
+  { key: 'carbs', label: 'Carbs (g)', placeholder: '40' },
+  { key: 'fat', label: 'Fat (g)', placeholder: '12' },
+] as const;
+type NutrientKey = (typeof NUTRIENT_FIELDS)[number]['key'];
 
 export default function EditRecipeScreen() {
   const { id } = useLocalSearchParams<{ id?: string }>();
@@ -52,7 +68,22 @@ function EditForm({ existing }: { existing?: Recipe }) {
   const [steps, setSteps] = useState(existing?.steps.join('\n') ?? '');
   const [notes, setNotes] = useState(existing?.notes ?? '');
   const [sourceUrl, setSourceUrl] = useState(existing?.sourceUrl ?? '');
+  const [nutrition, setNutrition] = useState<Record<NutrientKey, string>>({
+    kcal: numText(existing?.nutrition?.kcal),
+    protein: numText(existing?.nutrition?.protein),
+    carbs: numText(existing?.nutrition?.carbs),
+    fat: numText(existing?.nutrition?.fat),
+  });
   const [error, setError] = useState<string>();
+
+  const estimate = useMemo(
+    () =>
+      estimateNutrition({
+        ingredients: parseIngredientList(ingredients),
+        servings: parseWholeNumber(servings) || undefined,
+      }),
+    [ingredients, servings],
+  );
 
   const choosePhoto = async () => {
     try {
@@ -87,6 +118,21 @@ function EditForm({ existing }: { existing?: Recipe }) {
     if (Object.values(nums).some((n) => Number.isNaN(n))) {
       return setError('Servings and times must be whole numbers (like 4 or 30).');
     }
+    const nutrients = {
+      kcal: parseDecimal(nutrition.kcal),
+      protein: parseDecimal(nutrition.protein),
+      carbs: parseDecimal(nutrition.carbs),
+      fat: parseDecimal(nutrition.fat),
+    };
+    const filled = Object.values(nutrients).filter((n) => n !== undefined);
+    if (filled.some((n) => Number.isNaN(n))) {
+      return setError('Nutrition values must be numbers (like 350 or 12.5).');
+    }
+    if (filled.length && filled.length < 4) {
+      return setError(
+        'Fill in all four nutrition values, or leave them all empty to use the estimate.',
+      );
+    }
 
     const input: RecipeInput = {
       title: title.trim(),
@@ -101,6 +147,7 @@ function EditForm({ existing }: { existing?: Recipe }) {
         .filter(Boolean),
       notes: notes.trim() || undefined,
       sourceUrl: sourceUrl.trim() || undefined,
+      nutrition: filled.length ? (nutrients as Nutrients) : undefined,
     };
 
     if (existing) {
@@ -229,6 +276,31 @@ function EditForm({ existing }: { existing?: Recipe }) {
           placeholder={'Preheat the oven to 180°C.\nMix the dry ingredients.'}
         />
 
+        <View style={styles.group}>
+          <Text style={[styles.label, { color: c.text }]}>Nutrition per serving (optional)</Text>
+          <Text style={[styles.hint, { color: c.textSecondary }]}>
+            {estimate.countedCount
+              ? `Leave empty to use the estimate from your ingredients: about ${Math.round(estimate.perServing.kcal)} kcal per serving.`
+              : 'Leave empty to estimate it from your ingredients.'}
+          </Text>
+          <View style={styles.nutrientGrid}>
+            {NUTRIENT_FIELDS.map((f) => (
+              <View key={f.key} style={styles.nutrientCell}>
+                <Field
+                  label={f.label}
+                  value={nutrition[f.key]}
+                  onChangeText={(t) => {
+                    setNutrition((prev) => ({ ...prev, [f.key]: t }));
+                    setError(undefined);
+                  }}
+                  keyboardType="decimal-pad"
+                  placeholder={f.placeholder}
+                />
+              </View>
+            ))}
+          </View>
+        </View>
+
         <Field
           label="Notes"
           value={notes}
@@ -271,5 +343,8 @@ const styles = StyleSheet.create({
   photoButtons: { flexDirection: 'row', gap: Spacing.two },
   numbers: { flexDirection: 'row', gap: Spacing.three },
   number: { flex: 1 },
+  hint: { fontSize: 13 },
+  nutrientGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.three },
+  nutrientCell: { flexBasis: '45%', flexGrow: 1 },
   error: { fontSize: 15, fontWeight: '600' },
 });

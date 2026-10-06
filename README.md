@@ -19,6 +19,15 @@ See [FEATURES.md](FEATURES.md) for the full plan.
 - **Make next:** a to-cook list you can reorder; "Cooked" moves a recipe to your history
 - Recipe pages show which ingredients you have and how often you've cooked it
 
+## Phase 3
+
+- **Nutrition per serving** (calories, protein, carbs, fat), estimated from the ingredient list
+  using a built-in table of ~120 common foods (`src/lib/foods.ts`, typical USDA values per 100 g)
+- Converts cups / tbsp / tsp / g / oz / lb / pieces / cans to grams per food
+- Shows which ingredients weren't counted and a per-ingredient breakdown
+- You can type in your own numbers for any recipe; they replace the estimate
+- Recipe cards show calories per serving (`~` means estimated)
+
 ## Run it
 
 ```bash
@@ -30,7 +39,7 @@ npm run web      # or open it in the browser
 ## Checks
 
 ```bash
-npm test             # unit tests for ingredient parsing, search/filter and pantry matching
+npm test             # unit tests for ingredient parsing, search/filter, pantry matching and nutrition
 npm run typecheck
 npm run lint
 ```
@@ -41,7 +50,7 @@ npm run lint
   - `(tabs)/` – the four tabs: `index.tsx` (recipes, search, filters), `cook.tsx`, `next.tsx`, `pantry.tsx`
   - `recipe/[id].tsx` – recipe details
   - `recipe/edit.tsx` – add / edit form
-- `src/lib/` – plain logic: recipe types, filtering, ingredient parsing, pantry matching, photo saving
+- `src/lib/` – plain logic: recipe types, filtering, ingredient parsing, pantry matching, nutrition, photo saving
 - `src/store/` – data saved on the device: recipes, and pantry / make next / cooking history
 - `src/components/ui.tsx` – shared buttons, chips and text fields
 - `tests/` – unit tests (run with Node's built-in test runner)

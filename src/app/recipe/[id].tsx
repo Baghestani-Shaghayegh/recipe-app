@@ -2,6 +2,7 @@ import { Image } from 'expo-image';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
+import { NutritionPanel } from '@/components/nutrition-panel';
 import { Button, confirm, SectionTitle } from '@/components/ui';
 import { MaxContentWidth, Spacing, useTheme } from '@/constants/theme';
 import { isStaple, pantryHas } from '@/lib/pantry';
@@ -144,6 +145,8 @@ export default function RecipeDetailScreen() {
           })}
         </View>
       ) : null}
+
+      <NutritionPanel recipe={recipe} />
 
       {recipe.steps.length ? (
         <View style={styles.block}>

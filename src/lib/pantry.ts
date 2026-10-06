@@ -100,7 +100,7 @@ export function isStaple(name: string): boolean {
 }
 
 /** True if all of `needle` appears in `hay` as whole words in the same order. */
-function containsPhrase(hay: string[], needle: string[]): boolean {
+export function containsPhrase(hay: string[], needle: string[]): boolean {
   if (!needle.length || needle.length > hay.length) return false;
   for (let i = 0; i + needle.length <= hay.length; i++) {
     if (needle.every((w, j) => hay[i + j] === w)) return true;

@@ -1,4 +1,5 @@
 import type { Ingredient } from './ingredients';
+import type { Nutrients } from './nutrition';
 
 export const CATEGORIES = ['Breakfast', 'Lunch', 'Dinner', 'Dessert', 'Snack', 'Drinks'] as const;
 export type Category = (typeof CATEGORIES)[number];
@@ -16,6 +17,8 @@ export type Recipe = {
   steps: string[];
   notes?: string;
   sourceUrl?: string;
+  /** Per-serving values typed in by the user; when missing, nutrition is estimated. */
+  nutrition?: Nutrients;
   createdAt: number;
   updatedAt: number;
 };

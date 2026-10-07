@@ -9,8 +9,10 @@ import { Button, SectionTitle } from '@/components/ui';
 import { MaxContentWidth, Spacing, useTheme } from '@/constants/theme';
 import { STORE_SECTIONS } from '@/lib/foods';
 import type { Recipe } from '@/lib/recipe';
+import { dateKey, upcomingRecipeIds } from '@/lib/plan';
 import { buildShoppingList, shoppingListText } from '@/lib/shopping';
 import { useKitchen } from '@/store/kitchen';
+import { usePlan } from '@/store/plan';
 import { useRecipes } from '@/store/recipes';
 import { extraKey, useShopping } from '@/store/shopping';
 
@@ -18,14 +20,20 @@ export default function ShoppingScreen() {
   const c = useTheme();
   const { recipes } = useRecipes();
   const { makeNext, pantry, addToPantry } = useKitchen();
+  const { plan } = usePlan();
   const { isChecked, toggleChecked, extras, addExtras, removeExtra, clearChecked } = useShopping();
   const [text, setText] = useState('');
   const [note, setNote] = useState<string>();
 
   const queue = useMemo(() => {
     const byId = new Map(recipes.map((r) => [r.id, r]));
-    return makeNext.map((m) => byId.get(m.recipeId)).filter((r): r is Recipe => !!r);
-  }, [recipes, makeNext]);
+    // Make next first, then recipes planned for today or later; each recipe once.
+    const ids = new Set([
+      ...makeNext.map((m) => m.recipeId),
+      ...upcomingRecipeIds(plan, dateKey(new Date())),
+    ]);
+    return [...ids].map((id) => byId.get(id)).filter((r): r is Recipe => !!r);
+  }, [recipes, makeNext, plan]);
   const items = useMemo(() => buildShoppingList(queue, pantry), [queue, pantry]);
 
   const tickedItems = items.filter((i) => isChecked(i.key));
@@ -103,8 +111,8 @@ export default function ShoppingScreen() {
       {queue.length ? (
         <Pressable onPress={() => router.navigate('/next')} accessibilityRole="link">
           <Text style={[styles.note, { color: c.textSecondary }]}>
-            For {queue.length} recipe{queue.length === 1 ? '' : 's'} in Make next:{' '}
-            <Text style={{ color: c.accent }}>{queue.map((r) => r.title).join(', ')}</Text>
+            For {queue.length} recipe{queue.length === 1 ? '' : 's'} from Make next and your meal
+            plan: <Text style={{ color: c.accent }}>{queue.map((r) => r.title).join(', ')}</Text>
             {pantry.length ? '. Things in your pantry are left out.' : '.'}
           </Text>
         </Pressable>
@@ -114,8 +122,8 @@ export default function ShoppingScreen() {
         <View style={styles.empty}>
           <Text style={[styles.emptyTitle, { color: c.text }]}>Your list is empty</Text>
           <Text style={[styles.emptyText, { color: c.textSecondary }]}>
-            Add recipes to Make next and everything you need shows up here, minus what’s already in
-            your pantry.
+            Add recipes to Make next or your meal plan and everything you need shows up here, minus
+            what’s already in your pantry.
           </Text>
           <Button
             label="Find something to cook"
@@ -127,7 +135,7 @@ export default function ShoppingScreen() {
 
       {queue.length && !items.length ? (
         <Text style={[styles.emptyText, { color: c.textSecondary }]}>
-          You already have everything for your Make next recipes.
+          You already have everything for your Make next and planned recipes.
         </Text>
       ) : null}
 

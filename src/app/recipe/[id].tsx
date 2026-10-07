@@ -177,7 +177,9 @@ export default function RecipeDetailScreen() {
                   }>
                   {status === 'have' ? '✓' : status === 'missing' ? '○' : '•'}
                 </Text>
-                <Text style={[styles.body, { color: c.text }]}>{scaleIngredientText(ing, factor)}</Text>
+                <Text style={[styles.body, { color: c.text }]}>
+                  {scaleIngredientText(ing, factor)}
+                </Text>
               </View>
             );
           })}

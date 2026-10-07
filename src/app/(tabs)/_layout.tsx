@@ -58,6 +58,10 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="plan"
+        options={{ title: 'Meal plan', tabBarLabel: 'Plan', tabBarIcon: icon('calendar-outline') }}
+      />
+      <Tabs.Screen
         name="pantry"
         options={{ title: 'My Pantry', tabBarLabel: 'Pantry', tabBarIcon: icon('basket-outline') }}
       />

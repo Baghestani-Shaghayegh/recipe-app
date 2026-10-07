@@ -4,7 +4,8 @@ import { test } from 'node:test';
 import { parseIngredientLine } from '../src/lib/ingredients.ts';
 import { scaleFactor, scaleIngredientText } from '../src/lib/scale.ts';
 
-const scale = (line: string, factor: number) => scaleIngredientText(parseIngredientLine(line), factor);
+const scale = (line: string, factor: number) =>
+  scaleIngredientText(parseIngredientLine(line), factor);
 
 test('scaleFactor', () => {
   assert.equal(scaleFactor(2, 6), 3);

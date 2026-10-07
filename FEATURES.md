@@ -57,8 +57,8 @@ These are the core of the app. Build them first, in roughly this order.
 ## Nice-to-have features (add later)
 
 ### Planning and shopping
-- **Weekly meal planner**: drag recipes onto days of the week
-- ✅ **Shopping list**: made from the "make next" list or the meal plan, minus what's in My Pantry
+- ✅ **Weekly meal planner**: put recipes on days of the week (tap to add; no drag yet)
+- ✅ **Shopping list**: made from the "make next" list and the meal plan, minus what's in My Pantry
 - ✅ Group the shopping list by store section (produce, dairy, …)
 
 ### Better recipes

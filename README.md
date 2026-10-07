@@ -57,6 +57,14 @@ See [FEATURES.md](FEATURES.md) for the full plan.
 - Pages with no recipe data, and the web version (browsers block reading other sites), fall back to
   pasting the recipe text.
 
+## Meal plan
+
+- **Plan tab:** a Monday–Sunday week with ‹ › to move between weeks. Tap *+ Add* on a day, search
+  your recipes and tap one to plan it; *Remove* takes it off again. Today is highlighted.
+- Recipes planned for today or later are added to the **Shopping list** together with Make next
+  (a recipe in both is counted once). Past days no longer add anything.
+- Saved on the device (`plan.v1`); logic in `src/lib/plan.ts`.
+
 ## Scale servings
 
 - On a recipe page, use − / + next to *Servings* to change the serving size; ingredient amounts
@@ -86,7 +94,7 @@ npm run lint
 ## Code layout
 
 - `src/app/` – screens (Expo Router: every file is a route)
-  - `(tabs)/` – the five tabs: `index.tsx` (recipes, search, filters), `cook.tsx`, `next.tsx`, `pantry.tsx`, `shopping.tsx`
+  - `(tabs)/` – the six tabs: `index.tsx` (recipes, search, filters), `cook.tsx`, `next.tsx`, `plan.tsx`, `pantry.tsx`, `shopping.tsx`
   - `recipe/[id].tsx` – recipe details
   - `recipe/edit.tsx` – add / edit form
 - `src/lib/` – plain logic: recipe types, filtering, ingredient parsing, pantry matching, nutrition, shopping list, Instagram and caption reading, photo saving

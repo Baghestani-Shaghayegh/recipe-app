@@ -3,7 +3,12 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { SectionTitle } from '@/components/ui';
 import { Spacing, useTheme } from '@/constants/theme';
-import { estimateNutrition, type IngredientNutrition, type Nutrients } from '@/lib/nutrition';
+import {
+  estimateExtras,
+  estimateNutrition,
+  type IngredientNutrition,
+  type Nutrients,
+} from '@/lib/nutrition';
 import type { Recipe } from '@/lib/recipe';
 
 const PROBLEM_TEXT: Record<NonNullable<IngredientNutrition['problem']>, string> = {
@@ -44,6 +49,7 @@ export function NutritionPanel({ recipe }: { recipe: Recipe }) {
   const [showDetails, setShowDetails] = useState(false);
   const est = estimateNutrition(recipe);
   const manual = recipe.nutrition;
+  const extras = estimateExtras(recipe);
 
   if (!manual && !est.countedCount) {
     if (!recipe.ingredients.length) return null;
@@ -66,6 +72,13 @@ export function NutritionPanel({ recipe }: { recipe: Recipe }) {
         {manual ? `Your numbers, per serving` : `Estimated ${perServing}`}
       </Text>
       <NutrientRow values={manual ?? est.perServing} />
+
+      {extras ? (
+        <Text style={[styles.note, { color: c.textSecondary }]}>
+          Also (estimated from the ingredients): fiber {formatNutrient(extras.fiber, 'g')} · sugar{' '}
+          {formatNutrient(extras.sugar, 'g')} · sodium {Math.round(extras.sodium)} mg
+        </Text>
+      ) : null}
 
       {!manual && est.notCounted.length ? (
         <Text style={[styles.note, { color: c.danger }]}>

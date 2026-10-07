@@ -27,6 +27,8 @@ See [FEATURES.md](FEATURES.md) for the full plan.
 - Shows which ingredients weren't counted and a per-ingredient breakdown
 - You can type in your own numbers for any recipe; they replace the estimate
 - Recipe cards show calories per serving (`~` means estimated)
+- Recipe pages also show estimated **fiber, sugar and sodium** per serving (`src/lib/foods-micro.ts`,
+  rounded typical values per 100 g). Not yet: vitamins and minerals other than sodium
 
 ## Phase 4
 
@@ -144,8 +146,8 @@ See [FEATURES.md](FEATURES.md) for the full plan.
   adds up the week (kcal, protein, carbs, fat) and shows the average on planned days.
 - *Daily goals* at the bottom of the tab: calories and protein per day, saved on the device.
 - Recipes with no nutrition data are left out and counted in a note. Estimates only, same as the
-  recipe pages. Not yet: fiber, sugar, sodium and vitamins (the built-in food table only has
-  calories, protein, carbs and fat). Logic in `src/lib/plan-nutrition.ts`.
+  recipe pages. The plan totals only cover calories, protein, carbs and fat (not fiber, sugar or
+  sodium). Logic in `src/lib/plan-nutrition.ts`.
 
 ## Scale servings
 

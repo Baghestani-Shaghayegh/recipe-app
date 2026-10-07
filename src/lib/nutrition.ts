@@ -1,3 +1,4 @@
+import { microFor } from './foods-micro';
 import { FOODS, type Food } from './foods';
 import type { Ingredient } from './ingredients';
 import { containsPhrase, isStaple, normalizeWords } from './pantry';
@@ -112,4 +113,30 @@ export function servingNutrition(
   if (recipe.nutrition) return { values: recipe.nutrition, source: 'manual' };
   const est = estimateNutrition(recipe);
   return est.countedCount ? { values: est.perServing, source: 'estimate' } : undefined;
+}
+
+export type Extras = { fiber: number; sugar: number; sodium: number };
+
+/**
+ * Fiber (g), sugar (g) and sodium (mg) per serving, added up from the ingredients that were counted
+ * in the main estimate. Undefined if nothing could be counted.
+ */
+export function estimateExtras(
+  recipe: Pick<Recipe, 'ingredients' | 'servings'>,
+): Extras | undefined {
+  const est = estimateNutrition(recipe);
+  if (!est.countedCount) return undefined;
+  const total = { fiber: 0, sugar: 0, sodium: 0 };
+  for (const l of est.lines) {
+    const micro = l.food && l.grams !== undefined ? microFor(l.food) : undefined;
+    if (!micro || l.grams === undefined) continue;
+    total.fiber += (micro.fiber * l.grams) / 100;
+    total.sugar += (micro.sugar * l.grams) / 100;
+    total.sodium += (micro.sodium * l.grams) / 100;
+  }
+  return {
+    fiber: total.fiber / est.servings,
+    sugar: total.sugar / est.servings,
+    sodium: total.sodium / est.servings,
+  };
 }

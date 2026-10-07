@@ -111,6 +111,8 @@ test('empty or junk text gives an empty draft, not a crash', () => {
     title: undefined,
     ingredients: [],
     steps: [],
+    notes: undefined,
+    sourceUrl: undefined,
     servings: undefined,
     prepMinutes: undefined,
     cookMinutes: undefined,
@@ -137,4 +139,14 @@ test('draft from text keeps the source, credits the author, and saves text it co
 
   assert.equal(recipeDraftFromText('🔥', { author: 'chef_sara' }).title, 'Recipe from @chef_sara');
   assert.equal(recipeDraftFromText('').title, 'Imported recipe');
+});
+
+test('Notes and Source lines are kept apart from the steps', () => {
+  const r = parseRecipeText(
+    'Soup\n\nIngredients:\n- 1 onion\n\nMethod:\n1. Fry it.\n2. Eat.\n\nNotes: Freezes well.\nServe hot.\n\n#meal-prep\n\nSource: https://example.com/soup',
+  );
+  assert.deepEqual(r.steps, ['Fry it.', 'Eat.']);
+  assert.equal(r.notes, 'Freezes well.\nServe hot.');
+  assert.equal(r.sourceUrl, 'https://example.com/soup');
+  assert.deepEqual(r.tags, ['meal-prep']);
 });

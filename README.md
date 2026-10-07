@@ -57,6 +57,15 @@ See [FEATURES.md](FEATURES.md) for the full plan.
 - Pages with no recipe data, and the web version (browsers block reading other sites), fall back to
   pasting the recipe text.
 
+## Share a recipe
+
+- *Share recipe* on a recipe page opens the phone's share sheet with the recipe as text (title,
+  times, ingredients, method, notes, tags, source), at the serving size and units you picked. If
+  there's no share sheet (some browsers) it's copied instead.
+- A friend with this app can paste it into *Import* and get the recipe back: the importer reads the
+  "Ingredients:" / "Method:" headings, plus "Notes:" and "Source:" lines. There's no link-sharing
+  (that would need an online service); it's text. Logic in `src/lib/share.ts`.
+
 ## Import from YouTube and TikTok
 
 - Paste a YouTube video / Shorts link or a TikTok link into the same Import screen. YouTube: the

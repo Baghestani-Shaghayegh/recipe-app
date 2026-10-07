@@ -11,6 +11,10 @@ export type ParsedRecipeText = {
   cookMinutes?: number;
   tags: string[];
   category?: Category;
+  /** Text after a "Notes:" heading. */
+  notes?: string;
+  /** A link after a "Source:" heading. */
+  sourceUrl?: string;
 };
 
 const INGREDIENT_HEADER =
@@ -133,23 +137,40 @@ export function parseRecipeText(raw: string): ParsedRecipeText {
   const text = raw.replace(/\r\n?/g, '\n');
 
   const tags: string[] = [];
-  for (const m of text.matchAll(/#([\p{L}\p{N}_]+)/gu)) {
+  for (const m of text.matchAll(/#([\p{L}\p{N}_]+(?:-[\p{L}\p{N}_]+)*)/gu)) {
     const tag = m[1].toLowerCase();
     if (!GENERIC_TAGS.has(tag) && !tags.includes(tag) && tags.length < MAX_TAGS) tags.push(tag);
   }
 
   const lines = text
     .split('\n')
-    .map((l) => cleanLine(l.replace(/#[\p{L}\p{N}_]+/gu, '')))
+    .map((l) => cleanLine(l.replace(/#[\p{L}\p{N}_]+(?:-[\p{L}\p{N}_]+)*/gu, '')))
     .filter((l) => l && !(l.length < 120 && PROMO.test(l)));
 
-  let section: 'intro' | 'ingredients' | 'steps' = 'intro';
+  let section: 'intro' | 'ingredients' | 'steps' | 'notes' = 'intro';
+  const notes: string[] = [];
+  let sourceUrl: string | undefined;
   let sawHeaders = false;
   const intro: string[] = [];
   const ingredients: string[] = [];
   const steps: string[] = [];
 
   for (const line of lines) {
+    const source = line.match(/^source\s*[:：]\s*(https?:\/\/\S+)/i);
+    if (source) {
+      sourceUrl = source[1];
+      continue;
+    }
+    const notesStart = line.match(/^notes?\s*[:：]\s*(.*)$/i);
+    if (notesStart && sawHeaders) {
+      section = 'notes';
+      if (notesStart[1]) notes.push(notesStart[1]);
+      continue;
+    }
+    if (section === 'notes') {
+      notes.push(line);
+      continue;
+    }
     if (INGREDIENT_HEADER.test(line) && line.length < 60) {
       section = 'ingredients';
       sawHeaders = true;
@@ -223,6 +244,8 @@ export function parseRecipeText(raw: string): ParsedRecipeText {
     title: titleText,
     ingredients: ingredients.map((i) => i.trim()).filter(Boolean),
     steps,
+    notes: notes.join('\n') || undefined,
+    sourceUrl,
     servings: findServings(text),
     prepMinutes,
     cookMinutes,
@@ -242,6 +265,7 @@ export function recipeDraftFromText(
   const p = parseRecipeText(text);
   const notes = [
     extra.author ? `From @${extra.author} on ${extra.site ?? 'Instagram'}.` : undefined,
+    p.notes,
     !p.ingredients.length || !p.steps.length ? `Original text:\n${text.trim()}` : undefined,
   ]
     .filter(Boolean)
@@ -257,6 +281,6 @@ export function recipeDraftFromText(
     ingredients: parseIngredientList(p.ingredients.join('\n')),
     steps: p.steps,
     notes: notes || undefined,
-    sourceUrl: extra.sourceUrl,
+    sourceUrl: extra.sourceUrl ?? p.sourceUrl,
   };
 }

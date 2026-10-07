@@ -88,7 +88,7 @@ These are the core of the app. Build them first, in roughly this order.
 
 ### Social and sync
 - Account login and sync between phone and computer
-- Share a recipe with a friend as a link
+- ✅ Share a recipe with a friend (as text via the share sheet, not a link: no server)
 - Shared lists with a partner or family
 
 ### Polish

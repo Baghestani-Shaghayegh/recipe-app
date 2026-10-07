@@ -1,12 +1,14 @@
+import * as Clipboard from 'expo-clipboard';
 import { Image } from 'expo-image';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Linking, Share, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { NutritionPanel } from '@/components/nutrition-panel';
 import { Button, Chip, confirm, SectionTitle } from '@/components/ui';
 import { MaxContentWidth, Spacing, useTheme } from '@/constants/theme';
 import { isStaple, pantryHas } from '@/lib/pantry';
+import { recipeToText } from '@/lib/share';
 import { findSubstitutions } from '@/lib/substitutions';
 import { deleteRecipePhoto } from '@/lib/photos';
 import { formatMinutes, MAX_RATING, nextRating, totalMinutes } from '@/lib/recipe';
@@ -24,6 +26,7 @@ export default function RecipeDetailScreen() {
   // Serving size picked on this screen only; the saved recipe is never changed.
   const [chosenServings, setChosenServings] = useState<number>();
   const [units, setUnits] = useState<UnitSystem>('original');
+  const [shareNote, setShareNote] = useState<string>();
 
   if (!recipe) {
     return (
@@ -59,6 +62,17 @@ export default function RecipeDetailScreen() {
     !pantry.length || isStaple(name) ? 'unknown' : pantryHas(pantry, name) ? 'have' : 'missing';
   const counted = recipe.ingredients.filter((i) => ingredientStatus(i.name) !== 'unknown');
   const haveCount = counted.filter((i) => ingredientStatus(i.name) === 'have').length;
+
+  const onShare = async () => {
+    const message = recipeToText(recipe, { factor, servings, units });
+    try {
+      await Share.share({ message, title: recipe.title });
+    } catch {
+      // No share sheet (e.g. some browsers): copy the text instead.
+      await Clipboard.setStringAsync(message).catch(() => undefined);
+      setShareNote('Copied the recipe. Paste it into a message.');
+    }
+  };
 
   const onDelete = async () => {
     if (await confirm('Delete recipe?', `“${recipe.title}” will be removed.`, 'Delete')) {
@@ -168,6 +182,10 @@ export default function RecipeDetailScreen() {
               })
             }
           />
+        ) : null}
+        <Button label="Share recipe" variant="secondary" onPress={onShare} />
+        {shareNote ? (
+          <Text style={[styles.meta, { color: c.textSecondary }]}>{shareNote}</Text>
         ) : null}
         {timesCooked.length ? (
           <Text style={[styles.meta, { color: c.textSecondary }]}>

@@ -57,6 +57,16 @@ See [FEATURES.md](FEATURES.md) for the full plan.
 - Pages with no recipe data, and the web version (browsers block reading other sites), fall back to
   pasting the recipe text.
 
+## Import from YouTube and TikTok
+
+- Paste a YouTube video / Shorts link or a TikTok link into the same Import screen. YouTube: the
+  title and the full description are read from the video page; TikTok: the caption comes from
+  TikTok's public oEmbed data. The thumbnail becomes the photo, and the text goes through the same
+  caption reader as Instagram (headings like "Ingredients" and "Method" help). You review it before
+  saving. Logic in `src/lib/video.ts`.
+- Not included: reading what's *said* in a video (see "Not yet" below). If the description has no
+  recipe, the text is put in the notes. Phone app only; on the web, paste the text.
+
 ## Meal plan
 
 - **Plan tab:** a Monday–Sunday week with ‹ › to move between weeks. Tap *+ Add* on a day, search

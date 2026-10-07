@@ -17,6 +17,7 @@ import { MaxContentWidth, Spacing, useTheme } from '@/constants/theme';
 import { fetchInstagramPost, InstagramError, parseInstagramUrl } from '@/lib/instagram';
 import { saveRemotePhoto } from '@/lib/photos';
 import { recipeDraftFromText } from '@/lib/recipe-text';
+import { fetchVideoPost, parseTiktokUrl, parseYoutubeUrl, VideoError } from '@/lib/video';
 import { fetchWebsiteRecipe, parseWebUrl, WebsiteError } from '@/lib/website';
 import { setRecipeDraft } from '@/store/draft';
 
@@ -34,12 +35,17 @@ export default function ImportScreen() {
   const autoFetched = useRef(false);
 
   const parsedLink = parseInstagramUrl(link);
-  const webUrl = parsedLink ? undefined : parseWebUrl(link);
+  const videoUrl = parsedLink ? undefined : (parseYoutubeUrl(link) ?? parseTiktokUrl(link));
+  const webUrl = parsedLink || videoUrl ? undefined : parseWebUrl(link);
 
-  const openDraft = (text: string, extra: { author?: string; photoUri?: string } = {}) => {
+  const openDraft = (
+    text: string,
+    extra: { author?: string; photoUri?: string; site?: string; sourceUrl?: string } = {},
+  ) => {
     const draft = recipeDraftFromText(text, {
       ...extra,
-      sourceUrl: parsedLink?.url ?? webUrl ?? (link.trim() || undefined),
+      sourceUrl:
+        extra.sourceUrl ?? parsedLink?.url ?? videoUrl ?? webUrl ?? (link.trim() || undefined),
     });
     const key = setRecipeDraft(draft);
     router.replace({ pathname: '/recipe/edit', params: { draft: key } });
@@ -55,6 +61,17 @@ export default function ImportScreen() {
           ? await saveRemotePhoto(post.imageUrl).catch(() => undefined)
           : undefined;
         openDraft(post.caption, { author: post.author, photoUri });
+      } else if (parseYoutubeUrl(url) || parseTiktokUrl(url)) {
+        const post = await fetchVideoPost(url);
+        const photoUri = post.imageUrl
+          ? await saveRemotePhoto(post.imageUrl).catch(() => undefined)
+          : undefined;
+        openDraft(post.caption, {
+          author: post.author,
+          photoUri,
+          site: post.site,
+          sourceUrl: post.url,
+        });
       } else {
         const { imageUrl, ...draft } = await fetchWebsiteRecipe(url);
         const photoUri = imageUrl
@@ -67,7 +84,7 @@ export default function ImportScreen() {
       }
     } catch (e) {
       const text =
-        e instanceof InstagramError || e instanceof WebsiteError
+        e instanceof InstagramError || e instanceof WebsiteError || e instanceof VideoError
           ? e.message
           : 'Something went wrong reading that link.';
       setMessage({ text: `${text} You can paste the recipe text below instead.`, error: true });
@@ -110,7 +127,7 @@ export default function ImportScreen() {
         <View style={styles.group}>
           <Field
             label="Recipe link"
-            hint="An Instagram post or reel, or any recipe website. Instagram: Share → Copy link."
+            hint="An Instagram, TikTok or YouTube video, or any recipe website. Use Share → Copy link."
             value={link}
             onChangeText={(t) => {
               setLink(t);
@@ -127,7 +144,15 @@ export default function ImportScreen() {
                 label="Paste link"
                 variant="secondary"
                 onPress={() =>
-                  pasteInto((t) => setLink(parseInstagramUrl(t)?.url ?? parseWebUrl(t) ?? t.trim()))
+                  pasteInto((t) =>
+                    setLink(
+                      parseInstagramUrl(t)?.url ??
+                        parseYoutubeUrl(t) ??
+                        parseTiktokUrl(t) ??
+                        parseWebUrl(t) ??
+                        t.trim(),
+                    ),
+                  )
                 }
               />
             </View>
@@ -136,12 +161,12 @@ export default function ImportScreen() {
                 <Button
                   label="Get recipe"
                   onPress={() => fetchFromLink()}
-                  disabled={(!parsedLink && !webUrl) || loading}
+                  disabled={(!parsedLink && !videoUrl && !webUrl) || loading}
                 />
               </View>
             ) : null}
           </View>
-          {link.trim() && !parsedLink && !webUrl ? (
+          {link.trim() && !parsedLink && !videoUrl && !webUrl ? (
             <Text style={[styles.message, { color: c.danger }]}>
               That doesn’t look like a link. It should start with https://
             </Text>

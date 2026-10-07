@@ -237,11 +237,11 @@ export function parseRecipeText(raw: string): ParsedRecipeText {
  */
 export function recipeDraftFromText(
   text: string,
-  extra: { sourceUrl?: string; photoUri?: string; author?: string } = {},
+  extra: { sourceUrl?: string; photoUri?: string; author?: string; site?: string } = {},
 ): Omit<Recipe, 'id' | 'createdAt' | 'updatedAt'> {
   const p = parseRecipeText(text);
   const notes = [
-    extra.author ? `From @${extra.author} on Instagram.` : undefined,
+    extra.author ? `From @${extra.author} on ${extra.site ?? 'Instagram'}.` : undefined,
     !p.ingredients.length || !p.steps.length ? `Original text:\n${text.trim()}` : undefined,
   ]
     .filter(Boolean)

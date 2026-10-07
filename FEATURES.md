@@ -79,7 +79,7 @@ These are the core of the app. Build them first, in roughly this order.
 - "Use it up": suggest recipes with ingredients that expire soon
 - Suggestions based on what you cook and rate highly
 - Ingredient substitutions ("no buttermilk? use milk + lemon")
-- Diet filters: vegetarian, vegan, gluten-free, high-protein, allergies
+- ✅ Diet filters: vegetarian, vegan, gluten-free, dairy-free, nut-free, high-protein (keyword-based, not allergy-safe)
 
 ### Nutrition extras
 - Daily/weekly nutrition totals from the meal planner

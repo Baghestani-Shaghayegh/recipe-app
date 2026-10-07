@@ -70,6 +70,15 @@ See [FEATURES.md](FEATURES.md) for the full plan.
 - On a recipe page, tap the heart to favorite it and the stars to rate it (tap the same star again
   to clear). Cards show ♥ and ★ ratings; the Recipes tab has a *♥ Favorites* filter chip.
 
+## Diet filters
+
+- Chips on the Recipes and Cook now tabs: Vegetarian, Vegan, Gluten-free, Dairy-free, Nut-free and
+  High-protein (25 g+ per serving); several can be combined.
+- A recipe fits if it has that diet as a tag (e.g. `vegan`), or if its ingredient list has no
+  matching words (`src/lib/diet.ts`: meat, fish, dairy, egg, honey, gluten, nuts, with exceptions
+  like coconut milk or rice flour). **This is a keyword check, not a guarantee: don't rely on it for
+  allergies.** Recipes without ingredients never match.
+
 ## Unit conversion
 
 - Recipe page: *As written* / *Metric* / *US cups* chips above the ingredients. Cups, tablespoons,

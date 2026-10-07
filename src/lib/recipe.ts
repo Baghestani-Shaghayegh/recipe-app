@@ -1,3 +1,4 @@
+import { fitsDiet, type DietId } from './diet';
 import type { Ingredient } from './ingredients';
 import type { Nutrients } from './nutrition';
 
@@ -66,6 +67,8 @@ export type RecipeFilters = {
   maxMinutes?: number;
   tags: string[];
   favoritesOnly?: boolean;
+  /** Every diet listed must fit. */
+  diets?: DietId[];
 };
 
 /**
@@ -77,6 +80,7 @@ export function filterRecipes(recipes: Recipe[], f: RecipeFilters): Recipe[] {
   const words = f.query.toLowerCase().split(/\s+/).filter(Boolean);
   return recipes.filter((r) => {
     if (f.favoritesOnly && !r.favorite) return false;
+    if (f.diets?.some((d) => !fitsDiet(r, d))) return false;
     if (f.category && r.category !== f.category) return false;
     if (f.maxMinutes !== undefined) {
       const t = totalMinutes(r);

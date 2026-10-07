@@ -12,6 +12,7 @@ import {
   View,
 } from 'react-native';
 
+import { DIETS, type DietId } from '@/lib/diet';
 import { RecipeCard } from '@/components/recipe-card';
 import { Button, Chip } from '@/components/ui';
 import { MaxContentWidth, Spacing, useTheme } from '@/constants/theme';
@@ -26,14 +27,20 @@ export default function RecipeListScreen() {
   const [maxMinutes, setMaxMinutes] = useState<number>();
   const [tags, setTags] = useState<string[]>([]);
   const [favoritesOnly, setFavoritesOnly] = useState(false);
+  const [diets, setDiets] = useState<DietId[]>([]);
 
   const tagOptions = useMemo(() => allTags(recipes), [recipes]);
   const visible = useMemo(
-    () => filterRecipes(recipes, { query, category, maxMinutes, tags, favoritesOnly }),
-    [recipes, query, category, maxMinutes, tags, favoritesOnly],
+    () => filterRecipes(recipes, { query, category, maxMinutes, tags, favoritesOnly, diets }),
+    [recipes, query, category, maxMinutes, tags, favoritesOnly, diets],
   );
   const hasFilters =
-    !!query || !!category || maxMinutes !== undefined || tags.length > 0 || favoritesOnly;
+    !!query ||
+    !!category ||
+    maxMinutes !== undefined ||
+    tags.length > 0 ||
+    favoritesOnly ||
+    diets.length > 0;
 
   const clearFilters = () => {
     setQuery('');
@@ -41,6 +48,7 @@ export default function RecipeListScreen() {
     setMaxMinutes(undefined);
     setTags([]);
     setFavoritesOnly(false);
+    setDiets([]);
   };
 
   const toggleTag = (t: string) =>
@@ -110,6 +118,23 @@ export default function RecipeListScreen() {
         ))}
         {tagOptions.map((t) => (
           <Chip key={t} label={`#${t}`} selected={tags.includes(t)} onPress={() => toggleTag(t)} />
+        ))}
+      </ScrollView>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.chipRow}>
+        {DIETS.map((d) => (
+          <Chip
+            key={d.id}
+            label={d.label}
+            selected={diets.includes(d.id)}
+            onPress={() =>
+              setDiets((prev) =>
+                prev.includes(d.id) ? prev.filter((x) => x !== d.id) : [...prev, d.id],
+              )
+            }
+          />
         ))}
       </ScrollView>
       {hasFilters ? (

@@ -6,6 +6,7 @@ import { CardAction, RecipeCard } from '@/components/recipe-card';
 import { Button, Chip, SectionTitle } from '@/components/ui';
 import { MaxContentWidth, Spacing, useTheme } from '@/constants/theme';
 import { recommend, type RecipeMatch } from '@/lib/pantry';
+import { DIETS, type DietId } from '@/lib/diet';
 import { CATEGORIES, filterRecipes, TIME_FILTERS, type Category } from '@/lib/recipe';
 import { useKitchen } from '@/store/kitchen';
 import { useRecipes } from '@/store/recipes';
@@ -16,10 +17,15 @@ export default function CookNowScreen() {
   const { pantry } = useKitchen();
   const [category, setCategory] = useState<Category>();
   const [maxMinutes, setMaxMinutes] = useState<number>();
+  const [diets, setDiets] = useState<DietId[]>([]);
 
   const { ready, almost } = useMemo(
-    () => recommend(filterRecipes(recipes, { query: '', category, maxMinutes, tags: [] }), pantry),
-    [recipes, pantry, category, maxMinutes],
+    () =>
+      recommend(
+        filterRecipes(recipes, { query: '', category, maxMinutes, tags: [], diets }),
+        pantry,
+      ),
+    [recipes, pantry, category, maxMinutes, diets],
   );
 
   if (!pantry.length) {
@@ -61,6 +67,23 @@ export default function CookNowScreen() {
               label={t.label}
               selected={maxMinutes === t.maxMinutes}
               onPress={() => setMaxMinutes(maxMinutes === t.maxMinutes ? undefined : t.maxMinutes)}
+            />
+          ))}
+        </ScrollView>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.chipRow}>
+          {DIETS.map((d) => (
+            <Chip
+              key={d.id}
+              label={d.label}
+              selected={diets.includes(d.id)}
+              onPress={() =>
+                setDiets((prev) =>
+                  prev.includes(d.id) ? prev.filter((x) => x !== d.id) : [...prev, d.id],
+                )
+              }
             />
           ))}
         </ScrollView>

@@ -66,14 +66,49 @@ See [FEATURES.md](FEATURES.md) for the full plan.
   ingredients), each with "Similar to …". Recipes rated 1–2 stars are never suggested, nor ones you already rate 4–5 stars or favorited. Needs at
   least one liked recipe. Logic in `src/lib/suggest.ts`.
 
+## Sync and sharing (Supabase)
+
+Optional: the app works fully offline without it. With it you get:
+
+- **Account & sync** (Recipes tab footer → *Account & sync*): sign in with email and password and
+  your recipes, pantry, best-before dates, make-next list, history, meal plan, goals and shopping
+  list follow you across devices. Changes are sent a few seconds after you make them and checked
+  when the app opens or returns to the front. Per list, the newer change wins; the first time a
+  device meets existing data its recipes are merged, not replaced. Photos are not synced.
+- **Shared household** (same screen): *Start a household* gives an 8-character code; a partner or
+  family member signs in and joins with it. Everyone in the household then edits the same recipes,
+  pantry, plan and shopping list. *Leave household* goes back to your own data; when the last
+  person leaves, the shared data is deleted.
+- **Share as link** (recipe page, when signed in): publishes a copy of the recipe (no photo, rating
+  or favorite) and shares a `recipeapp://recipe/import?share=<id>` link plus the recipe as text.
+  Opening the link, or pasting it in *Import*, adds the recipe to the other person's app. Anyone
+  holding the link can read that one recipe; nothing can be listed or searched. The link only
+  opens for people who have the app installed (there's no web page).
+
+### Set it up
+
+1. Create a project at [supabase.com](https://supabase.com) (the free plan allows 2 active projects).
+2. In the project's **SQL editor**, run `supabase/migrations/20261007000000_recipe_box.sql`. It
+   creates the tables with row-level security (people can only read their own data and their own
+   household's) and the functions for households and shared links.
+3. Copy `.env.example` to `.env` and fill in the project URL and publishable key
+   (**Project Settings → API**). Restart `npm start`.
+4. If you'd rather not confirm emails during testing: **Authentication → Providers → Email →
+   Confirm email** off. With it on, *Create account* asks you to confirm by email first.
+
+Code: `src/lib/supabase.ts` (small client over Supabase's REST API, no extra packages),
+`src/lib/sync.ts` (the merge rules), `src/store/account.tsx` (sign-in and sync loop),
+`src/app/account.tsx`. Sign-in tokens are kept in the device's regular app storage.
+
 ## Share a recipe
 
 - *Share recipe* on a recipe page opens the phone's share sheet with the recipe as text (title,
   times, ingredients, method, notes, tags, source), at the serving size and units you picked. If
   there's no share sheet (some browsers) it's copied instead.
 - A friend with this app can paste it into *Import* and get the recipe back: the importer reads the
-  "Ingredients:" / "Method:" headings, plus "Notes:" and "Source:" lines. There's no link-sharing
-  (that would need an online service); it's text. Logic in `src/lib/share.ts`.
+  "Ingredients:" / "Method:" headings, plus "Notes:" and "Source:" lines. Links need the
+  Supabase setup (see *Sync and sharing*); this plain text works without it. Logic in
+  `src/lib/share.ts`.
 
 ## Import from YouTube and TikTok
 
@@ -165,8 +200,6 @@ See [FEATURES.md](FEATURES.md) for the full plan.
 
 Not yet (each needs something the app doesn't have on its own):
 
-- **Login, sync between devices, shared lists, share-by-link:** need an online service (database
-  and accounts).
 - **AI parsing of unstructured captions, and reading what's said in a reel:** need an AI/speech
   service with a secret key, which must live on a server, not in the app.
 - **Scanning a cookbook page or handwritten recipe:** needs text recognition (a native module,

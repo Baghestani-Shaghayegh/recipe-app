@@ -178,9 +178,16 @@ export default function RecipeListScreen() {
           )
         }
         ListFooterComponent={
-          <Pressable onPress={() => router.push('/backup')} accessibilityRole="link">
-            <Text style={[styles.footerLink, { color: c.accent }]}>Back up or restore recipes</Text>
-          </Pressable>
+          <View>
+            <Pressable onPress={() => router.push('/account')} accessibilityRole="link">
+              <Text style={[styles.footerLink, { color: c.accent }]}>Account & sync</Text>
+            </Pressable>
+            <Pressable onPress={() => router.push('/backup')} accessibilityRole="link">
+              <Text style={[styles.footerLink, { color: c.accent }]}>
+                Back up or restore recipes
+              </Text>
+            </Pressable>
+          </View>
         }
         contentContainerStyle={styles.list}
         keyboardShouldPersistTaps="handled"

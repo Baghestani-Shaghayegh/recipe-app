@@ -17,9 +17,18 @@ import { MaxContentWidth, Spacing, useTheme } from '@/constants/theme';
 import { fetchInstagramPost, InstagramError, parseInstagramUrl } from '@/lib/instagram';
 import { saveRemotePhoto } from '@/lib/photos';
 import { recipeDraftFromText } from '@/lib/recipe-text';
+import { recipeFromShared } from '@/lib/share';
+import { parseShareId } from '@/lib/supabase';
+import { useAccount } from '@/store/account';
 import { fetchVideoPost, parseTiktokUrl, parseYoutubeUrl, VideoError } from '@/lib/video';
 import { fetchWebsiteRecipe, parseWebUrl, WebsiteError } from '@/lib/website';
 import { setRecipeDraft } from '@/store/draft';
+
+/** A shared-recipe id, when the text holds a recipeapp:// share link or is just the id. */
+const shareIdFrom = (text: string) =>
+  /recipeapp:\/\/recipe\/import\?share=|^[0-9a-f-]{36}$/i.test(text.trim())
+    ? parseShareId(text)
+    : undefined;
 
 // Browsers block reading Instagram and recipe sites from another site, so on the web the text is pasted.
 const CAN_FETCH = Platform.OS !== 'web';
@@ -27,13 +36,15 @@ const CAN_FETCH = Platform.OS !== 'web';
 export default function ImportScreen() {
   const c = useTheme();
   // A link can also arrive as recipeapp://recipe/import?url=…
-  const params = useLocalSearchParams<{ url?: string }>();
-  const [link, setLink] = useState(params.url ?? '');
+  const params = useLocalSearchParams<{ url?: string; share?: string }>();
+  const { fetchSharedRecipe } = useAccount();
+  const [link, setLink] = useState(params.url ?? params.share ?? '');
   const [caption, setCaption] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ text: string; error?: boolean }>();
   const autoFetched = useRef(false);
 
+  const shareId = shareIdFrom(link);
   const parsedLink = parseInstagramUrl(link);
   const videoUrl = parsedLink ? undefined : (parseYoutubeUrl(link) ?? parseTiktokUrl(link));
   const webUrl = parsedLink || videoUrl ? undefined : parseWebUrl(link);
@@ -55,7 +66,13 @@ export default function ImportScreen() {
     setMessage(undefined);
     setLoading(true);
     try {
-      if (parseInstagramUrl(url)) {
+      const sid = shareIdFrom(url);
+      if (sid) {
+        const { recipe, error } = await fetchSharedRecipe(sid);
+        const draft = recipeFromShared(recipe);
+        if (!draft) throw new Error(error ?? 'That link doesn’t hold a recipe.');
+        router.replace({ pathname: '/recipe/edit', params: { draft: setRecipeDraft(draft) } });
+      } else if (parseInstagramUrl(url)) {
         const post = await fetchInstagramPost(url);
         const photoUri = post.imageUrl
           ? await saveRemotePhoto(post.imageUrl).catch(() => undefined)
@@ -84,9 +101,11 @@ export default function ImportScreen() {
       }
     } catch (e) {
       const text =
-        e instanceof InstagramError || e instanceof WebsiteError || e instanceof VideoError
+        e instanceof Error && shareIdFrom(url)
           ? e.message
-          : 'Something went wrong reading that link.';
+          : e instanceof InstagramError || e instanceof WebsiteError || e instanceof VideoError
+            ? e.message
+            : 'Something went wrong reading that link.';
       setMessage({ text: `${text} You can paste the recipe text below instead.`, error: true });
     } finally {
       setLoading(false);
@@ -94,13 +113,16 @@ export default function ImportScreen() {
   };
 
   useEffect(() => {
-    if (CAN_FETCH && params.url && parseInstagramUrl(params.url) && !autoFetched.current) {
+    if (params.share && !autoFetched.current) {
+      autoFetched.current = true;
+      fetchFromLink(params.share);
+    } else if (CAN_FETCH && params.url && parseInstagramUrl(params.url) && !autoFetched.current) {
       autoFetched.current = true;
       fetchFromLink(params.url);
     }
     // Only for a link passed in when the screen opens.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [params.url]);
+  }, [params.url, params.share]);
 
   const pasteInto = async (set: (s: string) => void) => {
     try {
@@ -146,7 +168,8 @@ export default function ImportScreen() {
                 onPress={() =>
                   pasteInto((t) =>
                     setLink(
-                      parseInstagramUrl(t)?.url ??
+                      (shareIdFrom(t) ? t.trim() : undefined) ??
+                        parseInstagramUrl(t)?.url ??
                         parseYoutubeUrl(t) ??
                         parseTiktokUrl(t) ??
                         parseWebUrl(t) ??
@@ -156,17 +179,17 @@ export default function ImportScreen() {
                 }
               />
             </View>
-            {CAN_FETCH ? (
+            {CAN_FETCH || shareId ? (
               <View style={styles.flex}>
                 <Button
                   label="Get recipe"
                   onPress={() => fetchFromLink()}
-                  disabled={(!parsedLink && !videoUrl && !webUrl) || loading}
+                  disabled={(!shareId && !parsedLink && !videoUrl && !webUrl) || loading}
                 />
               </View>
             ) : null}
           </View>
-          {link.trim() && !parsedLink && !videoUrl && !webUrl ? (
+          {link.trim() && !shareId && !parsedLink && !videoUrl && !webUrl ? (
             <Text style={[styles.message, { color: c.danger }]}>
               That doesn’t look like a link. It should start with https://
             </Text>

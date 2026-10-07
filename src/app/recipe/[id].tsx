@@ -8,12 +8,13 @@ import { NutritionPanel } from '@/components/nutrition-panel';
 import { Button, Chip, confirm, SectionTitle } from '@/components/ui';
 import { MaxContentWidth, Spacing, useTheme } from '@/constants/theme';
 import { isStaple, pantryHas } from '@/lib/pantry';
-import { recipeToText } from '@/lib/share';
+import { recipeToText, sharedPayload } from '@/lib/share';
 import { findSubstitutions } from '@/lib/substitutions';
 import { deleteRecipePhoto } from '@/lib/photos';
 import { formatMinutes, MAX_RATING, nextRating, totalMinutes } from '@/lib/recipe';
 import { MAX_SERVINGS, MIN_SERVINGS, scaleFactor, scaleIngredientText } from '@/lib/scale';
 import { convertTemperatures, UNIT_SYSTEMS, type UnitSystem } from '@/lib/units';
+import { useAccount } from '@/store/account';
 import { useKitchen } from '@/store/kitchen';
 import { useRecipes } from '@/store/recipes';
 
@@ -27,6 +28,7 @@ export default function RecipeDetailScreen() {
   const [chosenServings, setChosenServings] = useState<number>();
   const [units, setUnits] = useState<UnitSystem>('original');
   const [shareNote, setShareNote] = useState<string>();
+  const account = useAccount();
 
   if (!recipe) {
     return (
@@ -71,6 +73,20 @@ export default function RecipeDetailScreen() {
       // No share sheet (e.g. some browsers): copy the text instead.
       await Clipboard.setStringAsync(message).catch(() => undefined);
       setShareNote('Copied the recipe. Paste it into a message.');
+    }
+  };
+
+  const onShareLink = async () => {
+    setShareNote('Making a link…');
+    const { link, error } = await account.shareRecipe(sharedPayload(recipe));
+    if (!link) return setShareNote(error ?? 'Couldn’t make a link.');
+    setShareNote(undefined);
+    const message = `${recipe.title}: open it in Recipe Box\n${link}\n\nNo app yet? Here it is as text:\n\n${recipeToText(recipe, { factor, servings, units })}`;
+    try {
+      await Share.share({ message, title: recipe.title });
+    } catch {
+      await Clipboard.setStringAsync(message).catch(() => undefined);
+      setShareNote('Copied the link. Paste it into a message.');
     }
   };
 
@@ -184,6 +200,9 @@ export default function RecipeDetailScreen() {
           />
         ) : null}
         <Button label="Share recipe" variant="secondary" onPress={onShare} />
+        {account.session ? (
+          <Button label="Share as link" variant="secondary" onPress={onShareLink} />
+        ) : null}
         {shareNote ? (
           <Text style={[styles.meta, { color: c.textSecondary }]}>{shareNote}</Text>
         ) : null}

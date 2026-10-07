@@ -87,9 +87,9 @@ These are the core of the app. Build them first, in roughly this order.
 - ✅ Fiber, sugar and sodium (estimated; vitamins not done)
 
 ### Social and sync
-- Account login and sync between phone and computer
-- ✅ Share a recipe with a friend (as text via the share sheet, not a link: no server)
-- Shared lists with a partner or family
+- ✅ Account login and sync between phone and computer (Supabase; see README to set up)
+- ✅ Share a recipe with a friend: as text via the share sheet, or as a link (needs the Supabase setup)
+- ✅ Shared lists with a partner or family (a "household" shares everything)
 
 ### Polish
 - Dark mode

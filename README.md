@@ -70,6 +70,14 @@ See [FEATURES.md](FEATURES.md) for the full plan.
 - On a recipe page, tap the heart to favorite it and the stars to rate it (tap the same star again
   to clear). Cards show ♥ and ★ ratings; the Recipes tab has a *♥ Favorites* filter chip.
 
+## Unit conversion
+
+- Recipe page: *As written* / *Metric* / *US cups* chips above the ingredients. Cups, tablespoons,
+  teaspoons and ml become each other (rounded to kitchen sizes: ¼, ⅓, ½ …), oz / lb and g / kg too,
+  and temperatures in the steps switch between °F and °C. Works together with the servings
+  stepper and carries into cooking mode. Cloves, cans, pieces etc. stay as written; conversions are
+  approximate (volume and weight aren't converted into each other). Logic in `src/lib/units.ts`.
+
 ## Cooking mode and timers
 
 - *Start cooking* on a recipe page: one step at a time in big text, *Back* / *Next step*, and the

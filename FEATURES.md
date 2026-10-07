@@ -63,7 +63,7 @@ These are the core of the app. Build them first, in roughly this order.
 
 ### Better recipes
 - ✅ **Scale servings**: change 2 → 6 servings and the amounts update
-- **Unit conversion**: cups ↔ grams, °F ↔ °C
+- ✅ **Unit conversion**: cups ↔ ml, oz ↔ g, °F ↔ °C (volume ↔ weight such as cups ↔ grams is not done)
 - ✅ **Cooking mode**: big text, one step at a time, screen stays on
 - ✅ **Timers** inside the steps (in-app only, no background alerts)
 - ✅ **Ratings** (1–5 stars; no separate "would make again")

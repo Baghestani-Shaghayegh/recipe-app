@@ -4,12 +4,13 @@ import { useState } from 'react';
 import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { NutritionPanel } from '@/components/nutrition-panel';
-import { Button, confirm, SectionTitle } from '@/components/ui';
+import { Button, Chip, confirm, SectionTitle } from '@/components/ui';
 import { MaxContentWidth, Spacing, useTheme } from '@/constants/theme';
 import { isStaple, pantryHas } from '@/lib/pantry';
 import { deleteRecipePhoto } from '@/lib/photos';
 import { formatMinutes, MAX_RATING, nextRating, totalMinutes } from '@/lib/recipe';
 import { MAX_SERVINGS, MIN_SERVINGS, scaleFactor, scaleIngredientText } from '@/lib/scale';
+import { convertTemperatures, UNIT_SYSTEMS, type UnitSystem } from '@/lib/units';
 import { useKitchen } from '@/store/kitchen';
 import { useRecipes } from '@/store/recipes';
 
@@ -21,6 +22,7 @@ export default function RecipeDetailScreen() {
   const recipe = recipes.find((r) => r.id === id);
   // Serving size picked on this screen only; the saved recipe is never changed.
   const [chosenServings, setChosenServings] = useState<number>();
+  const [units, setUnits] = useState<UnitSystem>('original');
 
   if (!recipe) {
     return (
@@ -160,6 +162,7 @@ export default function RecipeDetailScreen() {
                 params: {
                   id: recipe.id,
                   ...(servings !== undefined && { servings: String(servings) }),
+                  units,
                 },
               })
             }
@@ -181,6 +184,16 @@ export default function RecipeDetailScreen() {
               You have {haveCount} of {counted.length} in your pantry
             </Text>
           ) : null}
+          <View style={styles.unitRow}>
+            {UNIT_SYSTEMS.map((u) => (
+              <Chip
+                key={u.id}
+                label={u.label}
+                selected={units === u.id}
+                onPress={() => setUnits(u.id)}
+              />
+            ))}
+          </View>
           {baseServings !== undefined && servings !== undefined ? (
             <View style={styles.stepper}>
               <Text style={[styles.meta, { color: c.textSecondary }]}>Servings</Text>
@@ -224,7 +237,7 @@ export default function RecipeDetailScreen() {
                   {status === 'have' ? '✓' : status === 'missing' ? '○' : '•'}
                 </Text>
                 <Text style={[styles.body, { color: c.text }]}>
-                  {scaleIngredientText(ing, factor)}
+                  {scaleIngredientText(ing, factor, units)}
                 </Text>
               </View>
             );
@@ -240,7 +253,9 @@ export default function RecipeDetailScreen() {
           {recipe.steps.map((step, i) => (
             <View key={i} style={styles.row}>
               <Text style={[styles.stepNumber, { color: c.accent }]}>{i + 1}</Text>
-              <Text style={[styles.body, { color: c.text }]}>{step}</Text>
+              <Text style={[styles.body, { color: c.text }]}>
+                {convertTemperatures(step, units)}
+              </Text>
             </View>
           ))}
         </View>
@@ -281,6 +296,7 @@ const styles = StyleSheet.create({
   block: { gap: Spacing.two },
   title: { fontSize: 28, fontWeight: '800' },
   meta: { fontSize: 15 },
+  unitRow: { flexDirection: 'row', gap: Spacing.two, flexWrap: 'wrap' },
   ratingRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.four },
   heart: { fontSize: 30, lineHeight: 34 },
   stars: { flexDirection: 'row', gap: Spacing.one },

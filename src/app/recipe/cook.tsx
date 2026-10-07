@@ -7,6 +7,7 @@ import { Button } from '@/components/ui';
 import { MaxContentWidth, Spacing, useTheme } from '@/constants/theme';
 import { scaleFactor, scaleIngredientText } from '@/lib/scale';
 import { findTimers, formatClock } from '@/lib/timers';
+import { convertTemperatures, type UnitSystem } from '@/lib/units';
 import { useRecipes } from '@/store/recipes';
 
 type RunningTimer = { id: number; label: string; endsAt: number; done: boolean };
@@ -17,7 +18,12 @@ let nextTimerId = 1;
 export default function CookScreen() {
   const c = useTheme();
   useKeepAwake();
-  const { id, servings } = useLocalSearchParams<{ id: string; servings?: string }>();
+  const { id, servings, units } = useLocalSearchParams<{
+    id: string;
+    servings?: string;
+    units?: UnitSystem;
+  }>();
+  const system: UnitSystem = units === 'metric' || units === 'us' ? units : 'original';
   const { recipes } = useRecipes();
   const recipe = recipes.find((r) => r.id === id);
   const [step, setStep] = useState(0);
@@ -73,7 +79,9 @@ export default function CookScreen() {
             <Text style={[styles.progress, { color: c.accent }]}>
               Step {step + 1} of {steps.length}
             </Text>
-            <Text style={[styles.step, { color: c.text }]}>{steps[step]}</Text>
+            <Text style={[styles.step, { color: c.text }]}>
+              {convertTemperatures(steps[step], system)}
+            </Text>
             {stepTimers.length ? (
               <View style={styles.timerButtons}>
                 {stepTimers.map((t) => (
@@ -101,7 +109,7 @@ export default function CookScreen() {
             {showIngredients
               ? recipe.ingredients.map((ing, i) => (
                   <Text key={i} style={[styles.ingredient, { color: c.text }]}>
-                    • {scaleIngredientText(ing, factor)}
+                    • {scaleIngredientText(ing, factor, system)}
                   </Text>
                 ))
               : null}

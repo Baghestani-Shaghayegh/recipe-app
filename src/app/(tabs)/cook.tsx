@@ -5,6 +5,7 @@ import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { CardAction, RecipeCard } from '@/components/recipe-card';
 import { Button, Chip, SectionTitle } from '@/components/ui';
 import { MaxContentWidth, Spacing, useTheme } from '@/constants/theme';
+import { describeExpiry, expiringItems, recipesToUseUp } from '@/lib/expiry';
 import { recommend, type RecipeMatch } from '@/lib/pantry';
 import { DIETS, type DietId } from '@/lib/diet';
 import { CATEGORIES, filterRecipes, TIME_FILTERS, type Category } from '@/lib/recipe';
@@ -14,7 +15,7 @@ import { useRecipes } from '@/store/recipes';
 export default function CookNowScreen() {
   const c = useTheme();
   const { recipes } = useRecipes();
-  const { pantry } = useKitchen();
+  const { pantry, expiry } = useKitchen();
   const [category, setCategory] = useState<Category>();
   const [maxMinutes, setMaxMinutes] = useState<number>();
   const [diets, setDiets] = useState<DietId[]>([]);
@@ -27,6 +28,11 @@ export default function CookNowScreen() {
       ),
     [recipes, pantry, category, maxMinutes, diets],
   );
+
+  const useSoon = useMemo(() => {
+    const filtered = filterRecipes(recipes, { query: '', category, maxMinutes, tags: [], diets });
+    return recipesToUseUp(filtered, expiringItems(pantry, expiry));
+  }, [recipes, pantry, expiry, category, maxMinutes, diets]);
 
   if (!pantry.length) {
     return (
@@ -88,6 +94,22 @@ export default function CookNowScreen() {
           ))}
         </ScrollView>
       </View>
+
+      {useSoon.length ? (
+        <View style={styles.section}>
+          <SectionTitle>Use it up ({useSoon.length})</SectionTitle>
+          {useSoon.map(({ recipe, uses }) => (
+            <RecipeCard key={recipe.id} recipe={recipe}>
+              <Text style={[styles.missing, { color: c.danger }]} numberOfLines={3}>
+                Uses{' '}
+                {uses
+                  .map((u) => `${u.item} (${describeExpiry(u.daysLeft).toLowerCase()})`)
+                  .join(', ')}
+              </Text>
+            </RecipeCard>
+          ))}
+        </View>
+      ) : null}
 
       <View style={styles.section}>
         <SectionTitle>Ready to cook ({ready.length})</SectionTitle>

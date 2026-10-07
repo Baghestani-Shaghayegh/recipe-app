@@ -3,13 +3,15 @@ import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { FlatList, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
-import { Button } from '@/components/ui';
+import { Button, Chip } from '@/components/ui';
 import { MaxContentWidth, Spacing, useTheme } from '@/constants/theme';
+import { daysLeft, describeExpiry, EXPIRY_OPTIONS, expiryIn, USE_SOON_DAYS } from '@/lib/expiry';
 import { useKitchen } from '@/store/kitchen';
 
 export default function PantryScreen() {
   const c = useTheme();
-  const { pantry, addToPantry, removeFromPantry } = useKitchen();
+  const { pantry, addToPantry, removeFromPantry, expiry, setExpiry } = useKitchen();
+  const [editing, setEditing] = useState<string>();
   const [text, setText] = useState('');
   const [message, setMessage] = useState<string>();
 
@@ -60,15 +62,59 @@ export default function PantryScreen() {
         keyExtractor={(item) => item}
         ListHeaderComponent={header}
         renderItem={({ item }) => (
-          <View style={[styles.item, { borderBottomColor: c.border }]}>
-            <Text style={[styles.itemText, { color: c.text }]}>{item}</Text>
-            <Pressable
-              onPress={() => removeFromPantry(item)}
-              hitSlop={10}
-              accessibilityRole="button"
-              accessibilityLabel={`Remove ${item}`}>
-              <Ionicons name="close-circle" size={22} color={c.textSecondary} />
-            </Pressable>
+          <View style={[styles.itemBlock, { borderBottomColor: c.border }]}>
+            <View style={styles.item}>
+              <Pressable
+                style={styles.itemMain}
+                onPress={() => setEditing(editing === item ? undefined : item)}
+                accessibilityRole="button"
+                accessibilityLabel={`Best-before date for ${item}`}>
+                <Text style={[styles.itemText, { color: c.text }]}>{item}</Text>
+                {expiry[item] ? (
+                  <Text
+                    style={[
+                      styles.expiry,
+                      {
+                        color: daysLeft(expiry[item]) <= USE_SOON_DAYS ? c.danger : c.textSecondary,
+                      },
+                    ]}>
+                    {describeExpiry(daysLeft(expiry[item]))}
+                  </Text>
+                ) : null}
+              </Pressable>
+              <Pressable
+                onPress={() => removeFromPantry(item)}
+                hitSlop={10}
+                accessibilityRole="button"
+                accessibilityLabel={`Remove ${item}`}>
+                <Ionicons name="close-circle" size={22} color={c.textSecondary} />
+              </Pressable>
+            </View>
+            {editing === item ? (
+              <View style={styles.expiryRow}>
+                <Text style={[styles.expiry, { color: c.textSecondary }]}>Use within</Text>
+                {EXPIRY_OPTIONS.map((o) => (
+                  <Chip
+                    key={o.days}
+                    label={o.label}
+                    selected={expiry[item] === expiryIn(o.days)}
+                    onPress={() => {
+                      setExpiry(item, expiryIn(o.days));
+                      setEditing(undefined);
+                    }}
+                  />
+                ))}
+                {expiry[item] ? (
+                  <Chip
+                    label="No date"
+                    onPress={() => {
+                      setExpiry(item, undefined);
+                      setEditing(undefined);
+                    }}
+                  />
+                ) : null}
+              </View>
+            ) : null}
           </View>
         )}
         ListEmptyComponent={
@@ -97,13 +143,11 @@ const styles = StyleSheet.create({
   },
   message: { fontSize: 14 },
   link: { fontSize: 15, fontWeight: '600' },
-  item: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 12,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-  },
+  itemBlock: { borderBottomWidth: StyleSheet.hairlineWidth, paddingVertical: 12, gap: Spacing.two },
+  item: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  itemMain: { flex: 1, gap: 2 },
+  expiry: { fontSize: 13 },
+  expiryRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: Spacing.two },
   itemText: { fontSize: 16, textTransform: 'capitalize' },
   empty: { fontSize: 15, textAlign: 'center', paddingVertical: Spacing.five },
 });

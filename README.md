@@ -70,6 +70,14 @@ See [FEATURES.md](FEATURES.md) for the full plan.
 - On a recipe page, tap the heart to favorite it and the stars to rate it (tap the same star again
   to clear). Cards show ♥ and ★ ratings; the Recipes tab has a *♥ Favorites* filter chip.
 
+## Use it up
+
+- **Pantry tab:** tap an item to set a best-before date (3 days / 1 week / 2 weeks / 1 month) or
+  clear it. Dates show under the item, in red once they're within 3 days or past.
+- **Cook now tab:** a *Use it up* section on top lists recipes that use items expiring within 3
+  days (or already past), ranked by how many of them they use. The category, time and diet filters
+  apply. Logic in `src/lib/expiry.ts`; dates are saved separately (`expiry.v1`).
+
 ## Diet filters
 
 - Chips on the Recipes and Cook now tabs: Vegetarian, Vegan, Gluten-free, Dairy-free, Nut-free and

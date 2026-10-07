@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useMemo } from 'react';
 
+import type { Expiry } from '@/lib/expiry';
 import { newPantryItems } from '@/lib/pantry';
 
 import { usePersistedState } from './persisted';
@@ -14,6 +15,10 @@ type KitchenContextValue = {
   /** Adds items from text like "eggs, milk". Returns how many were new. */
   addToPantry: (text: string) => number;
   removeFromPantry: (item: string) => void;
+  /** Best-before dates by pantry item. */
+  expiry: Expiry;
+  /** Sets the date ("2026-10-07") for a pantry item, or clears it with undefined. */
+  setExpiry: (item: string, day: string | undefined) => void;
 
   makeNext: MakeNextItem[];
   isInMakeNext: (recipeId: string) => boolean;
@@ -30,6 +35,7 @@ const KitchenContext = createContext<KitchenContextValue | null>(null);
 /** Pantry, "make next" list and cooking history. */
 export function KitchenProvider({ children }: { children: React.ReactNode }) {
   const [pantry, setPantry, pantryLoaded] = usePersistedState<string[]>('pantry.v1', () => []);
+  const [expiry, setExpiryState, expiryLoaded] = usePersistedState<Expiry>('expiry.v1', () => ({}));
   const [makeNext, setMakeNext, nextLoaded] = usePersistedState<MakeNextItem[]>(
     'makeNext.v1',
     () => [],
@@ -45,9 +51,21 @@ export function KitchenProvider({ children }: { children: React.ReactNode }) {
     [pantry, setPantry],
   );
 
+  const setExpiry = useCallback(
+    (item: string, day: string | undefined) =>
+      setExpiryState((prev) => {
+        const { [item]: _old, ...rest } = prev;
+        return day ? { ...rest, [item]: day } : rest;
+      }),
+    [setExpiryState],
+  );
+
   const removeFromPantry = useCallback(
-    (item: string) => setPantry((prev) => prev.filter((p) => p !== item)),
-    [setPantry],
+    (item: string) => {
+      setPantry((prev) => prev.filter((p) => p !== item));
+      setExpiry(item, undefined);
+    },
+    [setPantry, setExpiry],
   );
 
   const isInMakeNext = useCallback(
@@ -88,10 +106,12 @@ export function KitchenProvider({ children }: { children: React.ReactNode }) {
 
   const value = useMemo(
     () => ({
-      loaded: pantryLoaded && nextLoaded && cookedLoaded,
+      loaded: pantryLoaded && nextLoaded && cookedLoaded && expiryLoaded,
       pantry,
       addToPantry,
       removeFromPantry,
+      expiry,
+      setExpiry,
       makeNext,
       isInMakeNext,
       toggleMakeNext,
@@ -103,9 +123,12 @@ export function KitchenProvider({ children }: { children: React.ReactNode }) {
       pantryLoaded,
       nextLoaded,
       cookedLoaded,
+      expiryLoaded,
       pantry,
       addToPantry,
       removeFromPantry,
+      expiry,
+      setExpiry,
       makeNext,
       isInMakeNext,
       toggleMakeNext,

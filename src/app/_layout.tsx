@@ -5,6 +5,7 @@ import { useColorScheme } from 'react-native';
 import { Colors } from '@/constants/theme';
 import { KitchenProvider } from '@/store/kitchen';
 import { RecipesProvider } from '@/store/recipes';
+import { ShoppingProvider } from '@/store/shopping';
 
 export default function RootLayout() {
   const dark = useColorScheme() === 'dark';
@@ -26,23 +27,25 @@ export default function RootLayout() {
       }}>
       <RecipesProvider>
         <KitchenProvider>
-          <Stack
-            screenOptions={{
-              headerShadowVisible: false,
-              headerTintColor: c.accent,
-              headerTitleStyle: { color: c.text },
-            }}>
-            <Stack.Screen name="(tabs)" options={{ headerShown: false, title: 'Recipes' }} />
-            <Stack.Screen name="recipe/[id]" options={{ title: '' }} />
-            <Stack.Screen
-              name="recipe/edit"
-              options={{ title: 'New recipe', presentation: 'modal' }}
-            />
-            <Stack.Screen
-              name="recipe/import"
-              options={{ title: 'Import from Instagram', presentation: 'modal' }}
-            />
-          </Stack>
+          <ShoppingProvider>
+            <Stack
+              screenOptions={{
+                headerShadowVisible: false,
+                headerTintColor: c.accent,
+                headerTitleStyle: { color: c.text },
+              }}>
+              <Stack.Screen name="(tabs)" options={{ headerShown: false, title: 'Recipes' }} />
+              <Stack.Screen name="recipe/[id]" options={{ title: '' }} />
+              <Stack.Screen
+                name="recipe/edit"
+                options={{ title: 'New recipe', presentation: 'modal' }}
+              />
+              <Stack.Screen
+                name="recipe/import"
+                options={{ title: 'Import from Instagram', presentation: 'modal' }}
+              />
+            </Stack>
+          </ShoppingProvider>
         </KitchenProvider>
       </RecipesProvider>
       <StatusBar style="auto" />

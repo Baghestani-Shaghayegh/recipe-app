@@ -61,6 +61,14 @@ export default function TabLayout() {
         name="pantry"
         options={{ title: 'My Pantry', tabBarLabel: 'Pantry', tabBarIcon: icon('basket-outline') }}
       />
+      <Tabs.Screen
+        name="shopping"
+        options={{
+          title: 'Shopping list',
+          tabBarLabel: 'Shopping',
+          tabBarIcon: icon('cart-outline'),
+        }}
+      />
     </Tabs>
   );
 }

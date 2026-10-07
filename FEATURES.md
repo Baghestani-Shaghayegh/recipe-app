@@ -58,8 +58,8 @@ These are the core of the app. Build them first, in roughly this order.
 
 ### Planning and shopping
 - **Weekly meal planner**: drag recipes onto days of the week
-- **Shopping list**: made from the "make next" list or the meal plan, minus what's in My Pantry
-- Group the shopping list by store section (produce, dairy, …)
+- ✅ **Shopping list**: made from the "make next" list or the meal plan, minus what's in My Pantry
+- ✅ Group the shopping list by store section (produce, dairy, …)
 
 ### Better recipes
 - **Scale servings**: change 2 → 6 servings and the amounts update

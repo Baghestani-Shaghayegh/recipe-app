@@ -2,7 +2,7 @@ import type { Ingredient } from './ingredients';
 import type { Recipe } from './recipe';
 
 // Words that describe how an ingredient is prepared, not what it is.
-const DESCRIPTORS = new Set([
+export const DESCRIPTORS = new Set([
   'fresh',
   'freshly',
   'chopped',

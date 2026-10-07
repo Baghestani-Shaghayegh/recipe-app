@@ -9,9 +9,22 @@
  * - `each`: grams in one piece, used for "3 eggs", "2 cloves garlic", "1 slice bread".
  * - `can`: grams in one can.
  * - `bunch`: grams in one bunch.
+ * - `section`: where it's usually found in a store (for the shopping list).
  */
+export const STORE_SECTIONS = [
+  'Produce',
+  'Bakery',
+  'Dairy & eggs',
+  'Meat & fish',
+  'Pantry',
+  'Spices',
+  'Other',
+] as const;
+export type StoreSection = (typeof STORE_SECTIONS)[number];
+
 export type Food = {
   names: string[];
+  section: StoreSection;
   kcal: number;
   protein: number;
   carbs: number;
@@ -29,7 +42,7 @@ type Row = [
   number,
   number,
   number,
-  Omit<Food, 'names' | 'kcal' | 'protein' | 'carbs' | 'fat'>?,
+  Omit<Food, 'names' | 'kcal' | 'protein' | 'carbs' | 'fat' | 'section'>?,
 ];
 
 const ROWS: Row[] = [
@@ -249,11 +262,21 @@ const ROWS: Row[] = [
   [['saffron'], 310, 11, 65, 6, { cup: 34 }],
 ];
 
-export const FOODS: Food[] = ROWS.map(([names, kcal, protein, carbs, fat, extra]) => ({
-  names,
-  kcal,
-  protein,
-  carbs,
-  fat,
-  ...extra,
-}));
+// Rows are grouped above; each of these foods starts a run of rows in that store section.
+const SECTION_STARTS: Record<string, StoreSection> = {
+  egg: 'Dairy & eggs',
+  flour: 'Pantry',
+  bread: 'Bakery',
+  couscous: 'Pantry',
+  'chicken breast': 'Meat & fish',
+  oil: 'Pantry',
+  water: 'Other',
+  onion: 'Produce',
+  pepper: 'Spices',
+};
+
+let section: StoreSection = 'Other';
+export const FOODS: Food[] = ROWS.map(([names, kcal, protein, carbs, fat, extra]) => {
+  section = SECTION_STARTS[names[0]] ?? section;
+  return { names, section, kcal, protein, carbs, fat, ...extra };
+});

@@ -39,6 +39,15 @@ See [FEATURES.md](FEATURES.md) for the full plan.
   normal form before saving. Text it couldn't sort goes into the notes.
 - Links can be opened directly: `recipeapp://recipe/import?url=<instagram link>`.
 
+## Shopping list
+
+- **Shopping tab:** everything your Make next recipes need, minus what's in your pantry
+  (salt, pepper, oil and water are skipped), grouped by store section
+- The same ingredient from several recipes is added up (2 eggs + 3 eggs → 5 eggs; 1 cup + 2 tbsp
+  milk → 266 ml) and shows which recipes need it
+- Tick items as you shop; *Done* puts ticked items in your pantry, so they drop off the list
+- Add your own items (e.g. paper towels); *Copy* puts the list on the clipboard to send or paste
+
 Not yet: receiving links from Instagram's share sheet (needs a development build, not Expo Go),
 and AI parsing for captions without clear structure or reels with spoken-only recipes.
 
@@ -53,7 +62,7 @@ npm run web      # or open it in the browser
 ## Checks
 
 ```bash
-npm test             # unit tests for parsing, search/filter, pantry matching, nutrition and import
+npm test             # unit tests for parsing, search/filter, pantry matching, nutrition, import and the shopping list
 npm run typecheck
 npm run lint
 ```
@@ -61,10 +70,10 @@ npm run lint
 ## Code layout
 
 - `src/app/` – screens (Expo Router: every file is a route)
-  - `(tabs)/` – the four tabs: `index.tsx` (recipes, search, filters), `cook.tsx`, `next.tsx`, `pantry.tsx`
+  - `(tabs)/` – the five tabs: `index.tsx` (recipes, search, filters), `cook.tsx`, `next.tsx`, `pantry.tsx`, `shopping.tsx`
   - `recipe/[id].tsx` – recipe details
   - `recipe/edit.tsx` – add / edit form
-- `src/lib/` – plain logic: recipe types, filtering, ingredient parsing, pantry matching, nutrition, Instagram and caption reading, photo saving
-- `src/store/` – data saved on the device: recipes, and pantry / make next / cooking history
+- `src/lib/` – plain logic: recipe types, filtering, ingredient parsing, pantry matching, nutrition, shopping list, Instagram and caption reading, photo saving
+- `src/store/` – data saved on the device: recipes; pantry, make next and cooking history; shopping ticks
 - `src/components/ui.tsx` – shared buttons, chips and text fields
 - `tests/` – unit tests (run with Node's built-in test runner)

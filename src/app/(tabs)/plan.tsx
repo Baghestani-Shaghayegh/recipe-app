@@ -5,6 +5,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Button, Field } from '@/components/ui';
 import { MaxContentWidth, Spacing, useTheme } from '@/constants/theme';
 import { addDays, dateKey, weekDays } from '@/lib/plan';
+import { goalProgress, parseGoal, planNutrition } from '@/lib/plan-nutrition';
 import { filterRecipes } from '@/lib/recipe';
 import { usePlan } from '@/store/plan';
 import { useRecipes } from '@/store/recipes';
@@ -18,7 +19,9 @@ function dayLabel(d: Date): string {
 export default function PlanScreen() {
   const c = useTheme();
   const { recipes } = useRecipes();
-  const { plan, addToDay, removeFromDay } = usePlan();
+  const { plan, addToDay, removeFromDay, goals, setGoals } = usePlan();
+  const [kcalGoal, setKcalGoal] = useState(goals.kcal ? String(goals.kcal) : '');
+  const [proteinGoal, setProteinGoal] = useState(goals.protein ? String(goals.protein) : '');
   const [weekOffset, setWeekOffset] = useState(0);
   const [pickerDay, setPickerDay] = useState<string>();
   const [query, setQuery] = useState('');
@@ -34,6 +37,17 @@ export default function PlanScreen() {
         .slice(0, MAX_PICKER_RESULTS),
     [recipes, query],
   );
+
+  const dayKeys = days.map(dateKey);
+  const weekNutrition = planNutrition(plan, dayKeys, byId);
+  const plannedDays = dayKeys.filter((k) => (plan[k] ?? []).some((id) => byId.has(id))).length;
+  const average = (total: number) => (plannedDays ? Math.round(total / plannedDays) : 0);
+  const saveGoals = () => {
+    const next = { kcal: parseGoal(kcalGoal), protein: parseGoal(proteinGoal) };
+    setGoals(next);
+    setKcalGoal(next.kcal ? String(next.kcal) : '');
+    setProteinGoal(next.protein ? String(next.protein) : '');
+  };
 
   const rangeLabel = `${dayLabel(days[0])} – ${dayLabel(days[6])}`;
   const closePicker = () => {
@@ -68,10 +82,30 @@ export default function PlanScreen() {
         </Pressable>
       </View>
 
+      {plannedDays ? (
+        <View style={[styles.summary, { backgroundColor: c.card, borderColor: c.border }]}>
+          <Text style={[styles.dayName, { color: c.text }]}>
+            Planned this week: ~{Math.round(weekNutrition.total.kcal)} kcal
+          </Text>
+          <Text style={[styles.small, { color: c.textSecondary }]}>
+            {Math.round(weekNutrition.total.protein)} g protein ·{' '}
+            {Math.round(weekNutrition.total.carbs)} g carbs · {Math.round(weekNutrition.total.fat)}{' '}
+            g fat. Average on planned days: ~{average(weekNutrition.total.kcal)} kcal
+            {goals.kcal ? ` (goal ${goals.kcal})` : ''}, {average(weekNutrition.total.protein)} g
+            protein{goals.protein ? ` (goal ${goals.protein})` : ''}.
+            {weekNutrition.unknown
+              ? ` ${weekNutrition.unknown} planned recipe${weekNutrition.unknown === 1 ? ' has' : 's have'} no nutrition data.`
+              : ''}
+          </Text>
+        </View>
+      ) : null}
+
       {days.map((d) => {
         const key = dateKey(d);
         const planned = (plan[key] ?? []).map((id) => byId.get(id)).filter((r) => !!r);
         const isToday = key === todayKey;
+        const dayNutrition = planNutrition(plan, [key], byId);
+        const kcalShare = goalProgress(dayNutrition.total.kcal, goals.kcal);
         const picking = pickerDay === key;
         return (
           <View
@@ -114,6 +148,19 @@ export default function PlanScreen() {
                 </Pressable>
               </View>
             ))}
+            {planned.length && dayNutrition.total.kcal > 0 ? (
+              <Text
+                style={[
+                  styles.small,
+                  { color: kcalShare !== undefined && kcalShare > 1 ? c.danger : c.textSecondary },
+                ]}>
+                ~{Math.round(dayNutrition.total.kcal)} kcal ·{' '}
+                {Math.round(dayNutrition.total.protein)} g protein
+                {kcalShare !== undefined
+                  ? ` · ${Math.round(kcalShare * 100)}% of your calorie goal`
+                  : ''}
+              </Text>
+            ) : null}
             {!planned.length && !picking ? (
               <Text style={[styles.small, { color: c.textSecondary }]}>Nothing planned</Text>
             ) : null}
@@ -163,6 +210,28 @@ export default function PlanScreen() {
         );
       })}
 
+      <View style={[styles.summary, { backgroundColor: c.card, borderColor: c.border }]}>
+        <Text style={[styles.dayName, { color: c.text }]}>Daily goals</Text>
+        <Text style={[styles.small, { color: c.textSecondary }]}>
+          Totals count one serving of each planned recipe. Leave a box empty for no goal.
+        </Text>
+        <Field
+          label="Calories per day"
+          value={kcalGoal}
+          onChangeText={setKcalGoal}
+          keyboardType="number-pad"
+          placeholder="e.g. 2000"
+        />
+        <Field
+          label="Protein per day (g)"
+          value={proteinGoal}
+          onChangeText={setProteinGoal}
+          keyboardType="number-pad"
+          placeholder="e.g. 80"
+        />
+        <Button label="Save goals" variant="secondary" onPress={saveGoals} />
+      </View>
+
       <Text style={[styles.small, { color: c.textSecondary }]}>
         Recipes planned for today or later are added to your Shopping list.
       </Text>
@@ -188,6 +257,7 @@ const styles = StyleSheet.create({
   weekTitle: { alignItems: 'center', gap: 2 },
   range: { fontSize: 17, fontWeight: '700' },
   arrow: { fontSize: 32, lineHeight: 34, paddingHorizontal: Spacing.three },
+  summary: { borderWidth: 1, borderRadius: 14, padding: Spacing.three, gap: Spacing.two },
   day: { borderWidth: 1, borderRadius: 14, padding: Spacing.three, gap: Spacing.two },
   dayHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   dayName: { fontSize: 16, fontWeight: '700' },

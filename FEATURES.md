@@ -82,8 +82,8 @@ These are the core of the app. Build them first, in roughly this order.
 - ✅ Diet filters: vegetarian, vegan, gluten-free, dairy-free, nut-free, high-protein (keyword-based, not allergy-safe)
 
 ### Nutrition extras
-- Daily/weekly nutrition totals from the meal planner
-- Goals (calories or protein per day)
+- ✅ Daily/weekly nutrition totals from the meal planner
+- ✅ Goals (calories or protein per day)
 - Full nutrients (fiber, sugar, sodium, vitamins)
 
 ### Social and sync

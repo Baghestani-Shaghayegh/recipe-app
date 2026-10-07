@@ -118,6 +118,16 @@ See [FEATURES.md](FEATURES.md) for the full plan.
   recipes you don't already have (same id) and pantry items; nothing is overwritten.
 - Photos stay on the device and aren't part of the backup. Logic in `src/lib/backup.ts`.
 
+## Nutrition totals and goals
+
+- **Plan tab:** each day shows the estimated calories and protein of its planned recipes (one
+  serving each), with the percentage of your calorie goal and red when over it. A card at the top
+  adds up the week (kcal, protein, carbs, fat) and shows the average on planned days.
+- *Daily goals* at the bottom of the tab: calories and protein per day, saved on the device.
+- Recipes with no nutrition data are left out and counted in a note. Estimates only, same as the
+  recipe pages. Not yet: fiber, sugar, sodium and vitamins (the built-in food table only has
+  calories, protein, carbs and fat). Logic in `src/lib/plan-nutrition.ts`.
+
 ## Scale servings
 
 - On a recipe page, use − / + next to *Servings* to change the serving size; ingredient amounts

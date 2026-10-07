@@ -1,5 +1,6 @@
 import { Image } from 'expo-image';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
+import { useState } from 'react';
 import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { NutritionPanel } from '@/components/nutrition-panel';
@@ -8,6 +9,7 @@ import { MaxContentWidth, Spacing, useTheme } from '@/constants/theme';
 import { isStaple, pantryHas } from '@/lib/pantry';
 import { deleteRecipePhoto } from '@/lib/photos';
 import { formatMinutes, totalMinutes } from '@/lib/recipe';
+import { MAX_SERVINGS, MIN_SERVINGS, scaleFactor, scaleIngredientText } from '@/lib/scale';
 import { useKitchen } from '@/store/kitchen';
 import { useRecipes } from '@/store/recipes';
 
@@ -17,6 +19,8 @@ export default function RecipeDetailScreen() {
   const { recipes, loaded, deleteRecipe } = useRecipes();
   const { pantry, isInMakeNext, toggleMakeNext, markCooked, cooked } = useKitchen();
   const recipe = recipes.find((r) => r.id === id);
+  // Serving size picked on this screen only; the saved recipe is never changed.
+  const [chosenServings, setChosenServings] = useState<number>();
 
   if (!recipe) {
     return (
@@ -29,12 +33,15 @@ export default function RecipeDetailScreen() {
     );
   }
 
+  const baseServings = recipe.servings;
+  const servings = chosenServings ?? baseServings;
+  const factor = scaleFactor(baseServings, servings);
   const total = totalMinutes(recipe);
   const facts = [
     recipe.prepMinutes !== undefined ? ['Prep', formatMinutes(recipe.prepMinutes)] : undefined,
     recipe.cookMinutes !== undefined ? ['Cook', formatMinutes(recipe.cookMinutes)] : undefined,
     total !== undefined ? ['Total', formatMinutes(total)] : undefined,
-    recipe.servings !== undefined ? ['Serves', String(recipe.servings)] : undefined,
+    baseServings !== undefined ? ['Serves', String(baseServings)] : undefined,
   ].filter((f): f is string[] => !!f);
 
   const inMakeNext = isInMakeNext(recipe.id);
@@ -128,6 +135,37 @@ export default function RecipeDetailScreen() {
               You have {haveCount} of {counted.length} in your pantry
             </Text>
           ) : null}
+          {baseServings !== undefined && servings !== undefined ? (
+            <View style={styles.stepper}>
+              <Text style={[styles.meta, { color: c.textSecondary }]}>Servings</Text>
+              <Pressable
+                onPress={() => setChosenServings(Math.max(MIN_SERVINGS, servings - 1))}
+                disabled={servings <= MIN_SERVINGS}
+                hitSlop={8}
+                accessibilityRole="button"
+                accessibilityLabel="Fewer servings"
+                style={[styles.stepButton, { borderColor: c.border, backgroundColor: c.card }]}>
+                <Text style={[styles.stepButtonText, { color: c.text }]}>−</Text>
+              </Pressable>
+              <Text style={[styles.servings, { color: c.text }]} accessibilityLiveRegion="polite">
+                {servings}
+              </Text>
+              <Pressable
+                onPress={() => setChosenServings(Math.min(MAX_SERVINGS, servings + 1))}
+                disabled={servings >= MAX_SERVINGS}
+                hitSlop={8}
+                accessibilityRole="button"
+                accessibilityLabel="More servings"
+                style={[styles.stepButton, { borderColor: c.border, backgroundColor: c.card }]}>
+                <Text style={[styles.stepButtonText, { color: c.text }]}>+</Text>
+              </Pressable>
+              {servings !== baseServings ? (
+                <Pressable onPress={() => setChosenServings(undefined)} hitSlop={8}>
+                  <Text style={[styles.meta, { color: c.accent }]}>Reset to {baseServings}</Text>
+                </Pressable>
+              ) : null}
+            </View>
+          ) : null}
           {recipe.ingredients.map((ing, i) => {
             const status = ingredientStatus(ing.name);
             return (
@@ -139,7 +177,7 @@ export default function RecipeDetailScreen() {
                   }>
                   {status === 'have' ? '✓' : status === 'missing' ? '○' : '•'}
                 </Text>
-                <Text style={[styles.body, { color: c.text }]}>{ing.text}</Text>
+                <Text style={[styles.body, { color: c.text }]}>{scaleIngredientText(ing, factor)}</Text>
               </View>
             );
           })}
@@ -207,6 +245,17 @@ const styles = StyleSheet.create({
   factValue: { fontSize: 16, fontWeight: '700' },
   row: { flexDirection: 'row', gap: Spacing.three, alignItems: 'flex-start' },
   bullet: { fontSize: 16, lineHeight: 24, minWidth: 18, textAlign: 'center' },
+  stepper: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three },
+  stepButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  stepButtonText: { fontSize: 20, fontWeight: '600', lineHeight: 24 },
+  servings: { fontSize: 18, fontWeight: '700', minWidth: 24, textAlign: 'center' },
   buttons: { flexDirection: 'row', gap: Spacing.two },
   flex: { flex: 1 },
   stepNumber: { fontSize: 16, fontWeight: '800', lineHeight: 24, minWidth: 18 },

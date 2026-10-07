@@ -48,6 +48,13 @@ See [FEATURES.md](FEATURES.md) for the full plan.
 - Tick items as you shop; *Done* puts ticked items in your pantry, so they drop off the list
 - Add your own items (e.g. paper towels); *Copy* puts the list on the clipboard to send or paste
 
+## Scale servings
+
+- On a recipe page, use − / + next to *Servings* to change the serving size; ingredient amounts
+  update (1½ cups → 3 cups, 2 cloves → 1 clove). *Reset* goes back to the saved size.
+- Only for viewing: the saved recipe is not changed. Lines without a plain amount ("salt to taste",
+  "2-3 eggs") and amounts written in the steps are not scaled.
+
 Not yet: receiving links from Instagram's share sheet (needs a development build, not Expo Go),
 and AI parsing for captions without clear structure or reels with spoken-only recipes.
 

@@ -62,7 +62,7 @@ These are the core of the app. Build them first, in roughly this order.
 - ✅ Group the shopping list by store section (produce, dairy, …)
 
 ### Better recipes
-- **Scale servings**: change 2 → 6 servings and the amounts update
+- ✅ **Scale servings**: change 2 → 6 servings and the amounts update
 - **Unit conversion**: cups ↔ grams, °F ↔ °C
 - **Cooking mode**: big text, one step at a time, screen stays on
 - **Timers** inside the steps

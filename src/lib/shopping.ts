@@ -45,7 +45,7 @@ export function formatAmount(n: number): string {
   return String(Math.round(n * 10) / 10);
 }
 
-function withUnit(amount: number, unit: string | undefined): string {
+export function withUnit(amount: number, unit: string | undefined): string {
   if (!unit) return formatAmount(amount);
   const u = amount > 1 && PLURAL_UNITS[unit] ? PLURAL_UNITS[unit] : unit;
   return `${formatAmount(amount)} ${u}`;

@@ -59,6 +59,13 @@ See [FEATURES.md](FEATURES.md) for the full plan.
 - Pages with no recipe data, and the web version (browsers block reading other sites), fall back to
   pasting the recipe text.
 
+## Suggestions from what you like
+
+- **Cook now tab, *You might like*:** up to 5 recipes you haven't cooked in the last 2 weeks that
+  resemble the ones you rate 4–5 stars, favorite or cook often (shared tags, category and
+  ingredients), each with "Similar to …". Recipes rated 1–2 stars are never suggested, nor ones you already rate 4–5 stars or favorited. Needs at
+  least one liked recipe. Logic in `src/lib/suggest.ts`.
+
 ## Share a recipe
 
 - *Share recipe* on a recipe page opens the phone's share sheet with the recipe as text (title,

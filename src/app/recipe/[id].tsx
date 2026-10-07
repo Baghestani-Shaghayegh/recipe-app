@@ -7,6 +7,7 @@ import { NutritionPanel } from '@/components/nutrition-panel';
 import { Button, Chip, confirm, SectionTitle } from '@/components/ui';
 import { MaxContentWidth, Spacing, useTheme } from '@/constants/theme';
 import { isStaple, pantryHas } from '@/lib/pantry';
+import { findSubstitutions } from '@/lib/substitutions';
 import { deleteRecipePhoto } from '@/lib/photos';
 import { formatMinutes, MAX_RATING, nextRating, totalMinutes } from '@/lib/recipe';
 import { MAX_SERVINGS, MIN_SERVINGS, scaleFactor, scaleIngredientText } from '@/lib/scale';
@@ -236,9 +237,16 @@ export default function RecipeDetailScreen() {
                   }>
                   {status === 'have' ? '✓' : status === 'missing' ? '○' : '•'}
                 </Text>
-                <Text style={[styles.body, { color: c.text }]}>
-                  {scaleIngredientText(ing, factor, units)}
-                </Text>
+                <View style={styles.flex}>
+                  <Text style={[styles.body, { color: c.text }]}>
+                    {scaleIngredientText(ing, factor, units)}
+                  </Text>
+                  {status === 'missing' && findSubstitutions(ing.name) ? (
+                    <Text style={[styles.swap, { color: c.textSecondary }]}>
+                      No {ing.name.split(',')[0]}? Try: {findSubstitutions(ing.name)!.join('; ')}
+                    </Text>
+                  ) : null}
+                </View>
               </View>
             );
           })}
@@ -296,6 +304,7 @@ const styles = StyleSheet.create({
   block: { gap: Spacing.two },
   title: { fontSize: 28, fontWeight: '800' },
   meta: { fontSize: 15 },
+  swap: { fontSize: 14, lineHeight: 20, fontStyle: 'italic' },
   unitRow: { flexDirection: 'row', gap: Spacing.two, flexWrap: 'wrap' },
   ratingRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.four },
   heart: { fontSize: 30, lineHeight: 34 },

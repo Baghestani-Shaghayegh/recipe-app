@@ -78,7 +78,7 @@ These are the core of the app. Build them first, in roughly this order.
 ### Smarter recommendations
 - ✅ "Use it up": suggest recipes with ingredients that expire soon
 - Suggestions based on what you cook and rate highly
-- Ingredient substitutions ("no buttermilk? use milk + lemon")
+- ✅ Ingredient substitutions ("no buttermilk? use milk + lemon"), built-in list shown for missing ingredients
 - ✅ Diet filters: vegetarian, vegan, gluten-free, dairy-free, nut-free, high-protein (keyword-based, not allergy-safe)
 
 ### Nutrition extras

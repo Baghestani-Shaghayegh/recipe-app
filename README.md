@@ -70,6 +70,13 @@ See [FEATURES.md](FEATURES.md) for the full plan.
 - On a recipe page, tap the heart to favorite it and the stars to rate it (tap the same star again
   to clear). Cards show ♥ and ★ ratings; the Recipes tab has a *♥ Favorites* filter chip.
 
+## Substitutions
+
+- On a recipe page, an ingredient that isn't in your pantry shows swap ideas underneath when we
+  know some ("No buttermilk? Try: 1 cup milk + 1 tbsp lemon juice …"), from a built-in list of ~45
+  common swaps (`src/lib/substitutions.ts`). Only exact matches: "peanut butter" gets no butter
+  swaps. Needs a pantry with items in it, since "missing" means not in the pantry.
+
 ## Use it up
 
 - **Pantry tab:** tap an item to set a best-before date (3 days / 1 week / 2 weeks / 1 month) or

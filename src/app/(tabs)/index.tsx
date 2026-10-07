@@ -152,6 +152,11 @@ export default function RecipeListScreen() {
             </View>
           )
         }
+        ListFooterComponent={
+          <Pressable onPress={() => router.push('/backup')} accessibilityRole="link">
+            <Text style={[styles.footerLink, { color: c.accent }]}>Back up or restore recipes</Text>
+          </Pressable>
+        }
         contentContainerStyle={styles.list}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="on-drag"
@@ -181,6 +186,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   chipRow: { gap: Spacing.two },
+  footerLink: { fontSize: 14, textAlign: 'center', paddingVertical: Spacing.four },
   clear: { fontSize: 14, fontWeight: '600' },
   empty: { alignItems: 'center', gap: Spacing.three, paddingVertical: Spacing.six },
   emptyTitle: { fontSize: 20, fontWeight: '700' },

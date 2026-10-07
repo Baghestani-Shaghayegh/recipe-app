@@ -70,6 +70,13 @@ See [FEATURES.md](FEATURES.md) for the full plan.
 - On a recipe page, tap the heart to favorite it and the stars to rate it (tap the same star again
   to clear). Cards show ♥ and ★ ratings; the Recipes tab has a *♥ Favorites* filter chip.
 
+## Backup
+
+- Footer of the Recipes tab → *Back up or restore recipes*. *Copy backup* puts all recipes and the
+  pantry on the clipboard as text; paste it into a note or email to keep it. *Restore* adds the
+  recipes you don't already have (same id) and pantry items; nothing is overwritten.
+- Photos stay on the device and aren't part of the backup. Logic in `src/lib/backup.ts`.
+
 ## Scale servings
 
 - On a recipe page, use − / + next to *Servings* to change the serving size; ingredient amounts

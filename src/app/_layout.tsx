@@ -42,6 +42,7 @@ export default function RootLayout() {
                   name="recipe/edit"
                   options={{ title: 'New recipe', presentation: 'modal' }}
                 />
+                <Stack.Screen name="backup" options={{ title: 'Backup', presentation: 'modal' }} />
                 <Stack.Screen
                   name="recipe/import"
                   options={{ title: 'Import a recipe', presentation: 'modal' }}

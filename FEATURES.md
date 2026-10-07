@@ -94,7 +94,7 @@ These are the core of the app. Build them first, in roughly this order.
 ### Polish
 - Dark mode
 - Works offline
-- Export / backup all recipes
+- ✅ Export / backup all recipes (copy as text; no file export yet)
 
 ---
 

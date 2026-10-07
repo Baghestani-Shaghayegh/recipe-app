@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useMemo } from 'react';
 
+import { mergeRecipes } from '@/lib/backup';
 import { parseIngredientList } from '@/lib/ingredients';
 import type { Recipe } from '@/lib/recipe';
 
@@ -14,6 +15,8 @@ type RecipesContextValue = {
   updateRecipe: (id: string, input: RecipeInput) => void;
   /** Changes a few fields (e.g. favorite, rating) without touching the rest. */
   patchRecipe: (id: string, patch: Pick<Partial<Recipe>, 'favorite' | 'rating'>) => void;
+  /** Adds restored recipes whose id isn't here yet. Returns how many were added. */
+  addRecipes: (incoming: Recipe[]) => number;
   deleteRecipe: (id: string) => void;
 };
 
@@ -101,6 +104,15 @@ export function RecipesProvider({ children }: { children: React.ReactNode }) {
     [setRecipes],
   );
 
+  const addRecipes = useCallback(
+    (incoming: Recipe[]) => {
+      const { added } = mergeRecipes(recipes, incoming);
+      if (added) setRecipes((prev) => mergeRecipes(prev, incoming).merged);
+      return added;
+    },
+    [recipes, setRecipes],
+  );
+
   const deleteRecipe = useCallback(
     (id: string) => {
       setRecipes((prev) => prev.filter((r) => r.id !== id));
@@ -109,8 +121,8 @@ export function RecipesProvider({ children }: { children: React.ReactNode }) {
   );
 
   const value = useMemo(
-    () => ({ recipes, loaded, addRecipe, updateRecipe, patchRecipe, deleteRecipe }),
-    [recipes, loaded, addRecipe, updateRecipe, patchRecipe, deleteRecipe],
+    () => ({ recipes, loaded, addRecipe, updateRecipe, patchRecipe, addRecipes, deleteRecipe }),
+    [recipes, loaded, addRecipe, updateRecipe, patchRecipe, addRecipes, deleteRecipe],
   );
 
   return <RecipesContext.Provider value={value}>{children}</RecipesContext.Provider>;

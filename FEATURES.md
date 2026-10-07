@@ -106,7 +106,7 @@ These are the core of the app. Build them first, in roughly this order.
 | 2 ✅ | "Make next" list + My Pantry + recommendations | Small effort, big value |
 | 3 ✅ | Nutrition | Built-in food table for now; online lookup later |
 | 4 ✅ | Instagram import | Link → caption → recipe draft, on the phone; paste-caption fallback. Next: share sheet, AI parsing |
-| 5 | Nice-to-haves | Pick by what you miss most while using it |
+| 5 ✅ | Nice-to-haves | Everything that works on the phone alone is built; what's left needs an online service, an AI key, text recognition or a development build (see the README) |
 
 ## Data model (first draft)
 

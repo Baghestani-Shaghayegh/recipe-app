@@ -163,8 +163,17 @@ See [FEATURES.md](FEATURES.md) for the full plan.
 - Only for viewing: the saved recipe is not changed. Lines without a plain amount ("salt to taste",
   "2-3 eggs") and amounts written in the steps are not scaled.
 
-Not yet: receiving links from Instagram's share sheet (needs a development build, not Expo Go),
-and AI parsing for captions without clear structure or reels with spoken-only recipes.
+Not yet (each needs something the app doesn't have on its own):
+
+- **Login, sync between devices, shared lists, share-by-link:** need an online service (database
+  and accounts).
+- **AI parsing of unstructured captions, and reading what's said in a reel:** need an AI/speech
+  service with a secret key, which must live on a server, not in the app.
+- **Scanning a cookbook page or handwritten recipe:** needs text recognition (a native module,
+  so a development build, or an online service).
+- **Receiving links from the Instagram / TikTok / YouTube share sheet:** needs a development
+  build, not Expo Go.
+- **Vitamins and minerals** other than sodium in the nutrition estimate.
 
 ## Run it
 

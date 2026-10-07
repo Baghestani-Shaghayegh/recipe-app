@@ -70,6 +70,15 @@ See [FEATURES.md](FEATURES.md) for the full plan.
 - On a recipe page, tap the heart to favorite it and the stars to rate it (tap the same star again
   to clear). Cards show ♥ and ★ ratings; the Recipes tab has a *♥ Favorites* filter chip.
 
+## Cooking mode and timers
+
+- *Start cooking* on a recipe page: one step at a time in big text, *Back* / *Next step*, and the
+  screen stays on. *Show ingredients* lists them at the serving size you picked.
+- Times in a step ("simmer 30 minutes", "fry 5-7 min") get a *Start timer* button (a range uses the
+  shorter time). Several timers can run at once; they vibrate when time is up. Timers only run
+  while the cooking screen is open; there are no notifications when the app is in the background.
+  Logic in `src/lib/timers.ts`.
+
 ## Backup
 
 - Footer of the Recipes tab → *Back up or restore recipes*. *Copy backup* puts all recipes and the

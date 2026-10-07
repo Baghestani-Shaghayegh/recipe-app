@@ -150,6 +150,21 @@ export default function RecipeDetailScreen() {
             />
           </View>
         </View>
+        {recipe.steps.length ? (
+          <Button
+            label="Start cooking"
+            variant="secondary"
+            onPress={() =>
+              router.push({
+                pathname: '/recipe/cook',
+                params: {
+                  id: recipe.id,
+                  ...(servings !== undefined && { servings: String(servings) }),
+                },
+              })
+            }
+          />
+        ) : null}
         {timesCooked.length ? (
           <Text style={[styles.meta, { color: c.textSecondary }]}>
             Cooked {timesCooked.length === 1 ? 'once' : `${timesCooked.length} times`} · last on{' '}

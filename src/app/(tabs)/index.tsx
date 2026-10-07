@@ -131,7 +131,7 @@ export default function RecipeListScreen() {
               </Text>
               <Button label="Add a recipe" onPress={() => router.push('/recipe/edit')} />
               <Button
-                label="Import from Instagram"
+                label="Import a recipe"
                 variant="secondary"
                 onPress={() => router.push('/recipe/import')}
               />

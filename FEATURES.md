@@ -70,7 +70,7 @@ These are the core of the app. Build them first, in roughly this order.
 - **Favorites**
 
 ### More import options
-- Import from any recipe website (most use a standard recipe format that's easy to read)
+- ✅ Import from any recipe website (most use a standard recipe format that's easy to read)
 - Import from TikTok and YouTube links
 - Scan a photo of a cookbook page or handwritten recipe
 - Transcribe recipe videos that have no caption

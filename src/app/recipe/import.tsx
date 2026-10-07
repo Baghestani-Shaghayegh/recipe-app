@@ -17,9 +17,10 @@ import { MaxContentWidth, Spacing, useTheme } from '@/constants/theme';
 import { fetchInstagramPost, InstagramError, parseInstagramUrl } from '@/lib/instagram';
 import { saveRemotePhoto } from '@/lib/photos';
 import { recipeDraftFromText } from '@/lib/recipe-text';
+import { fetchWebsiteRecipe, parseWebUrl, WebsiteError } from '@/lib/website';
 import { setRecipeDraft } from '@/store/draft';
 
-// Browsers block reading Instagram pages from another site, so on the web the caption is pasted.
+// Browsers block reading Instagram and recipe sites from another site, so on the web the text is pasted.
 const CAN_FETCH = Platform.OS !== 'web';
 
 export default function ImportScreen() {
@@ -33,11 +34,12 @@ export default function ImportScreen() {
   const autoFetched = useRef(false);
 
   const parsedLink = parseInstagramUrl(link);
+  const webUrl = parsedLink ? undefined : parseWebUrl(link);
 
   const openDraft = (text: string, extra: { author?: string; photoUri?: string } = {}) => {
     const draft = recipeDraftFromText(text, {
       ...extra,
-      sourceUrl: parsedLink?.url ?? (link.trim() || undefined),
+      sourceUrl: parsedLink?.url ?? webUrl ?? (link.trim() || undefined),
     });
     const key = setRecipeDraft(draft);
     router.replace({ pathname: '/recipe/edit', params: { draft: key } });
@@ -47,15 +49,28 @@ export default function ImportScreen() {
     setMessage(undefined);
     setLoading(true);
     try {
-      const post = await fetchInstagramPost(url);
-      const photoUri = post.imageUrl
-        ? await saveRemotePhoto(post.imageUrl).catch(() => undefined)
-        : undefined;
-      openDraft(post.caption, { author: post.author, photoUri });
+      if (parseInstagramUrl(url)) {
+        const post = await fetchInstagramPost(url);
+        const photoUri = post.imageUrl
+          ? await saveRemotePhoto(post.imageUrl).catch(() => undefined)
+          : undefined;
+        openDraft(post.caption, { author: post.author, photoUri });
+      } else {
+        const { imageUrl, ...draft } = await fetchWebsiteRecipe(url);
+        const photoUri = imageUrl
+          ? await saveRemotePhoto(imageUrl).catch(() => undefined)
+          : undefined;
+        router.replace({
+          pathname: '/recipe/edit',
+          params: { draft: setRecipeDraft({ ...draft, photoUri }) },
+        });
+      }
     } catch (e) {
       const text =
-        e instanceof InstagramError ? e.message : 'Something went wrong reading that post.';
-      setMessage({ text: `${text} You can paste the caption below instead.`, error: true });
+        e instanceof InstagramError || e instanceof WebsiteError
+          ? e.message
+          : 'Something went wrong reading that link.';
+      setMessage({ text: `${text} You can paste the recipe text below instead.`, error: true });
     } finally {
       setLoading(false);
     }
@@ -90,18 +105,18 @@ export default function ImportScreen() {
     <KeyboardAvoidingView
       style={{ flex: 1, backgroundColor: c.background }}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <Stack.Screen options={{ title: 'Import from Instagram', headerLeft }} />
+      <Stack.Screen options={{ title: 'Import a recipe', headerLeft }} />
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <View style={styles.group}>
           <Field
-            label="Instagram link"
-            hint="In Instagram, tap Share (the paper plane) → Copy link."
+            label="Recipe link"
+            hint="An Instagram post or reel, or any recipe website. Instagram: Share → Copy link."
             value={link}
             onChangeText={(t) => {
               setLink(t);
               setMessage(undefined);
             }}
-            placeholder="https://www.instagram.com/reel/…"
+            placeholder="https://…"
             autoCapitalize="none"
             autoCorrect={false}
             keyboardType="url"
@@ -111,7 +126,9 @@ export default function ImportScreen() {
               <Button
                 label="Paste link"
                 variant="secondary"
-                onPress={() => pasteInto((t) => setLink(parseInstagramUrl(t)?.url ?? t.trim()))}
+                onPress={() =>
+                  pasteInto((t) => setLink(parseInstagramUrl(t)?.url ?? parseWebUrl(t) ?? t.trim()))
+                }
               />
             </View>
             {CAN_FETCH ? (
@@ -119,26 +136,26 @@ export default function ImportScreen() {
                 <Button
                   label="Get recipe"
                   onPress={() => fetchFromLink()}
-                  disabled={!parsedLink || loading}
+                  disabled={(!parsedLink && !webUrl) || loading}
                 />
               </View>
             ) : null}
           </View>
-          {link.trim() && !parsedLink ? (
+          {link.trim() && !parsedLink && !webUrl ? (
             <Text style={[styles.message, { color: c.danger }]}>
-              That doesn’t look like an Instagram post or reel link.
+              That doesn’t look like a link. It should start with https://
             </Text>
           ) : null}
           {!CAN_FETCH ? (
             <Text style={[styles.message, { color: c.textSecondary }]}>
-              In the browser the app can’t open Instagram posts itself. The link will be saved with
-              the recipe. Paste the caption below to fill in the rest.
+              In the browser the app can’t open other sites itself. The link will be saved with the
+              recipe. Paste the recipe text below to fill in the rest.
             </Text>
           ) : null}
           {loading ? (
             <View style={styles.row}>
               <ActivityIndicator color={c.accent} />
-              <Text style={[styles.message, { color: c.textSecondary }]}>Reading the post…</Text>
+              <Text style={[styles.message, { color: c.textSecondary }]}>Reading the page…</Text>
             </View>
           ) : null}
           {message ? (
@@ -152,8 +169,8 @@ export default function ImportScreen() {
 
         <View style={styles.group}>
           <Field
-            label={CAN_FETCH ? 'Or paste the caption' : 'Caption'}
-            hint="The recipe text from the post. Headings like “Ingredients” and “Method” help."
+            label={CAN_FETCH ? 'Or paste the recipe text' : 'Recipe text'}
+            hint="The recipe text from the post or page. Headings like “Ingredients” and “Method” help."
             value={caption}
             onChangeText={setCaption}
             multiline

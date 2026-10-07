@@ -48,6 +48,15 @@ See [FEATURES.md](FEATURES.md) for the full plan.
 - Tick items as you shop; *Done* puts ticked items in your pantry, so they drop off the list
 - Add your own items (e.g. paper towels); *Copy* puts the list on the clipboard to send or paste
 
+## Import from a recipe website
+
+- Same Import screen: paste any recipe page link and tap *Get recipe*. The app reads the page's
+  standard recipe data (schema.org JSON-LD, which most recipe sites include): title, photo,
+  ingredients, steps, servings, prep/cook time, tags and a category guess (`src/lib/website.ts`).
+- You review the recipe in the normal form before saving; the link is kept as the source.
+- Pages with no recipe data, and the web version (browsers block reading other sites), fall back to
+  pasting the recipe text.
+
 ## Scale servings
 
 - On a recipe page, use − / + next to *Servings* to change the serving size; ingredient amounts

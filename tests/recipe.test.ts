@@ -6,6 +6,7 @@ import {
   allTags,
   filterRecipes,
   formatMinutes,
+  nextRating,
   parseTags,
   totalMinutes,
   type Recipe,
@@ -91,4 +92,19 @@ test('all selected tags must match', () => {
 test('all tags, most used first', () => {
   const extra = recipe({ tags: ['quick'] });
   assert.deepEqual(allTags([...all, extra]), ['quick', 'persian', 'vegetarian']);
+});
+
+test('favorites filter', () => {
+  const fav = recipe({ title: 'Fav', favorite: true });
+  const plain = recipe({ title: 'Plain' });
+  assert.deepEqual(filterRecipes([fav, plain], { query: '', tags: [], favoritesOnly: true }), [
+    fav,
+  ]);
+  assert.equal(filterRecipes([fav, plain], { query: '', tags: [] }).length, 2);
+});
+
+test('tapping the same star clears the rating', () => {
+  assert.equal(nextRating(undefined, 4), 4);
+  assert.equal(nextRating(2, 5), 5);
+  assert.equal(nextRating(4, 4), undefined);
 });

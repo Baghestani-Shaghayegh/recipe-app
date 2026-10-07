@@ -155,6 +155,8 @@ function EditForm({ existing, imported }: { existing?: Recipe; imported?: Recipe
       notes: notes.trim() || undefined,
       sourceUrl: sourceUrl.trim() || undefined,
       nutrition: filled.length ? (nutrients as Nutrients) : undefined,
+      favorite: existing?.favorite,
+      rating: existing?.rating,
     };
 
     if (existing) {

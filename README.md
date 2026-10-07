@@ -65,6 +65,11 @@ See [FEATURES.md](FEATURES.md) for the full plan.
   (a recipe in both is counted once). Past days no longer add anything.
 - Saved on the device (`plan.v1`); logic in `src/lib/plan.ts`.
 
+## Favorites and ratings
+
+- On a recipe page, tap the heart to favorite it and the stars to rate it (tap the same star again
+  to clear). Cards show ♥ and ★ ratings; the Recipes tab has a *♥ Favorites* filter chip.
+
 ## Scale servings
 
 - On a recipe page, use − / + next to *Servings* to change the serving size; ingredient amounts

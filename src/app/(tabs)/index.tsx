@@ -25,19 +25,22 @@ export default function RecipeListScreen() {
   const [category, setCategory] = useState<Category>();
   const [maxMinutes, setMaxMinutes] = useState<number>();
   const [tags, setTags] = useState<string[]>([]);
+  const [favoritesOnly, setFavoritesOnly] = useState(false);
 
   const tagOptions = useMemo(() => allTags(recipes), [recipes]);
   const visible = useMemo(
-    () => filterRecipes(recipes, { query, category, maxMinutes, tags }),
-    [recipes, query, category, maxMinutes, tags],
+    () => filterRecipes(recipes, { query, category, maxMinutes, tags, favoritesOnly }),
+    [recipes, query, category, maxMinutes, tags, favoritesOnly],
   );
-  const hasFilters = !!query || !!category || maxMinutes !== undefined || tags.length > 0;
+  const hasFilters =
+    !!query || !!category || maxMinutes !== undefined || tags.length > 0 || favoritesOnly;
 
   const clearFilters = () => {
     setQuery('');
     setCategory(undefined);
     setMaxMinutes(undefined);
     setTags([]);
+    setFavoritesOnly(false);
   };
 
   const toggleTag = (t: string) =>
@@ -92,6 +95,11 @@ export default function RecipeListScreen() {
         horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.chipRow}>
+        <Chip
+          label="♥ Favorites"
+          selected={favoritesOnly}
+          onPress={() => setFavoritesOnly(!favoritesOnly)}
+        />
         {TIME_FILTERS.map((t) => (
           <Chip
             key={t.maxMinutes}

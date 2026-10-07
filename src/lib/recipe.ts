@@ -19,6 +19,9 @@ export type Recipe = {
   sourceUrl?: string;
   /** Per-serving values typed in by the user; when missing, nutrition is estimated. */
   nutrition?: Nutrients;
+  favorite?: boolean;
+  /** Your own rating, 1 to 5 stars. */
+  rating?: number;
   createdAt: number;
   updatedAt: number;
 };
@@ -32,6 +35,13 @@ export const TIME_FILTERS = [
 export function totalMinutes(r: Pick<Recipe, 'prepMinutes' | 'cookMinutes'>): number | undefined {
   if (r.prepMinutes === undefined && r.cookMinutes === undefined) return undefined;
   return (r.prepMinutes ?? 0) + (r.cookMinutes ?? 0);
+}
+
+export const MAX_RATING = 5;
+
+/** Tapping the star you already gave clears the rating; any other star sets it. */
+export function nextRating(current: number | undefined, tapped: number): number | undefined {
+  return current === tapped ? undefined : tapped;
 }
 
 export function formatMinutes(minutes: number): string {
@@ -55,6 +65,7 @@ export type RecipeFilters = {
   category?: Category;
   maxMinutes?: number;
   tags: string[];
+  favoritesOnly?: boolean;
 };
 
 /**
@@ -65,6 +76,7 @@ export type RecipeFilters = {
 export function filterRecipes(recipes: Recipe[], f: RecipeFilters): Recipe[] {
   const words = f.query.toLowerCase().split(/\s+/).filter(Boolean);
   return recipes.filter((r) => {
+    if (f.favoritesOnly && !r.favorite) return false;
     if (f.category && r.category !== f.category) return false;
     if (f.maxMinutes !== undefined) {
       const t = totalMinutes(r);

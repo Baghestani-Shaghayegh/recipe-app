@@ -8,7 +8,7 @@ import { Button, confirm, SectionTitle } from '@/components/ui';
 import { MaxContentWidth, Spacing, useTheme } from '@/constants/theme';
 import { isStaple, pantryHas } from '@/lib/pantry';
 import { deleteRecipePhoto } from '@/lib/photos';
-import { formatMinutes, totalMinutes } from '@/lib/recipe';
+import { formatMinutes, MAX_RATING, nextRating, totalMinutes } from '@/lib/recipe';
 import { MAX_SERVINGS, MIN_SERVINGS, scaleFactor, scaleIngredientText } from '@/lib/scale';
 import { useKitchen } from '@/store/kitchen';
 import { useRecipes } from '@/store/recipes';
@@ -16,7 +16,7 @@ import { useRecipes } from '@/store/recipes';
 export default function RecipeDetailScreen() {
   const c = useTheme();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { recipes, loaded, deleteRecipe } = useRecipes();
+  const { recipes, loaded, deleteRecipe, patchRecipe } = useRecipes();
   const { pantry, isInMakeNext, toggleMakeNext, markCooked, cooked } = useKitchen();
   const recipe = recipes.find((r) => r.id === id);
   // Serving size picked on this screen only; the saved recipe is never changed.
@@ -89,6 +89,37 @@ export default function RecipeDetailScreen() {
             {[recipe.category, ...recipe.tags.map((t) => `#${t}`)].filter(Boolean).join('  ·  ')}
           </Text>
         ) : null}
+      </View>
+
+      <View style={styles.ratingRow}>
+        <Pressable
+          onPress={() => patchRecipe(recipe.id, { favorite: !recipe.favorite })}
+          hitSlop={8}
+          accessibilityRole="button"
+          accessibilityState={{ selected: !!recipe.favorite }}
+          accessibilityLabel={recipe.favorite ? 'Remove from favorites' : 'Add to favorites'}>
+          <Text style={[styles.heart, { color: recipe.favorite ? c.accent : c.textSecondary }]}>
+            {recipe.favorite ? '♥' : '♡'}
+          </Text>
+        </Pressable>
+        <View style={styles.stars}>
+          {Array.from({ length: MAX_RATING }, (_, i) => i + 1).map((n) => (
+            <Pressable
+              key={n}
+              onPress={() => patchRecipe(recipe.id, { rating: nextRating(recipe.rating, n) })}
+              hitSlop={4}
+              accessibilityRole="button"
+              accessibilityLabel={`Rate ${n} of ${MAX_RATING}`}>
+              <Text
+                style={[
+                  styles.star,
+                  { color: n <= (recipe.rating ?? 0) ? c.accent : c.textSecondary },
+                ]}>
+                {n <= (recipe.rating ?? 0) ? '★' : '☆'}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
       </View>
 
       {facts.length ? (
@@ -235,6 +266,10 @@ const styles = StyleSheet.create({
   block: { gap: Spacing.two },
   title: { fontSize: 28, fontWeight: '800' },
   meta: { fontSize: 15 },
+  ratingRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.four },
+  heart: { fontSize: 30, lineHeight: 34 },
+  stars: { flexDirection: 'row', gap: Spacing.one },
+  star: { fontSize: 28, lineHeight: 34 },
   facts: {
     flexDirection: 'row',
     justifyContent: 'space-around',

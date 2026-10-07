@@ -12,6 +12,8 @@ type RecipesContextValue = {
   loaded: boolean;
   addRecipe: (input: RecipeInput) => Recipe;
   updateRecipe: (id: string, input: RecipeInput) => void;
+  /** Changes a few fields (e.g. favorite, rating) without touching the rest. */
+  patchRecipe: (id: string, patch: Pick<Partial<Recipe>, 'favorite' | 'rating'>) => void;
   deleteRecipe: (id: string) => void;
 };
 
@@ -92,6 +94,13 @@ export function RecipesProvider({ children }: { children: React.ReactNode }) {
     [setRecipes],
   );
 
+  const patchRecipe = useCallback(
+    (id: string, patch: Pick<Partial<Recipe>, 'favorite' | 'rating'>) => {
+      setRecipes((prev) => prev.map((r) => (r.id === id ? { ...r, ...patch } : r)));
+    },
+    [setRecipes],
+  );
+
   const deleteRecipe = useCallback(
     (id: string) => {
       setRecipes((prev) => prev.filter((r) => r.id !== id));
@@ -100,8 +109,8 @@ export function RecipesProvider({ children }: { children: React.ReactNode }) {
   );
 
   const value = useMemo(
-    () => ({ recipes, loaded, addRecipe, updateRecipe, deleteRecipe }),
-    [recipes, loaded, addRecipe, updateRecipe, deleteRecipe],
+    () => ({ recipes, loaded, addRecipe, updateRecipe, patchRecipe, deleteRecipe }),
+    [recipes, loaded, addRecipe, updateRecipe, patchRecipe, deleteRecipe],
   );
 
   return <RecipesContext.Provider value={value}>{children}</RecipesContext.Provider>;

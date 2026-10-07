@@ -66,8 +66,8 @@ These are the core of the app. Build them first, in roughly this order.
 - **Unit conversion**: cups ↔ grams, °F ↔ °C
 - **Cooking mode**: big text, one step at a time, screen stays on
 - **Timers** inside the steps
-- **Ratings and "would make again"**
-- **Favorites**
+- ✅ **Ratings** (1–5 stars; no separate "would make again")
+- ✅ **Favorites**
 
 ### More import options
 - ✅ Import from any recipe website (most use a standard recipe format that's easy to read)

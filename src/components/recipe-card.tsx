@@ -26,7 +26,13 @@ export function RecipeCard({
   const kcal = nutrition
     ? `${nutrition.source === 'estimate' ? '~' : ''}${Math.round(nutrition.values.kcal)} kcal`
     : undefined;
-  const meta = [recipe.category, minutes !== undefined ? formatMinutes(minutes) : undefined, kcal]
+  const meta = [
+    recipe.favorite ? '♥' : undefined,
+    recipe.rating ? `★ ${recipe.rating}` : undefined,
+    recipe.category,
+    minutes !== undefined ? formatMinutes(minutes) : undefined,
+    kcal,
+  ]
     .filter(Boolean)
     .join(' · ');
 

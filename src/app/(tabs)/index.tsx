@@ -43,10 +43,18 @@ export default function RecipeListScreen() {
   const toggleTag = (t: string) =>
     setTags((prev) => (prev.includes(t) ? prev.filter((x) => x !== t) : [...prev, t]));
 
-  const addButton = () => (
-    <Pressable onPress={() => router.push('/recipe/edit')} hitSlop={8} accessibilityRole="button">
-      <Text style={[styles.headerButton, { color: c.accent }]}>+ Add</Text>
-    </Pressable>
+  const headerButtons = () => (
+    <View style={styles.headerButtons}>
+      <Pressable
+        onPress={() => router.push('/recipe/import')}
+        hitSlop={8}
+        accessibilityRole="button">
+        <Text style={[styles.headerButton, { color: c.accent }]}>Import</Text>
+      </Pressable>
+      <Pressable onPress={() => router.push('/recipe/edit')} hitSlop={8} accessibilityRole="button">
+        <Text style={[styles.headerButton, { color: c.accent }]}>+ Add</Text>
+      </Pressable>
+    </View>
   );
 
   if (!loaded) {
@@ -108,7 +116,7 @@ export default function RecipeListScreen() {
 
   return (
     <View style={[styles.screen, { backgroundColor: c.background }]}>
-      <Tabs.Screen options={{ headerRight: addButton }} />
+      <Tabs.Screen options={{ headerRight: headerButtons }} />
       <FlatList
         data={visible}
         keyExtractor={(r) => r.id}
@@ -122,6 +130,11 @@ export default function RecipeListScreen() {
                 Add your first recipe to start your collection.
               </Text>
               <Button label="Add a recipe" onPress={() => router.push('/recipe/edit')} />
+              <Button
+                label="Import from Instagram"
+                variant="secondary"
+                onPress={() => router.push('/recipe/import')}
+              />
             </View>
           ) : (
             <View style={styles.empty}>
@@ -142,6 +155,7 @@ export default function RecipeListScreen() {
 const styles = StyleSheet.create({
   screen: { flex: 1 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  headerButtons: { flexDirection: 'row', gap: Spacing.two, paddingRight: Spacing.two },
   headerButton: { fontSize: 17, fontWeight: '600', paddingHorizontal: Spacing.two },
   list: {
     padding: Spacing.four,

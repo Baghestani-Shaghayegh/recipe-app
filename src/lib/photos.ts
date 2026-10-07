@@ -43,3 +43,15 @@ export function deleteRecipePhoto(uri: string | undefined) {
     console.warn('Could not delete photo', e);
   }
 }
+
+/**
+ * Saves a photo from the internet (e.g. an Instagram post's image) on the phone.
+ * Returns undefined on the web, where links like that expire and can't be copied.
+ */
+export async function saveRemotePhoto(url: string): Promise<string | undefined> {
+  if (Platform.OS === 'web') return undefined;
+  const dir = new Directory(Paths.document, 'photos');
+  if (!dir.exists) dir.create({ intermediates: true });
+  const file = await File.downloadFileAsync(url, new File(dir, `${Date.now()}.jpg`));
+  return file.uri;
+}

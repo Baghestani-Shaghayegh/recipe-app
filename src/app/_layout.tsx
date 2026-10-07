@@ -38,6 +38,10 @@ export default function RootLayout() {
               name="recipe/edit"
               options={{ title: 'New recipe', presentation: 'modal' }}
             />
+            <Stack.Screen
+              name="recipe/import"
+              options={{ title: 'Import from Instagram', presentation: 'modal' }}
+            />
           </Stack>
         </KitchenProvider>
       </RecipesProvider>

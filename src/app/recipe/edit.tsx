@@ -17,6 +17,7 @@ import { parseIngredientList } from '@/lib/ingredients';
 import { estimateNutrition, type Nutrients } from '@/lib/nutrition';
 import { deleteRecipePhoto, pickRecipePhoto } from '@/lib/photos';
 import { CATEGORIES, parseTags, type Category, type Recipe } from '@/lib/recipe';
+import { getRecipeDraft } from '@/store/draft';
 import { useRecipes, type RecipeInput } from '@/store/recipes';
 
 /** "" -> undefined, "12" -> 12, anything else -> NaN (shown as an error). */
@@ -44,35 +45,41 @@ const NUTRIENT_FIELDS = [
 type NutrientKey = (typeof NUTRIENT_FIELDS)[number]['key'];
 
 export default function EditRecipeScreen() {
-  const { id } = useLocalSearchParams<{ id?: string }>();
+  const { id, draft } = useLocalSearchParams<{ id?: string; draft?: string }>();
   const { recipes, loaded } = useRecipes();
+  // A draft handed over by the import screen.
+  const imported = draft ? getRecipeDraft(draft) : undefined;
   // Wait for saved recipes to load, so an edit opened directly (e.g. after a web refresh) starts filled in.
   if (!loaded) return null;
-  return <EditForm existing={id ? recipes.find((r) => r.id === id) : undefined} />;
+  return (
+    <EditForm existing={id ? recipes.find((r) => r.id === id) : undefined} imported={imported} />
+  );
 }
 
-function EditForm({ existing }: { existing?: Recipe }) {
+function EditForm({ existing, imported }: { existing?: Recipe; imported?: RecipeInput }) {
   const c = useTheme();
   const { addRecipe, updateRecipe } = useRecipes();
+  // Starting values: the saved recipe when editing, an imported draft, or nothing.
+  const start = existing ?? imported;
 
-  const [title, setTitle] = useState(existing?.title ?? '');
-  const [photoUri, setPhotoUri] = useState(existing?.photoUri);
-  const [category, setCategory] = useState<Category | undefined>(existing?.category);
-  const [tags, setTags] = useState(existing?.tags.join(', ') ?? '');
-  const [servings, setServings] = useState(numText(existing?.servings));
-  const [prep, setPrep] = useState(numText(existing?.prepMinutes));
-  const [cook, setCook] = useState(numText(existing?.cookMinutes));
+  const [title, setTitle] = useState(start?.title ?? '');
+  const [photoUri, setPhotoUri] = useState(start?.photoUri);
+  const [category, setCategory] = useState<Category | undefined>(start?.category);
+  const [tags, setTags] = useState(start?.tags.join(', ') ?? '');
+  const [servings, setServings] = useState(numText(start?.servings));
+  const [prep, setPrep] = useState(numText(start?.prepMinutes));
+  const [cook, setCook] = useState(numText(start?.cookMinutes));
   const [ingredients, setIngredients] = useState(
-    existing?.ingredients.map((i) => i.text).join('\n') ?? '',
+    start?.ingredients.map((i) => i.text).join('\n') ?? '',
   );
-  const [steps, setSteps] = useState(existing?.steps.join('\n') ?? '');
-  const [notes, setNotes] = useState(existing?.notes ?? '');
-  const [sourceUrl, setSourceUrl] = useState(existing?.sourceUrl ?? '');
+  const [steps, setSteps] = useState(start?.steps.join('\n') ?? '');
+  const [notes, setNotes] = useState(start?.notes ?? '');
+  const [sourceUrl, setSourceUrl] = useState(start?.sourceUrl ?? '');
   const [nutrition, setNutrition] = useState<Record<NutrientKey, string>>({
-    kcal: numText(existing?.nutrition?.kcal),
-    protein: numText(existing?.nutrition?.protein),
-    carbs: numText(existing?.nutrition?.carbs),
-    fat: numText(existing?.nutrition?.fat),
+    kcal: numText(start?.nutrition?.kcal),
+    protein: numText(start?.nutrition?.protein),
+    carbs: numText(start?.nutrition?.carbs),
+    fat: numText(start?.nutrition?.fat),
   });
   const [error, setError] = useState<string>();
 
@@ -176,7 +183,11 @@ function EditForm({ existing }: { existing?: Recipe }) {
       style={{ flex: 1, backgroundColor: c.background }}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <Stack.Screen
-        options={{ title: existing ? 'Edit recipe' : 'New recipe', headerLeft, headerRight }}
+        options={{
+          title: existing ? 'Edit recipe' : imported ? 'Review import' : 'New recipe',
+          headerLeft,
+          headerRight,
+        }}
       />
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <Field
@@ -187,7 +198,7 @@ function EditForm({ existing }: { existing?: Recipe }) {
             setError(undefined);
           }}
           placeholder="Grandma’s apple pie"
-          autoFocus={!existing}
+          autoFocus={!start}
         />
 
         <View style={styles.group}>

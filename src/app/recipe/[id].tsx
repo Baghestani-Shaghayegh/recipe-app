@@ -203,6 +203,13 @@ export default function RecipeDetailScreen() {
         {account.session ? (
           <Button label="Share as link" variant="secondary" onPress={onShareLink} />
         ) : null}
+        {account.configured ? (
+          <Button
+            label="Post a video of this to Discover"
+            variant="secondary"
+            onPress={() => router.push({ pathname: '/post/new', params: { recipeId: recipe.id } })}
+          />
+        ) : null}
         {shareNote ? (
           <Text style={[styles.meta, { color: c.textSecondary }]}>{shareNote}</Text>
         ) : null}

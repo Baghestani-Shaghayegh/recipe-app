@@ -90,6 +90,9 @@ These are the core of the app. Build them first, in roughly this order.
 - ✅ Account login and sync between phone and computer (Supabase; see README to set up)
 - ✅ Share a recipe with a friend: as text via the share sheet, or as a link (needs the Supabase setup)
 - ✅ Shared lists with a partner or family (a "household" shares everything)
+- ✅ Discover: a recipe-only feed of short videos (every post is a full recipe), likes and saves
+  (no comments), filters incl. "I can make it", Top most saved / most liked this week or ever,
+  report and block
 
 ### Polish
 - Dark mode

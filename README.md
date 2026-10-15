@@ -14,7 +14,7 @@ See [FEATURES.md](FEATURES.md) for the full plan.
 ## Phase 2
 
 - **Pantry:** list what you have at home (salt, pepper, oil and water are assumed)
-- **Cook now:** recipes you can make with your pantry, plus ones missing only 1–2 ingredients,
+- **Cook** ("What can I make?"): recipes you can make with your pantry, plus ones missing only 1–2 ingredients,
   with category and time filters. "egg" matches "3 eggs", "lentils" matches "red lentils", etc.
 - **Make next:** a to-cook list you can reorder; "Cooked" moves a recipe to your history
 - Recipe pages show which ingredients you have and how often you've cooked it
@@ -61,7 +61,7 @@ See [FEATURES.md](FEATURES.md) for the full plan.
 
 ## Suggestions from what you like
 
-- **Cook now tab, *You might like*:** up to 5 recipes you haven't cooked in the last 2 weeks that
+- **Cook tab, *You might like*:** up to 5 recipes you haven't cooked in the last 2 weeks that
   resemble the ones you rate 4–5 stars, favorite or cook often (shared tags, category and
   ingredients), each with "Similar to …". Recipes rated 1–2 stars are never suggested, nor ones you already rate 4–5 stars or favorited. Needs at
   least one liked recipe. Logic in `src/lib/suggest.ts`.
@@ -144,13 +144,13 @@ Code: `src/lib/supabase.ts` (small client over Supabase's REST API, no extra pac
 
 - **Pantry tab:** tap an item to set a best-before date (3 days / 1 week / 2 weeks / 1 month) or
   clear it. Dates show under the item, in red once they're within 3 days or past.
-- **Cook now tab:** a *Use it up* section on top lists recipes that use items expiring within 3
+- **Cook tab:** a *Use it up* section on top lists recipes that use items expiring within 3
   days (or already past), ranked by how many of them they use. The category, time and diet filters
   apply. Logic in `src/lib/expiry.ts`; dates are saved separately (`expiry.v1`).
 
 ## Diet filters
 
-- Chips on the Recipes and Cook now tabs: Vegetarian, Vegan, Gluten-free, Dairy-free, Nut-free and
+- Chips on the Recipes and Cook tabs: Vegetarian, Vegan, Gluten-free, Dairy-free, Nut-free and
   High-protein (25 g+ per serving); several can be combined.
 - A recipe fits if it has that diet as a tag (e.g. `vegan`), or if its ingredient list has no
   matching words (`src/lib/diet.ts`: meat, fish, dairy, egg, honey, gluten, nuts, with exceptions
@@ -198,6 +198,49 @@ Code: `src/lib/supabase.ts` (small client over Supabase's REST API, no extra pac
 - Only for viewing: the saved recipe is not changed. Lines without a plain amount ("salt to taste",
   "2-3 eggs") and amounts written in the steps are not scaled.
 
+## Discover: recipe videos
+
+A calm, recipe-only feed of short videos, like reels but nothing else to scroll past.
+
+- **Discover tab, For you:** full-screen videos, newest first; swipe up for the next one. Videos
+  play muted; tap to turn sound on. Every post is a full recipe: *Recipe* opens the ingredients
+  (with ✓ for what's in your pantry) and steps.
+- **Like** (♥) and **save** (bookmark). Saving copies the recipe into My Recipes, credited
+  "From @username on Discover", so it works with the pantry, plan and shopping list.
+  Liking needs an account; saving works signed out too (it's just not counted).
+- **No comments**, by design: only likes and saves.
+- **Filters** (sliders button): *I can make it* (everything in your pantry), time, category, diet.
+- **Top:** *Most saved* or *Most liked*, *This week* or *All time*. Tap one to watch it.
+- **Post** (+ button, or *Post a video of this to Discover* on a recipe page): sign in, pick a
+  username, choose one of your recipes (it must have ingredients and steps), record or choose a
+  video up to 60 seconds, post. Delete your own posts from their ⋯ menu.
+- **Safety:** ⋯ → *Report* (the post disappears for you; after 3 different people report it, it's
+  hidden for everyone) or *Block @user* (you no longer see their posts). To remove a post yourself,
+  open the `posts` table in Supabase's Table Editor and set `hidden` to true.
+
+### Set it up
+
+Discover uses the same Supabase project as sync (see *Sync and sharing*). In the SQL editor, also
+run `supabase/migrations/20261015000000_recipe_feed.sql`. It adds usernames, posts, likes, saves,
+reports, blocks, the ranking function, and a public `post-media` storage bucket for the videos
+(60 MB per file), all with row-level security.
+
+Things to know before opening it to the public:
+
+- **Video costs storage and bandwidth.** A 60-second phone video is roughly 10–40 MB, and every
+  view downloads it. Supabase's free plan has small storage and bandwidth limits; check
+  supabase.com/pricing and expect to need a paid plan (or a video service) as it grows.
+- Videos are uploaded as recorded (the picker asks the phone for medium quality); there's no
+  server-side compression or resizing yet.
+- App stores require apps with user posts to have reporting, blocking and a way to remove content
+  (all here), plus terms of use and a contact for complaints, which you'd need to add.
+
+Code: `src/lib/feed.ts` (rules and filters), `src/lib/post-video.ts` (record/pick and upload),
+`src/store/feed.tsx` (feed state), `src/components/reel.tsx`, `src/app/(tabs)/discover.tsx`,
+`src/app/post/`. The database rules have their own tests: `supabase/tests/run.sh` runs the
+migrations on a local Postgres with stand-ins for Supabase's auth and storage, then checks who can
+see, post, like, report and delete what.
+
 Not yet (each needs something the app doesn't have on its own):
 
 - **AI parsing of unstructured captions, and reading what's said in a reel:** need an AI/speech
@@ -222,12 +265,14 @@ npm run web      # or open it in the browser
 npm test             # unit tests for parsing, search/filter, pantry matching, nutrition, import and the shopping list
 npm run typecheck
 npm run lint
+supabase/tests/run.sh -h <socket dir> -p <port> -U postgres   # database rules, needs a local Postgres 16
 ```
 
 ## Code layout
 
 - `src/app/` – screens (Expo Router: every file is a route)
-  - `(tabs)/` – the six tabs: `index.tsx` (recipes, search, filters), `cook.tsx`, `next.tsx`, `plan.tsx`, `pantry.tsx`, `shopping.tsx`
+  - `(tabs)/` – the seven tabs: `index.tsx` (recipes, search, filters), `discover.tsx` (recipe videos), `cook.tsx`, `next.tsx`, `plan.tsx`, `pantry.tsx`, `shopping.tsx`
+  - `post/` – one video (`[id].tsx`) and posting a new one (`new.tsx`)
   - `recipe/[id].tsx` – recipe details
   - `recipe/edit.tsx` – add / edit form
 - `src/lib/` – plain logic: recipe types, filtering, ingredient parsing, pantry matching, nutrition, shopping list, Instagram and caption reading, photo saving

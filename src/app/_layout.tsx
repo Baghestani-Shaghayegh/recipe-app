@@ -4,6 +4,7 @@ import { useColorScheme } from 'react-native';
 
 import { Colors } from '@/constants/theme';
 import { AccountProvider } from '@/store/account';
+import { FeedProvider } from '@/store/feed';
 import { KitchenProvider } from '@/store/kitchen';
 import { PlanProvider } from '@/store/plan';
 import { RecipesProvider } from '@/store/recipes';
@@ -32,31 +33,41 @@ export default function RootLayout() {
           <KitchenProvider>
             <PlanProvider>
               <ShoppingProvider>
-                <Stack
-                  screenOptions={{
-                    headerShadowVisible: false,
-                    headerTintColor: c.accent,
-                    headerTitleStyle: { color: c.text },
-                  }}>
-                  <Stack.Screen name="(tabs)" options={{ headerShown: false, title: 'Recipes' }} />
-                  <Stack.Screen name="recipe/[id]" options={{ title: '' }} />
-                  <Stack.Screen
-                    name="recipe/edit"
-                    options={{ title: 'New recipe', presentation: 'modal' }}
-                  />
-                  <Stack.Screen
-                    name="account"
-                    options={{ title: 'Account & sync', presentation: 'modal' }}
-                  />
-                  <Stack.Screen
-                    name="backup"
-                    options={{ title: 'Backup', presentation: 'modal' }}
-                  />
-                  <Stack.Screen
-                    name="recipe/import"
-                    options={{ title: 'Import a recipe', presentation: 'modal' }}
-                  />
-                </Stack>
+                <FeedProvider>
+                  <Stack
+                    screenOptions={{
+                      headerShadowVisible: false,
+                      headerTintColor: c.accent,
+                      headerTitleStyle: { color: c.text },
+                    }}>
+                    <Stack.Screen
+                      name="(tabs)"
+                      options={{ headerShown: false, title: 'Recipes' }}
+                    />
+                    <Stack.Screen name="recipe/[id]" options={{ title: '' }} />
+                    <Stack.Screen
+                      name="recipe/edit"
+                      options={{ title: 'New recipe', presentation: 'modal' }}
+                    />
+                    <Stack.Screen
+                      name="account"
+                      options={{ title: 'Account & sync', presentation: 'modal' }}
+                    />
+                    <Stack.Screen
+                      name="backup"
+                      options={{ title: 'Backup', presentation: 'modal' }}
+                    />
+                    <Stack.Screen name="post/[id]" options={{ headerShown: false, title: '' }} />
+                    <Stack.Screen
+                      name="post/new"
+                      options={{ title: 'Post a recipe video', presentation: 'modal' }}
+                    />
+                    <Stack.Screen
+                      name="recipe/import"
+                      options={{ title: 'Import a recipe', presentation: 'modal' }}
+                    />
+                  </Stack>
+                </FeedProvider>
               </ShoppingProvider>
             </PlanProvider>
           </KitchenProvider>

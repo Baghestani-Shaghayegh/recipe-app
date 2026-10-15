@@ -41,10 +41,18 @@ export default function TabLayout() {
         options={{ title: 'My Recipes', tabBarLabel: 'Recipes', tabBarIcon: icon('book-outline') }}
       />
       <Tabs.Screen
+        name="discover"
+        options={{
+          title: 'Discover',
+          headerShown: false,
+          tabBarIcon: icon('play-circle-outline'),
+        }}
+      />
+      <Tabs.Screen
         name="cook"
         options={{
           title: 'What can I make?',
-          tabBarLabel: 'Cook now',
+          tabBarLabel: 'Cook',
           tabBarIcon: icon('flame-outline'),
         }}
       />
@@ -52,6 +60,7 @@ export default function TabLayout() {
         name="next"
         options={{
           title: 'Make next',
+          tabBarLabel: 'Next',
           tabBarIcon: icon('list-outline'),
           tabBarBadge: nextCount || undefined,
           tabBarBadgeStyle: { backgroundColor: c.accent, color: c.accentText },

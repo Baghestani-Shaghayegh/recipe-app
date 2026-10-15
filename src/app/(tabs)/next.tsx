@@ -61,7 +61,7 @@ export default function MakeNextScreen() {
         <View style={styles.empty}>
           <Text style={[styles.emptyTitle, { color: c.text }]}>Nothing planned yet</Text>
           <Text style={[styles.emptyText, { color: c.textSecondary }]}>
-            Tap “Add to make next” on any recipe, or pick one from Cook now.
+            Tap “Add to make next” on any recipe, or pick one from the Cook tab.
           </Text>
           <Button label="Browse recipes" variant="secondary" onPress={() => router.navigate('/')} />
         </View>

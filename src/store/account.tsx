@@ -4,6 +4,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -17,6 +18,7 @@ import {
   SupabaseError,
   type Household,
   type Session,
+  type SupabaseClient,
 } from '@/lib/supabase';
 import { markChanged, runSync, SYNC_KEYS, type SyncMeta } from '@/lib/sync';
 
@@ -51,6 +53,12 @@ type AccountContextValue = {
   shareRecipe: (recipe: unknown) => Promise<{ link?: string; error?: string }>;
   /** Reads a recipe from a shared link's id. Works without signing in. */
   fetchSharedRecipe: (id: string) => Promise<{ recipe?: unknown; error?: string }>;
+  /** The server, for features that talk to it directly (the Discover feed). */
+  api?: SupabaseClient;
+  /** Runs `task` with a fresh session; returns its result, or a message if not signed in / it failed. */
+  withSession: <T>(task: (s: Session) => Promise<T>) => Promise<{ value?: T; error?: string }>;
+  /** A session that's still valid (refreshed if needed), or undefined when signed out. */
+  freshSession: () => Promise<Session | undefined>;
 };
 
 const AccountContext = createContext<AccountContextValue | null>(null);
@@ -70,9 +78,10 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
   );
   const [sync, setSync] = useState<SyncState>({ syncing: false });
 
-  // Latest values for callbacks that outlive a render (timers, listeners).
+  // Latest values for callbacks that outlive a render (timers, listeners). A layout effect, so it's
+  // up to date before any screen's own effects run (e.g. the feed loading right after a reload).
   const live = useRef({ session, household });
-  useEffect(() => {
+  useLayoutEffect(() => {
     live.current = { session, household };
   }, [session, household]);
 
@@ -286,6 +295,9 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
       leaveHousehold,
       shareRecipe,
       fetchSharedRecipe,
+      api: client,
+      withSession,
+      freshSession,
     }),
     [
       sessionLoaded,
@@ -302,11 +314,15 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
       leaveHousehold,
       shareRecipe,
       fetchSharedRecipe,
+      withSession,
+      freshSession,
     ],
   );
 
   return <AccountContext.Provider value={value}>{children}</AccountContext.Provider>;
 }
+
+export { messageOf as accountErrorMessage };
 
 export function useAccount(): AccountContextValue {
   const ctx = useContext(AccountContext);

@@ -14,6 +14,23 @@ export type Session = {
 };
 
 export type RemoteRow = { key: string; value: unknown; updatedAt: number };
+
+/** A post as the database returns it. */
+export type PostRow = {
+  id: string;
+  author_id: string;
+  recipe: unknown;
+  video_path: string;
+  poster_path: string | null;
+  like_count: number;
+  save_count: number;
+  created_at: string;
+  profiles: { username: string } | null;
+};
+
+const MEDIA_BUCKET = 'post-media';
+const POST_COLUMNS =
+  'id,author_id,recipe,video_path,poster_path,like_count,save_count,created_at,profiles(username)';
 export type Household = { id: string; code: string };
 
 export class SupabaseError extends Error {
@@ -196,6 +213,199 @@ export function createSupabase(config: SupabaseConfig, fetchImpl: FetchLike = fe
     async getSharedRecipe(id: string): Promise<unknown | undefined> {
       const recipe = await post('/rest/v1/rpc/get_shared_recipe', { p_id: id });
       return recipe ?? undefined;
+    },
+
+    // ---------- Discover feed ----------
+
+    /** Public address of a file in the post-media bucket (videos stream from here). */
+    mediaUrl(path: string): string {
+      return `${config.url}/storage/v1/object/public/${MEDIA_BUCKET}/${path
+        .split('/')
+        .map(encodeURIComponent)
+        .join('/')}`;
+    },
+
+    /** Uploads a video or cover image into the signed-in user's folder. */
+    async uploadMedia(
+      session: Session,
+      path: string,
+      body: Blob | ArrayBuffer | Uint8Array,
+      contentType: string,
+    ): Promise<void> {
+      await call(
+        `/storage/v1/object/${MEDIA_BUCKET}/${path}`,
+        {
+          method: 'POST',
+          body: body as BodyInit,
+          headers: { 'Content-Type': contentType, 'x-upsert': 'false', 'cache-control': '3600' },
+        },
+        session.accessToken,
+      );
+    },
+
+    async deleteMedia(session: Session, paths: string[]): Promise<void> {
+      if (!paths.length) return;
+      await call(
+        `/storage/v1/object/${MEDIA_BUCKET}`,
+        { method: 'DELETE', body: JSON.stringify({ prefixes: paths }) },
+        session.accessToken,
+      );
+    },
+
+    async getUsername(session: Session): Promise<string | undefined> {
+      const rows = (await call(
+        `/rest/v1/profiles?select=username&id=eq.${encodeURIComponent(session.userId)}`,
+        { method: 'GET' },
+        session.accessToken,
+      )) as { username: string }[];
+      return rows[0]?.username;
+    },
+
+    async setUsername(session: Session, username: string): Promise<void> {
+      try {
+        await post(
+          '/rest/v1/profiles?on_conflict=id',
+          { id: session.userId, username },
+          session.accessToken,
+          { Prefer: 'resolution=merge-duplicates,return=minimal' },
+        );
+      } catch (e) {
+        if (e instanceof SupabaseError && e.status === 409) {
+          throw new SupabaseError('That username is taken. Try another one.', 409);
+        }
+        throw e;
+      }
+    },
+
+    /** Newest posts first; pass `before` (the oldest post's time) to load the next page. */
+    async listPosts(
+      session: Session | undefined,
+      opts: { before?: number; limit?: number } = {},
+    ): Promise<PostRow[]> {
+      const filters = [
+        `select=${POST_COLUMNS}`,
+        'order=created_at.desc',
+        `limit=${opts.limit ?? 20}`,
+        opts.before
+          ? `created_at=lt.${encodeURIComponent(new Date(opts.before).toISOString())}`
+          : '',
+      ].filter(Boolean);
+      return (await call(
+        `/rest/v1/posts?${filters.join('&')}`,
+        { method: 'GET' },
+        session?.accessToken,
+      )) as PostRow[];
+    },
+
+    async getPosts(session: Session | undefined, ids: string[]): Promise<PostRow[]> {
+      if (!ids.length) return [];
+      return (await call(
+        `/rest/v1/posts?select=${POST_COLUMNS}&id=in.(${ids.map(encodeURIComponent).join(',')})`,
+        { method: 'GET' },
+        session?.accessToken,
+      )) as PostRow[];
+    },
+
+    /** Post ids ranked by likes or saves, this week or ever. */
+    async topPosts(
+      session: Session | undefined,
+      metric: 'likes' | 'saves',
+      period: 'week' | 'all',
+      limit = 30,
+    ): Promise<{ postId: string; score: number }[]> {
+      const rows = (await post(
+        '/rest/v1/rpc/top_posts',
+        { p_metric: metric, p_period: period, p_limit: limit },
+        session?.accessToken,
+      )) as { post_id: string; score: number }[];
+      return rows.map((r) => ({ postId: r.post_id, score: Number(r.score) }));
+    },
+
+    async createPost(
+      session: Session,
+      post_: { recipe: unknown; videoPath: string; posterPath?: string },
+    ): Promise<PostRow> {
+      const rows = (await post(
+        `/rest/v1/posts?select=${POST_COLUMNS}`,
+        {
+          recipe: post_.recipe,
+          video_path: post_.videoPath,
+          poster_path: post_.posterPath ?? null,
+        },
+        session.accessToken,
+        { Prefer: 'return=representation' },
+      )) as PostRow[];
+      return rows[0];
+    },
+
+    async deletePost(session: Session, row: Pick<PostRow, 'id' | 'video_path' | 'poster_path'>) {
+      await call(
+        `/rest/v1/posts?id=eq.${encodeURIComponent(row.id)}`,
+        { method: 'DELETE' },
+        session.accessToken,
+      );
+      await this.deleteMedia(
+        session,
+        [row.video_path, row.poster_path].filter((p): p is string => !!p),
+      );
+    },
+
+    /** Which of these posts the user has liked and saved. */
+    async myReactions(
+      session: Session,
+      ids: string[],
+    ): Promise<{ liked: string[]; saved: string[] }> {
+      if (!ids.length) return { liked: [], saved: [] };
+      const q = `?select=post_id&post_id=in.(${ids.map(encodeURIComponent).join(',')})`;
+      const [liked, saved] = (await Promise.all([
+        call(`/rest/v1/post_likes${q}`, { method: 'GET' }, session.accessToken),
+        call(`/rest/v1/post_saves${q}`, { method: 'GET' }, session.accessToken),
+      ])) as { post_id: string }[][];
+      return { liked: liked.map((r) => r.post_id), saved: saved.map((r) => r.post_id) };
+    },
+
+    /** Likes or saves (on = true) or removes it (on = false). */
+    async react(session: Session, kind: 'like' | 'save', postId: string, on: boolean) {
+      const table = kind === 'like' ? 'post_likes' : 'post_saves';
+      if (on) {
+        try {
+          await post(`/rest/v1/${table}`, { post_id: postId }, session.accessToken, {
+            Prefer: 'return=minimal',
+          });
+        } catch (e) {
+          // Already liked/saved (e.g. from another device): that's the state we want.
+          if (!(e instanceof SupabaseError && e.status === 409)) throw e;
+        }
+      } else {
+        await call(
+          `/rest/v1/${table}?post_id=eq.${encodeURIComponent(postId)}&user_id=eq.${encodeURIComponent(session.userId)}`,
+          { method: 'DELETE' },
+          session.accessToken,
+        );
+      }
+    },
+
+    async reportPost(session: Session, postId: string, reason: string) {
+      try {
+        await post(
+          '/rest/v1/post_reports',
+          { post_id: postId, reason: reason.slice(0, 200) },
+          session.accessToken,
+          { Prefer: 'return=minimal' },
+        );
+      } catch (e) {
+        if (!(e instanceof SupabaseError && e.status === 409)) throw e; // already reported
+      }
+    },
+
+    async blockUser(session: Session, userId: string) {
+      try {
+        await post('/rest/v1/blocks', { blocked_id: userId }, session.accessToken, {
+          Prefer: 'return=minimal',
+        });
+      } catch (e) {
+        if (!(e instanceof SupabaseError && e.status === 409)) throw e; // already blocked
+      }
     },
   };
 }

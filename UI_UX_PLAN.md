@@ -29,8 +29,10 @@ People use the app with messy hands, the phone propped on the counter, and their
 - **Bottom tabs (Expo Router):** Home · Search · Saved · Shopping List · Profile (four or five tabs at most).
 
 ### Visual style
-- Food photos are the main visual. Large rounded cards (16–20 radius), lots of white space, soft shadows.
-- Typography: a warm serif for titles (Playfair Display, Fraunces, DM Serif) and a clean sans for body text (Inter, DM Sans).
+- Food photos are the main visual. Lots of white space; screens read like a printed cookbook page.
+- Lists (ingredients, steps, shopping list) are plain rows with thin dividers, not a card per row. Cards only for recipe tiles in feeds.
+- Buttons are rectangular with a small radius (10–12). Pills only for filter chips.
+- Typography: **Young Serif** for recipe titles only, **Hanken Grotesk** for everything else. Type scale: 13 / 15 / 17 / 22 / 28.
 - Small touches: haptics on check-off, heart animation on save, skeleton loaders while images load.
 - Empty states that invite action ("No saved recipes yet — find something tasty").
 
@@ -38,22 +40,23 @@ People use the app with messy hands, the phone propped on the counter, and their
 
 Food looks best next to warm, natural colors. Avoid cold blues and purples as the main color because they suppress appetite.
 
-### Chosen: "Warm Kitchen"
+### Chosen: "Warm Kitchen" (refined)
+
+Visual comparison: `design/vibe-picker.html`.
 
 | Role | Color | Light | Dark |
 |---|---|---|---|
-| Primary (buttons, CTAs) | Tomato / terracotta | `#E4572E` | `#F06A43` |
-| Secondary | Sage green | `#7A9E7E` | `#8FB393` |
-| Accent | Saffron / mustard | `#F2A541` | `#F2A541` |
-| Background | Warm cream / warm near-black | `#FFF8F0` | `#1C1714` |
-| Surface (cards) | White / dark brown | `#FFFFFF` | `#2A231E` |
-| Text primary | Espresso / cream | `#2B2118` | `#F5EDE4` |
-| Text secondary | Warm gray | `#7D7068` | `#B3A79D` |
-| Border / divider | Light sand | `#EFE4D8` | `#3A312A` |
+| Primary (buttons) | Ripe tomato | `#C8412B` | `#C8412B` (fill), `#EE7A63` (text/icons) |
+| Secondary (checkmarks, labels) | Olive | `#66733A` | `#A3B062` |
+| Accent (timers, highlights) | Saffron | `#E3A23C` | `#E3A23C` |
+| Background | Flour white / warm near-black | `#FBFAF8` | `#171311` |
+| Surface | White / dark brown | `#FFFFFF` | `#221C19` |
+| Text primary | Espresso / cream | `#241A17` | `#F3ECE6` |
+| Text secondary | Warm gray | `#776B65` | `#ADA29A` |
+| Border / divider | Light sand | `#ECE6E1` | `#342B27` |
 
-### Alternatives
-- **Fresh & Healthy** (healthy-eating or meal-prep angle): primary avocado `#5B8C51`, accent citrus `#FFB627`, background `#F7FAF5`, text `#1F2A1D`.
-- **Bold & Modern** (younger audience): primary paprika `#D7263D`, accent butter yellow `#FFD166`, background `#FAFAF7`, text `#1B1B1E`.
+Other reds considered (all pass WCAG AA with white text): Sun-dried tomato `#B23A28`, Rhubarb `#C43D4B`.
+The original `#E4572E` was dropped because white text on it fails AA contrast.
 
 ### Color rules
 - Use the primary color sparingly, for CTAs, the active tab and the save heart, so photos stay the focus.
@@ -61,7 +64,23 @@ Food looks best next to warm, natural colors. Avoid cold blues and purples as th
 - Check text contrast against WCAG AA (4.5:1). Light text on mustard or sage often fails.
 - Dark mode uses warm near-black, not pure black, for dim kitchens at night.
 
-## 3. Implementation notes
+## 3. Avoid the "AI-generated" look
+
+| Giveaway | What we do instead |
+|---|---|
+| Purple/blue gradients, glowing color blobs | Flat colors taken from food; real photos do the visual work |
+| Cream background + terracotta + trendy serif (the "second" AI default) | Flour-white background, deeper tomato red, olive, a cookbook serif only on titles |
+| Inter / Geist / Plus Jakarta Sans everywhere | Young Serif + Hanken Grotesk |
+| Identical rounded cards with soft shadows, cards inside cards | Plain divided lists; cards only for recipe tiles |
+| Pill buttons with trailing arrows ("Get started →") | Rectangular buttons, plain verbs ("Start cooking") |
+| Emoji as icons or section headings | One consistent icon set, used sparingly |
+| Everything centered, rows of three equal cards | Left-aligned text, mixed tile sizes in feeds |
+| Standard font-size ladder (12/14/16/18/24…) | Own scale: 13 / 15 / 17 / 22 / 28 |
+| Glassmorphism, neon glow, shadows everywhere | No blur; shadows only on floating things (sheets, timer) |
+| Placeholder content (John Doe, lorem ipsum) | Real recipes, real units (g, ml, °C), real photos |
+| Sparkle icons, "AI-powered" badges | Name smart features by what they do ("Cook with what's in my fridge") |
+
+## 4. Implementation notes
 - Put the colors in one theme file (e.g. `src/constants/theme.ts`) with light and dark tokens, and switch with `useColorScheme()`.
 - Navigation via Expo Router tabs in `src/app/`.
 - Suggested build order:

@@ -1,0 +1,192 @@
+<title>Recipe App Vibes</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=DM+Sans:wght@400;500;700&family=Nunito:wght@400;600;800&family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Manrope:wght@400;600;700&display=swap">
+<style>
+/* Layout: page chrome stays neutral; three phone mockups side by side carry each palette. */
+:root {
+  --bg: #F6F5F3;
+  --fg: #1E1D1B;
+  --muted: #6B6863;
+  --line: #E2DFDA;
+  --card: #FFFFFF;
+  --chrome-font: "DM Sans", system-ui, -apple-system, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --bg: #151514; --fg: #EDEBE7; --muted: #A09C96; --line: #2E2D2B; --card: #1E1D1C; color-scheme: dark; }
+}
+:root[data-theme="dark"] { --bg: #151514; --fg: #EDEBE7; --muted: #A09C96; --line: #2E2D2B; --card: #1E1D1C; color-scheme: dark; }
+
+body { background: var(--bg); color: var(--fg); font-family: var(--chrome-font); }
+.wrap { max-width: 1120px; margin: 0 auto; padding-block: 40px 64px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+header h1 { font-size: 30px; margin: 0 0 8px; text-wrap: balance; letter-spacing: -0.01em; }
+header p { margin: 0; color: var(--muted); max-width: 62ch; line-height: 1.5; font-size: 15px; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 40px 28px; margin-top: 36px; }
+.col { display: flex; flex-direction: column; align-items: center; gap: 16px; min-width: 0; }
+.col-head { width: 100%; max-width: 320px; display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+.col-head h2 { margin: 0; font-size: 18px; }
+.col-head .tag { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+.mode { font: 500 13px var(--chrome-font); color: var(--fg); background: var(--card); border: 1px solid var(--line); border-radius: 999px; padding: 6px 12px; cursor: pointer; }
+.mode:focus-visible, button:focus-visible, label:focus-within { outline: 2px solid #3B82F6; outline-offset: 2px; }
+.blurb { max-width: 320px; width: 100%; color: var(--muted); font-size: 14px; line-height: 1.5; margin: 0; }
+.swatches { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; width: 100%; max-width: 320px; }
+.sw { display: flex; flex-direction: column; gap: 4px; font-size: 11px; color: var(--muted); }
+.sw i { display: block; height: 34px; border-radius: 8px; border: 1px solid var(--line); }
+.sw b { color: var(--fg); font-weight: 500; font-variant-numeric: tabular-nums; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; }
+footer { margin-top: 48px; color: var(--muted); font-size: 14px; border-top: 1px solid var(--line); padding-top: 20px; }
+
+/* ---------- Phone mockup (colors come from per-vibe vars, fixed on purpose) ---------- */
+.phone { --r: 18px; width: 320px; max-width: 100%; aspect-ratio: 320 / 660; border-radius: 40px; padding: 10px; background: #111; box-shadow: 0 20px 50px -20px rgba(0,0,0,.45); }
+.screen { position: relative; height: 100%; border-radius: 31px; overflow: hidden; background: var(--p-bg); color: var(--p-text); font-family: var(--p-body); display: flex; flex-direction: column; transition: background .25s, color .25s; }
+.status { display: flex; justify-content: space-between; padding: 10px 22px 0; font-size: 12px; font-weight: 600; position: absolute; inset: 0 0 auto; z-index: 2; color: var(--p-text); }
+.hero { position: relative; height: 210px; flex: none; background: radial-gradient(circle at 30% 20%, color-mix(in srgb, var(--p-accent) 45%, transparent), transparent 60%), radial-gradient(circle at 80% 90%, color-mix(in srgb, var(--p-primary) 35%, transparent), transparent 55%), var(--p-hero); display: grid; place-items: center; }
+.hero svg { width: 170px; height: 170px; margin-top: 18px; }
+.hbtn { position: absolute; top: 38px; width: 34px; height: 34px; border-radius: 50%; background: var(--p-surface); color: var(--p-text); border: none; display: grid; place-items: center; box-shadow: 0 2px 8px rgba(0,0,0,.12); cursor: pointer; }
+.hbtn.back { left: 16px; } .hbtn.fav { right: 16px; }
+.hbtn svg { width: 18px; height: 18px; }
+.hbtn.fav.on svg path { fill: var(--p-primary); stroke: var(--p-primary); }
+.body { flex: 1; min-height: 0; margin-top: -22px; position: relative; background: var(--p-bg); border-radius: 24px 24px 0 0; padding: 18px 18px 0; display: flex; flex-direction: column; gap: 12px; overflow: hidden; }
+.kicker { font-size: 10px; text-transform: uppercase; letter-spacing: .1em; color: var(--p-secondary-text); font-weight: 700; }
+.title { font-family: var(--p-display); font-weight: var(--p-display-w); font-size: 22px; line-height: 1.15; margin: 2px 0 0; letter-spacing: var(--p-display-ls); }
+.facts { display: flex; gap: 6px; flex-wrap: wrap; }
+.fact { font-size: 11px; padding: 5px 9px; border-radius: 999px; background: var(--p-surface); border: 1px solid var(--p-border); color: var(--p-muted); }
+.fact strong { color: var(--p-text); font-weight: 700; }
+.tabs { display: flex; gap: 18px; border-bottom: 1px solid var(--p-border); font-size: 13px; }
+.tabs span { padding-bottom: 8px; color: var(--p-muted); }
+.tabs span.on { color: var(--p-text); font-weight: 700; box-shadow: inset 0 -2px 0 var(--p-primary); }
+.row { display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: var(--p-muted); }
+.stepper { display: flex; align-items: center; gap: 10px; background: var(--p-surface); border: 1px solid var(--p-border); border-radius: 999px; padding: 3px; }
+.stepper button { width: 24px; height: 24px; border-radius: 50%; border: none; background: var(--p-chip); color: var(--p-text); font-size: 14px; line-height: 1; cursor: pointer; }
+.stepper b { color: var(--p-text); min-width: 14px; text-align: center; font-variant-numeric: tabular-nums; }
+.ings { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.ings label { display: flex; align-items: center; gap: 10px; background: var(--p-surface); border: 1px solid var(--p-border); border-radius: 12px; padding: 8px 10px; font-size: 13px; cursor: pointer; }
+.ings input { appearance: none; width: 18px; height: 18px; border-radius: 6px; border: 2px solid var(--p-border-strong); margin: 0; flex: none; display: grid; place-items: center; cursor: pointer; }
+.ings input:checked { background: var(--p-secondary); border-color: var(--p-secondary); }
+.ings input:checked::after { content: ""; width: 5px; height: 9px; border: solid var(--p-on-secondary); border-width: 0 2px 2px 0; transform: rotate(45deg) translate(-1px,-1px); }
+.ings input:checked ~ .nm { text-decoration: line-through; color: var(--p-muted); }
+.ings .qty { margin-left: auto; color: var(--p-muted); font-variant-numeric: tabular-nums; font-size: 12px; }
+.cta { margin-top: auto; margin-bottom: 10px; border: none; border-radius: 14px; padding: 13px; font: 700 14px var(--p-body); background: var(--p-primary); color: var(--p-on-primary); display: flex; justify-content: center; align-items: center; gap: 8px; cursor: pointer; }
+.cta .tm { background: var(--p-accent); color: var(--p-on-accent); font-size: 11px; padding: 2px 7px; border-radius: 999px; }
+.tabbar { flex: none; display: flex; justify-content: space-around; padding: 10px 6px 16px; background: var(--p-surface); border-top: 1px solid var(--p-border); font-size: 10px; color: var(--p-muted); }
+.tabbar div { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+.tabbar svg { width: 18px; height: 18px; }
+.tabbar .on { color: var(--p-primary); font-weight: 700; }
+
+/* ---------- Vibes ---------- */
+.v-warm { --p-display: "Fraunces", Georgia, serif; --p-display-w: 700; --p-display-ls: -0.01em; --p-body: "DM Sans", system-ui, sans-serif;
+  --p-primary: #E4572E; --p-on-primary: #FFFFFF; --p-secondary: #7A9E7E; --p-secondary-text: #5E8462; --p-on-secondary: #FFFFFF; --p-accent: #F2A541; --p-on-accent: #2B2118;
+  --p-bg: #FFF8F0; --p-surface: #FFFFFF; --p-hero: #FBE9D7; --p-chip: #F6EADD; --p-text: #2B2118; --p-muted: #7D7068; --p-border: #EFE4D8; --p-border-strong: #CDBFB1; }
+.v-warm.dark { --p-primary: #F06A43; --p-secondary: #8FB393; --p-secondary-text: #8FB393; --p-on-secondary: #1C1714; --p-bg: #1C1714; --p-surface: #2A231E; --p-hero: #2F241C; --p-chip: #3A312A; --p-text: #F5EDE4; --p-muted: #B3A79D; --p-border: #3A312A; --p-border-strong: #5A4E44; }
+
+.v-fresh { --p-display: "Nunito", system-ui, sans-serif; --p-display-w: 800; --p-display-ls: -0.01em; --p-body: "Nunito", system-ui, sans-serif;
+  --p-primary: #5B8C51; --p-on-primary: #FFFFFF; --p-secondary: #5B8C51; --p-secondary-text: #4E7A45; --p-on-secondary: #FFFFFF; --p-accent: #FFB627; --p-on-accent: #1F2A1D;
+  --p-bg: #F7FAF5; --p-surface: #FFFFFF; --p-hero: #E3F0DC; --p-chip: #EAF2E5; --p-text: #1F2A1D; --p-muted: #66735F; --p-border: #E1EADB; --p-border-strong: #B9C8B0; }
+.v-fresh.dark { --p-primary: #74A869; --p-on-primary: #10180E; --p-secondary: #74A869; --p-secondary-text: #8DBE82; --p-on-secondary: #10180E; --p-bg: #131A12; --p-surface: #1D261B; --p-hero: #1E2C1B; --p-chip: #2A3627; --p-text: #EAF2E6; --p-muted: #A3B19C; --p-border: #2A3627; --p-border-strong: #44543F; }
+
+.v-bold { --p-display: "Bricolage Grotesque", system-ui, sans-serif; --p-display-w: 800; --p-display-ls: -0.02em; --p-body: "Manrope", system-ui, sans-serif;
+  --p-primary: #D7263D; --p-on-primary: #FFFFFF; --p-secondary: #1B1B1E; --p-secondary-text: #D7263D; --p-on-secondary: #FFD166; --p-accent: #FFD166; --p-on-accent: #1B1B1E;
+  --p-bg: #FAFAF7; --p-surface: #FFFFFF; --p-hero: #FFE9A8; --p-chip: #F0F0EB; --p-text: #1B1B1E; --p-muted: #66666B; --p-border: #E6E6E0; --p-border-strong: #BDBDB6; }
+.v-bold.dark { --p-primary: #EF4255; --p-secondary: #FFD166; --p-secondary-text: #FF6B7C; --p-on-secondary: #121214; --p-bg: #121214; --p-surface: #1E1E22; --p-hero: #2A2416; --p-chip: #2C2C31; --p-text: #F4F4F0; --p-muted: #A2A2A8; --p-border: #2C2C31; --p-border-strong: #4A4A50; }
+
+@media (prefers-reduced-motion: reduce) { .screen { transition: none; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Pick a vibe for the recipe app</h1>
+    <p>The same recipe screen in three palettes. Tap the ingredients to check them off, change the servings, tap the heart, and switch each phone between light and dark mode. Tell me which one you like, or mix pieces from different ones.</p>
+  </header>
+  <main class="grid" id="grid"></main>
+  <footer>Food photos will replace the illustration in the real app. The colors around them are what you are choosing here.</footer>
+</div>
+
+<script>
+const vibes = [
+  { id: "warm", name: "Warm Kitchen", tag: "Recommended", blurb: "Cozy and homemade, like a family cookbook. Tomato red buttons, sage green checkmarks, a classic serif for titles.",
+    sw: [["Primary","#E4572E"],["Sage","#7A9E7E"],["Saffron","#F2A541"],["Cream","#FFF8F0"]] },
+  { id: "fresh", name: "Fresh & Healthy", tag: "Meal prep", blurb: "Light, clean and green. Feels like a farmers' market. Rounded, friendly type throughout.",
+    sw: [["Avocado","#5B8C51"],["Citrus","#FFB627"],["Mint white","#F7FAF5"],["Text","#1F2A1D"]] },
+  { id: "bold", name: "Bold & Modern", tag: "Stands out", blurb: "Punchy paprika red and butter yellow with a chunky modern font. More energy, aimed at a younger crowd.",
+    sw: [["Paprika","#D7263D"],["Butter","#FFD166"],["Off-white","#FAFAF7"],["Charcoal","#1B1B1E"]] },
+];
+const base = [["Spaghetti", 200, "g"], ["Cherry tomatoes", 300, "g"], ["Garlic cloves", 3, ""], ["Fresh basil", 1, "bunch"], ["Heavy cream", 120, "ml"]];
+
+const bowl = `<svg viewBox="0 0 200 200" aria-hidden="true">
+  <ellipse cx="100" cy="112" rx="88" ry="80" fill="var(--p-surface)"/>
+  <ellipse cx="100" cy="108" rx="70" ry="62" fill="color-mix(in srgb, var(--p-accent) 30%, var(--p-surface))"/>
+  <g fill="none" stroke="var(--p-accent)" stroke-width="5" stroke-linecap="round">
+    <path d="M52 100c20-22 46 18 70-4s30 6 30 6"/><path d="M48 118c26-14 40 16 64 0s34-10 42 2"/>
+    <path d="M60 136c18-10 34 12 54 0s26-6 32 0"/><path d="M62 84c16-10 30 8 48-2s28 0 30 4"/></g>
+  <g fill="var(--p-primary)"><circle cx="78" cy="96" r="10"/><circle cx="122" cy="118" r="11"/><circle cx="104" cy="88" r="8"/><circle cx="88" cy="128" r="9"/></g>
+  <g fill="var(--p-secondary)"><path d="M118 80c10-12 26-8 26-8s-4 16-20 16z"/><path d="M66 116c-12-6-14-20-14-20s14 0 20 12z"/><path d="M128 140c12-2 20 8 20 8s-12 8-22-2z"/></g>
+</svg>`;
+const ic = {
+  back: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>`,
+  heart: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20s-7-4.4-9-9a4.8 4.8 0 0 1 9-3 4.8 4.8 0 0 1 9 3c-2 4.6-9 9-9 9z"/></svg>`,
+  home: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-7 9 7v9H3z"/></svg>`,
+  search: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>`,
+  saved: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 3h12v18l-6-4-6 4z"/></svg>`,
+  list: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>`,
+  user: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4-6 8-6s7 2 8 6"/></svg>`,
+};
+const fmt = n => Number.isInteger(n) ? n : n.toFixed(1).replace(/\.0$/, "");
+
+function phone(v) {
+  return `
+  <div class="phone"><div class="screen v-${v.id}" id="s-${v.id}">
+    <div class="status"><span>9:41</span><span>●●● 100%</span></div>
+    <div class="hero">${bowl}
+      <button class="hbtn back" aria-label="Back">${ic.back}</button>
+      <button class="hbtn fav" aria-label="Save recipe" aria-pressed="false">${ic.heart}</button>
+    </div>
+    <div class="body">
+      <div><div class="kicker">Italian · Weeknight</div><h3 class="title">Creamy Tomato Basil Pasta</h3></div>
+      <div class="facts"><span class="fact"><strong>25</strong> min</span><span class="fact"><strong>Easy</strong></span><span class="fact"><strong>520</strong> kcal</span></div>
+      <div class="tabs"><span class="on">Ingredients</span><span>Steps</span><span>Notes</span></div>
+      <div class="row"><span>Servings</span>
+        <div class="stepper"><button data-d="-1" aria-label="Fewer servings">−</button><b class="srv">2</b><button data-d="1" aria-label="More servings">+</button></div></div>
+      <ul class="ings">${base.map((b, i) => `<li><label><input type="checkbox" id="${v.id}-ing-${i}" ${i === 0 ? "checked" : ""}><span class="nm">${b[0]}</span><span class="qty" data-i="${i}"></span></label></li>`).join("")}</ul>
+      <button class="cta">Start cooking <span class="tm">Cook Mode</span></button>
+    </div>
+    <nav class="tabbar">
+      <div class="on">${ic.home}Home</div><div>${ic.search}Search</div><div>${ic.saved}Saved</div><div>${ic.list}List</div><div>${ic.user}Me</div>
+    </nav>
+  </div></div>`;
+}
+
+const grid = document.getElementById("grid");
+vibes.forEach(v => {
+  const col = document.createElement("section");
+  col.className = "col";
+  col.innerHTML = `
+    <div class="col-head"><div><div class="tag">${v.tag}</div><h2>${v.name}</h2></div>
+      <button class="mode" id="mode-${v.id}" aria-pressed="false">Dark mode</button></div>
+    ${phone(v)}
+    <p class="blurb">${v.blurb}</p>
+    <div class="swatches">${v.sw.map(([n, h]) => `<div class="sw"><i style="background:${h}"></i>${n}<b>${h}</b></div>`).join("")}</div>`;
+  grid.appendChild(col);
+
+  const screen = col.querySelector(".screen");
+  let servings = 2;
+  const render = () => {
+    col.querySelector(".srv").textContent = servings;
+    col.querySelectorAll(".qty").forEach(q => {
+      const [, amt, unit] = base[q.dataset.i];
+      q.textContent = `${fmt(amt * servings / 2)}${unit ? " " + unit : ""}`;
+    });
+  };
+  col.querySelectorAll(".stepper button").forEach(b => b.addEventListener("click", () => {
+    servings = Math.min(12, Math.max(1, servings + Number(b.dataset.d))); render();
+  }));
+  const fav = col.querySelector(".fav");
+  fav.addEventListener("click", () => { const on = fav.classList.toggle("on"); fav.setAttribute("aria-pressed", on); });
+  const mode = col.querySelector(".mode");
+  mode.addEventListener("click", () => {
+    const dark = screen.classList.toggle("dark");
+    mode.setAttribute("aria-pressed", dark);
+    mode.textContent = dark ? "Light mode" : "Dark mode";
+  });
+  render();
+});
+</script>

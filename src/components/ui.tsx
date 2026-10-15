@@ -15,16 +15,19 @@ export function Chip({
   label,
   selected,
   onPress,
+  accessibilityLabel,
 }: {
   label: string;
   selected?: boolean;
   onPress?: () => void;
+  accessibilityLabel?: string;
 }) {
   const c = useTheme();
   return (
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel}
       accessibilityState={{ selected }}
       style={({ pressed }) => [
         styles.chip,
@@ -93,6 +96,40 @@ export function Field({
   );
 }
 
+/** Two or three side-by-side choices, like a switch between views. */
+export function Segmented<T extends string>({
+  value,
+  options,
+  onChange,
+}: {
+  value: T;
+  options: { value: T; label: string }[];
+  onChange: (value: T) => void;
+}) {
+  const c = useTheme();
+  return (
+    <View style={[styles.segment, { backgroundColor: c.chip }]} accessibilityRole="tablist">
+      {options.map((o) => {
+        const selected = o.value === value;
+        return (
+          <Pressable
+            key={o.value}
+            onPress={() => onChange(o.value)}
+            accessibilityRole="tab"
+            accessibilityState={{ selected }}
+            style={[styles.segmentItem, selected && { backgroundColor: c.card }]}>
+            <Text
+              numberOfLines={1}
+              style={[styles.segmentText, { color: selected ? c.text : c.textSecondary }]}>
+              {o.label}
+            </Text>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+}
+
 export function SectionTitle({ children }: { children: React.ReactNode }) {
   const c = useTheme();
   return <Text style={[styles.sectionTitle, { color: c.text }]}>{children}</Text>;
@@ -110,6 +147,9 @@ export function confirm(title: string, message: string, confirmLabel: string): P
 }
 
 const styles = StyleSheet.create({
+  segment: { flexDirection: 'row', borderRadius: 12, padding: 3 },
+  segmentItem: { flex: 1, alignItems: 'center', paddingVertical: 8, borderRadius: 10 },
+  segmentText: { fontSize: 15, fontWeight: '600' },
   chip: {
     paddingVertical: 6,
     paddingHorizontal: Spacing.three,

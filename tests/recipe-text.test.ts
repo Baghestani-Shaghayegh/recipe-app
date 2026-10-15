@@ -98,7 +98,7 @@ test('total time and servings phrasing', () => {
   assert.equal(r.servings, 8);
   assert.equal(r.cookMinutes, 60);
   assert.equal(r.prepMinutes, undefined);
-  assert.equal(r.category, 'Dessert');
+  assert.equal(r.category, 'Baking');
 });
 
 test('time only in the title', () => {
@@ -149,4 +149,13 @@ test('Notes and Source lines are kept apart from the steps', () => {
   assert.equal(r.notes, 'Freezes well.\nServe hot.');
   assert.equal(r.sourceUrl, 'https://example.com/soup');
   assert.deepEqual(r.tags, ['meal-prep']);
+});
+
+test('category guesses use the new list', () => {
+  assert.equal(parseRecipeText('Banana bread\nIngredients\n3 bananas').category, 'Baking');
+  assert.equal(parseRecipeText('Mango smoothie\nIngredients\n1 mango').category, 'Snack');
+  assert.equal(
+    parseRecipeText('Weeknight dinner pasta\nIngredients\n100 g pasta').category,
+    'Dinner',
+  );
 });

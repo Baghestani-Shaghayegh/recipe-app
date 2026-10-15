@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { ActionSheet } from '@/components/action-sheet';
 import { Button } from '@/components/ui';
 import { Spacing, useTheme } from '@/constants/theme';
 import { compactCount, type FeedPost } from '@/lib/feed';
@@ -308,48 +309,6 @@ function RecipeSheet({
   );
 }
 
-function ActionSheet({
-  visible,
-  title,
-  actions,
-  onClose,
-}: {
-  visible: boolean;
-  title?: string;
-  actions: { label: string; danger?: boolean; onPress: () => void }[];
-  onClose: () => void;
-}) {
-  const c = useTheme();
-  return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <Pressable style={styles.backdrop} onPress={onClose} accessibilityLabel="Close menu">
-        <View style={[styles.menu, { backgroundColor: c.card }]}>
-          {title ? (
-            <Text style={[styles.menuTitle, { color: c.textSecondary }]}>{title}</Text>
-          ) : null}
-          {actions.map((a) => (
-            <Pressable
-              key={a.label}
-              onPress={a.onPress}
-              accessibilityRole="button"
-              style={[styles.menuItem, { borderTopColor: c.border }]}>
-              <Text style={[styles.menuText, { color: a.danger ? c.danger : c.text }]}>
-                {a.label}
-              </Text>
-            </Pressable>
-          ))}
-          <Pressable
-            onPress={onClose}
-            accessibilityRole="button"
-            style={[styles.menuItem, { borderTopColor: c.border }]}>
-            <Text style={[styles.menuText, styles.bold, { color: c.text }]}>Cancel</Text>
-          </Pressable>
-        </View>
-      </Pressable>
-    </Modal>
-  );
-}
-
 const shadowText = {
   textShadowColor: 'rgba(0,0,0,0.6)',
   textShadowOffset: { width: 0, height: 1 },
@@ -406,9 +365,4 @@ const styles = StyleSheet.create({
   bullet: { fontSize: 16, lineHeight: 24, minWidth: 18, textAlign: 'center' },
   stepNumber: { fontSize: 16, fontWeight: '800', lineHeight: 24, minWidth: 18 },
   body: { flex: 1, fontSize: 16, lineHeight: 24 },
-  menu: { margin: Spacing.four, borderRadius: 14, overflow: 'hidden' },
-  menuTitle: { fontSize: 14, textAlign: 'center', paddingVertical: Spacing.three },
-  menuItem: { paddingVertical: 14, alignItems: 'center', borderTopWidth: StyleSheet.hairlineWidth },
-  menuText: { fontSize: 17 },
-  bold: { fontWeight: '700' },
 });

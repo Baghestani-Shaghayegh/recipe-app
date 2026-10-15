@@ -16,6 +16,7 @@ import { Button, Field } from '@/components/ui';
 import { MaxContentWidth, Spacing, useTheme } from '@/constants/theme';
 import { fetchInstagramPost, InstagramError, parseInstagramUrl } from '@/lib/instagram';
 import { saveRemotePhoto } from '@/lib/photos';
+import { canReadPhotos, PhotoProblem, readRecipePhoto } from '@/lib/recipe-photo';
 import { recipeDraftFromText } from '@/lib/recipe-text';
 import { recipeFromShared } from '@/lib/share';
 import { parseShareId } from '@/lib/supabase';
@@ -45,6 +46,8 @@ export default function ImportScreen() {
   const autoFetched = useRef(false);
 
   const shareId = shareIdFrom(link);
+  const [photoBusy, setPhotoBusy] = useState<string>();
+  const [photoError, setPhotoError] = useState<string>();
   const parsedLink = parseInstagramUrl(link);
   const videoUrl = parsedLink ? undefined : (parseYoutubeUrl(link) ?? parseTiktokUrl(link));
   const webUrl = parsedLink || videoUrl ? undefined : parseWebUrl(link);
@@ -123,6 +126,19 @@ export default function ImportScreen() {
     // Only for a link passed in when the screen opens.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [params.url, params.share]);
+
+  const readPhoto = async (source: 'camera' | 'library') => {
+    setPhotoError(undefined);
+    setPhotoBusy('Reading the photo…');
+    try {
+      const text = await readRecipePhoto(source);
+      if (text) openDraft(text, { sourceUrl: undefined });
+    } catch (e) {
+      setPhotoError(e instanceof PhotoProblem ? e.message : 'Couldn’t read that photo.');
+    } finally {
+      setPhotoBusy(undefined);
+    }
+  };
 
   const pasteInto = async (set: (s: string) => void) => {
     try {
@@ -216,6 +232,50 @@ export default function ImportScreen() {
         <View style={[styles.divider, { backgroundColor: c.border }]} />
 
         <View style={styles.group}>
+          <Text style={[styles.sectionLabel, { color: c.text }]}>From a photo</Text>
+          <Text style={[styles.message, { color: c.textSecondary }]}>
+            A cookbook page or a handwritten card. The text is read on your phone; you check it
+            before saving.
+          </Text>
+          {canReadPhotos ? (
+            <View style={styles.row}>
+              <View style={styles.flex}>
+                <Button
+                  label="Take photo"
+                  variant="secondary"
+                  disabled={!!photoBusy}
+                  onPress={() => readPhoto('camera')}
+                />
+              </View>
+              <View style={styles.flex}>
+                <Button
+                  label="Choose photo"
+                  variant="secondary"
+                  disabled={!!photoBusy}
+                  onPress={() => readPhoto('library')}
+                />
+              </View>
+            </View>
+          ) : (
+            <Text style={[styles.message, { color: c.textSecondary }]}>
+              Reading photos works in the installed app (not in Expo Go or the browser). Here, type
+              or paste the recipe below.
+            </Text>
+          )}
+          {photoBusy ? (
+            <View style={styles.row}>
+              <ActivityIndicator color={c.accent} />
+              <Text style={[styles.message, { color: c.textSecondary }]}>{photoBusy}</Text>
+            </View>
+          ) : null}
+          {photoError ? (
+            <Text style={[styles.message, { color: c.danger }]}>{photoError}</Text>
+          ) : null}
+        </View>
+
+        <View style={[styles.divider, { backgroundColor: c.border }]} />
+
+        <View style={styles.group}>
           <Field
             label={CAN_FETCH ? 'Or paste the recipe text' : 'Recipe text'}
             hint="The recipe text from the post or page. Headings like “Ingredients” and “Method” help."
@@ -267,5 +327,6 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   message: { fontSize: 14, lineHeight: 20, flexShrink: 1 },
   divider: { height: StyleSheet.hairlineWidth },
+  sectionLabel: { fontSize: 15, fontWeight: '600' },
   captionBox: { minHeight: 180 },
 });

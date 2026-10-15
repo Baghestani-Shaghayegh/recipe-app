@@ -1,5 +1,18 @@
 # Recipe App — Feature Plan
 
+## Version 1 scope (first release)
+
+**One job: save recipes from anywhere, decide what to cook, and buy what's missing.**
+
+- Save: links (Instagram, TikTok, YouTube, websites), pasted text, photo of a paper recipe
+- Decide: categories Breakfast / Lunch / Dinner / Snack / Baking, cooking time, simple nutrition,
+  pantry → what can I make
+- Buy: shopping list from the recipes you pick, minus the pantry
+
+Tabs: Recipes · Cook (with pantry) · Shopping. Everything else is switched off in
+`src/constants/features.ts` and comes back in updates after launch, one at a time, starting with
+what testers ask for.
+
 ## Must-have features (MVP)
 
 These are the core of the app. Build them first, in roughly this order.

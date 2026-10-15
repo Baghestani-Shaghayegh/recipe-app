@@ -1,11 +1,14 @@
+import Ionicons from '@expo/vector-icons/Ionicons';
 import * as Clipboard from 'expo-clipboard';
 import { Image } from 'expo-image';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { Linking, Share, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
+import { ActionSheet, type SheetAction } from '@/components/action-sheet';
 import { NutritionPanel } from '@/components/nutrition-panel';
 import { Button, Chip, confirm, SectionTitle } from '@/components/ui';
+import { Features } from '@/constants/features';
 import { MaxContentWidth, Spacing, useTheme } from '@/constants/theme';
 import { isStaple, pantryHas } from '@/lib/pantry';
 import { recipeToText, sharedPayload } from '@/lib/share';
@@ -28,6 +31,7 @@ export default function RecipeDetailScreen() {
   const [chosenServings, setChosenServings] = useState<number>();
   const [units, setUnits] = useState<UnitSystem>('original');
   const [shareNote, setShareNote] = useState<string>();
+  const [menuOpen, setMenuOpen] = useState(false);
   const account = useAccount();
 
   if (!recipe) {
@@ -98,18 +102,73 @@ export default function RecipeDetailScreen() {
     }
   };
 
-  const editButton = () => (
-    <Pressable
-      onPress={() => router.push({ pathname: '/recipe/edit', params: { id: recipe.id } })}
-      hitSlop={8}
-      accessibilityRole="button">
-      <Text style={[styles.headerButton, { color: c.accent }]}>Edit</Text>
-    </Pressable>
+  const headerButtons = () => (
+    <View style={styles.headerRow}>
+      <Pressable
+        onPress={() => router.push({ pathname: '/recipe/edit', params: { id: recipe.id } })}
+        hitSlop={8}
+        accessibilityRole="button">
+        <Text style={[styles.headerButton, { color: c.accent }]}>Edit</Text>
+      </Pressable>
+      <Pressable
+        onPress={() => setMenuOpen(true)}
+        hitSlop={8}
+        accessibilityRole="button"
+        accessibilityLabel="More">
+        <Ionicons name="ellipsis-horizontal-circle-outline" size={26} color={c.accent} />
+      </Pressable>
+    </View>
   );
+
+  // Everything that isn't cooking or shopping lives in the ⋯ menu.
+  const fromMenu = (action: () => void) => () => {
+    setMenuOpen(false);
+    action();
+  };
+  const menuActions: SheetAction[] = [
+    { label: 'Share recipe', onPress: fromMenu(() => void onShare()) },
+    {
+      label: 'I cooked this',
+      onPress: () => {
+        setMenuOpen(false);
+        markCooked(recipe.id);
+        setShareNote('Nice! Marked as cooked today.');
+      },
+    },
+    ...(Features.accounts && account.session
+      ? [{ label: 'Share as link', onPress: fromMenu(() => void onShareLink()) }]
+      : []),
+    ...(Features.discover && account.configured
+      ? [
+          {
+            label: 'Post a video to Discover',
+            onPress: () => {
+              setMenuOpen(false);
+              router.push({ pathname: '/post/new', params: { recipeId: recipe.id } });
+            },
+          },
+        ]
+      : []),
+    {
+      label: 'Delete recipe',
+      danger: true,
+      onPress: fromMenu(() => void onDelete()),
+    },
+  ];
+
+  const listLabel = Features.makeNextTab
+    ? inMakeNext
+      ? '✓ In make next'
+      : '+ Add to make next'
+    : inMakeNext
+      ? '✓ On shopping list'
+      : '+ Shopping list';
+  const canCook = Features.cookingMode && recipe.steps.length > 0;
 
   return (
     <ScrollView style={{ backgroundColor: c.background }} contentContainerStyle={styles.content}>
-      <Stack.Screen options={{ title: recipe.title, headerRight: editButton }} />
+      <Stack.Screen options={{ title: recipe.title, headerRight: headerButtons }} />
+      <ActionSheet visible={menuOpen} actions={menuActions} onClose={() => setMenuOpen(false)} />
 
       {recipe.photoUri ? (
         <Image source={{ uri: recipe.photoUri }} style={styles.photo} contentFit="cover" />
@@ -124,36 +183,38 @@ export default function RecipeDetailScreen() {
         ) : null}
       </View>
 
-      <View style={styles.ratingRow}>
-        <Pressable
-          onPress={() => patchRecipe(recipe.id, { favorite: !recipe.favorite })}
-          hitSlop={8}
-          accessibilityRole="button"
-          accessibilityState={{ selected: !!recipe.favorite }}
-          accessibilityLabel={recipe.favorite ? 'Remove from favorites' : 'Add to favorites'}>
-          <Text style={[styles.heart, { color: recipe.favorite ? c.accent : c.textSecondary }]}>
-            {recipe.favorite ? '♥' : '♡'}
-          </Text>
-        </Pressable>
-        <View style={styles.stars}>
-          {Array.from({ length: MAX_RATING }, (_, i) => i + 1).map((n) => (
-            <Pressable
-              key={n}
-              onPress={() => patchRecipe(recipe.id, { rating: nextRating(recipe.rating, n) })}
-              hitSlop={4}
-              accessibilityRole="button"
-              accessibilityLabel={`Rate ${n} of ${MAX_RATING}`}>
-              <Text
-                style={[
-                  styles.star,
-                  { color: n <= (recipe.rating ?? 0) ? c.accent : c.textSecondary },
-                ]}>
-                {n <= (recipe.rating ?? 0) ? '★' : '☆'}
-              </Text>
-            </Pressable>
-          ))}
+      {Features.favoritesAndRatings ? (
+        <View style={styles.ratingRow}>
+          <Pressable
+            onPress={() => patchRecipe(recipe.id, { favorite: !recipe.favorite })}
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityState={{ selected: !!recipe.favorite }}
+            accessibilityLabel={recipe.favorite ? 'Remove from favorites' : 'Add to favorites'}>
+            <Text style={[styles.heart, { color: recipe.favorite ? c.accent : c.textSecondary }]}>
+              {recipe.favorite ? '♥' : '♡'}
+            </Text>
+          </Pressable>
+          <View style={styles.stars}>
+            {Array.from({ length: MAX_RATING }, (_, i) => i + 1).map((n) => (
+              <Pressable
+                key={n}
+                onPress={() => patchRecipe(recipe.id, { rating: nextRating(recipe.rating, n) })}
+                hitSlop={4}
+                accessibilityRole="button"
+                accessibilityLabel={`Rate ${n} of ${MAX_RATING}`}>
+                <Text
+                  style={[
+                    styles.star,
+                    { color: n <= (recipe.rating ?? 0) ? c.accent : c.textSecondary },
+                  ]}>
+                  {n <= (recipe.rating ?? 0) ? '★' : '☆'}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
         </View>
-      </View>
+      ) : null}
 
       {facts.length ? (
         <View style={[styles.facts, { backgroundColor: c.card, borderColor: c.border }]}>
@@ -168,48 +229,31 @@ export default function RecipeDetailScreen() {
 
       <View style={styles.block}>
         <View style={styles.buttons}>
+          {canCook ? (
+            <View style={styles.flex}>
+              <Button
+                label="Start cooking"
+                onPress={() =>
+                  router.push({
+                    pathname: '/recipe/cook',
+                    params: {
+                      id: recipe.id,
+                      ...(servings !== undefined && { servings: String(servings) }),
+                      units,
+                    },
+                  })
+                }
+              />
+            </View>
+          ) : null}
           <View style={styles.flex}>
             <Button
-              label={inMakeNext ? '✓ In make next' : '+ Add to make next'}
-              variant={inMakeNext ? 'secondary' : 'primary'}
+              label={listLabel}
+              variant={canCook || inMakeNext ? 'secondary' : 'primary'}
               onPress={() => toggleMakeNext(recipe.id)}
             />
           </View>
-          <View style={styles.flex}>
-            <Button
-              label="I cooked this"
-              variant="secondary"
-              onPress={() => markCooked(recipe.id)}
-            />
-          </View>
         </View>
-        {recipe.steps.length ? (
-          <Button
-            label="Start cooking"
-            variant="secondary"
-            onPress={() =>
-              router.push({
-                pathname: '/recipe/cook',
-                params: {
-                  id: recipe.id,
-                  ...(servings !== undefined && { servings: String(servings) }),
-                  units,
-                },
-              })
-            }
-          />
-        ) : null}
-        <Button label="Share recipe" variant="secondary" onPress={onShare} />
-        {account.session ? (
-          <Button label="Share as link" variant="secondary" onPress={onShareLink} />
-        ) : null}
-        {account.configured ? (
-          <Button
-            label="Post a video of this to Discover"
-            variant="secondary"
-            onPress={() => router.push({ pathname: '/post/new', params: { recipeId: recipe.id } })}
-          />
-        ) : null}
         {shareNote ? (
           <Text style={[styles.meta, { color: c.textSecondary }]}>{shareNote}</Text>
         ) : null}
@@ -229,17 +273,19 @@ export default function RecipeDetailScreen() {
               You have {haveCount} of {counted.length} in your pantry
             </Text>
           ) : null}
-          <View style={styles.unitRow}>
-            {UNIT_SYSTEMS.map((u) => (
-              <Chip
-                key={u.id}
-                label={u.label}
-                selected={units === u.id}
-                onPress={() => setUnits(u.id)}
-              />
-            ))}
-          </View>
-          {baseServings !== undefined && servings !== undefined ? (
+          {Features.unitSwitch ? (
+            <View style={styles.unitRow}>
+              {UNIT_SYSTEMS.map((u) => (
+                <Chip
+                  key={u.id}
+                  label={u.label}
+                  selected={units === u.id}
+                  onPress={() => setUnits(u.id)}
+                />
+              ))}
+            </View>
+          ) : null}
+          {Features.scaleServings && baseServings !== undefined && servings !== undefined ? (
             <View style={styles.stepper}>
               <Text style={[styles.meta, { color: c.textSecondary }]}>Servings</Text>
               <Pressable
@@ -285,7 +331,7 @@ export default function RecipeDetailScreen() {
                   <Text style={[styles.body, { color: c.text }]}>
                     {scaleIngredientText(ing, factor, units)}
                   </Text>
-                  {status === 'missing' && findSubstitutions(ing.name) ? (
+                  {Features.substitutions && status === 'missing' && findSubstitutions(ing.name) ? (
                     <Text style={[styles.swap, { color: c.textSecondary }]}>
                       No {ing.name.split(',')[0]}? Try: {findSubstitutions(ing.name)!.join('; ')}
                     </Text>
@@ -297,7 +343,7 @@ export default function RecipeDetailScreen() {
         </View>
       ) : null}
 
-      <NutritionPanel recipe={recipe} />
+      {Features.nutrition ? <NutritionPanel recipe={recipe} /> : null}
 
       {recipe.steps.length ? (
         <View style={styles.block}>
@@ -327,15 +373,19 @@ export default function RecipeDetailScreen() {
           </Text>
         </Pressable>
       ) : null}
-
-      <Button label="Delete recipe" variant="danger" onPress={onDelete} />
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  headerButton: { fontSize: 17, fontWeight: '600', paddingHorizontal: Spacing.two },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.three,
+    paddingRight: Spacing.two,
+  },
+  headerButton: { fontSize: 17, fontWeight: '600' },
   content: {
     padding: Spacing.four,
     gap: Spacing.five,

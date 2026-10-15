@@ -2,6 +2,7 @@ import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { Features } from '@/constants/features';
 import { Spacing, useTheme } from '@/constants/theme';
 import { servingNutrition } from '@/lib/nutrition';
 import { formatMinutes, totalMinutes, type Recipe } from '@/lib/recipe';
@@ -27,8 +28,8 @@ export function RecipeCard({
     ? `${nutrition.source === 'estimate' ? '~' : ''}${Math.round(nutrition.values.kcal)} kcal`
     : undefined;
   const meta = [
-    recipe.favorite ? '♥' : undefined,
-    recipe.rating ? `★ ${recipe.rating}` : undefined,
+    Features.favoritesAndRatings && recipe.favorite ? '♥' : undefined,
+    Features.favoritesAndRatings && recipe.rating ? `★ ${recipe.rating}` : undefined,
     recipe.category,
     minutes !== undefined ? formatMinutes(minutes) : undefined,
     kcal,

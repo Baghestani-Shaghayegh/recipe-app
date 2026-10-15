@@ -91,19 +91,22 @@ function findServings(text: string): number | undefined {
 
 function guessCategory(text: string): Category | undefined {
   const t = text.toLowerCase();
-  if (/\b(cocktail|mocktail|latte|smoothie|lemonade|juice|drink|tea|coffee|matcha)\b/.test(t))
-    return 'Drinks';
   if (
-    /\b(cake|cookies?|brownies?|dessert|pie|ice cream|pudding|cheesecake|tart|muffins?|sweets?)\b/.test(
+    /\b(bake|baking|baked|cakes?|cookies?|brownies?|dessert|pies?|tarts?|muffins?|cheesecake|bread|loaf|scones?|biscuits?|cupcakes?|banana bread|pastry|pastries)\b/.test(
       t,
     )
   )
-    return 'Dessert';
+    return 'Baking';
   if (
     /\b(breakfast|pancakes?|waffles?|oatmeal|overnight oats|granola|french toast|brunch)\b/.test(t)
   )
     return 'Breakfast';
-  if (/\b(snacks?|bites|dip|hummus|energy balls?)\b/.test(t)) return 'Snack';
+  if (
+    /\b(snacks?|bites|dip|hummus|energy balls?|smoothie|cocktail|mocktail|latte|lemonade|juice|drink)\b/.test(
+      t,
+    )
+  )
+    return 'Snack';
   if (/\b(dinner|supper)\b/.test(t)) return 'Dinner';
   if (/\b(lunch|salad|sandwich|wrap)\b/.test(t)) return 'Lunch';
   return undefined;

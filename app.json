@@ -32,6 +32,14 @@
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 76
         }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Recipe Box uses your photos to add a picture to a recipe, or to read a recipe from a photo of a cookbook page.",
+          "cameraPermission": "Recipe Box uses the camera to take a picture of a dish or of a recipe on paper, so it can read the recipe for you.",
+          "microphonePermission": false
+        }
       ]
     ],
     "experiments": {

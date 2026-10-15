@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { SectionTitle } from '@/components/ui';
+import { Features } from '@/constants/features';
 import { Spacing, useTheme } from '@/constants/theme';
 import {
   estimateExtras,
@@ -73,7 +74,7 @@ export function NutritionPanel({ recipe }: { recipe: Recipe }) {
       </Text>
       <NutrientRow values={manual ?? est.perServing} />
 
-      {extras ? (
+      {Features.extraNutrients && extras ? (
         <Text style={[styles.note, { color: c.textSecondary }]}>
           Also (estimated from the ingredients): fiber {formatNutrient(extras.fiber, 'g')} · sugar{' '}
           {formatNutrient(extras.sugar, 'g')} · sodium {Math.round(extras.sodium)} mg

@@ -118,9 +118,8 @@ function listFrom(value: Json): string[] {
 
 const CATEGORY_RULES: [RegExp, Category][] = [
   [/breakfast|brunch/, 'Breakfast'],
-  [/dessert|cake|cookie|sweet/, 'Dessert'],
-  [/drink|beverage|cocktail|smoothie/, 'Drinks'],
-  [/snack|appetizer|starter/, 'Snack'],
+  [/dessert|cake|cookie|sweet|bake|baking|bread|pastry|muffin|brownie/, 'Baking'],
+  [/snack|appetizer|starter|drink|beverage|cocktail|smoothie/, 'Snack'],
   [/lunch/, 'Lunch'],
   [/dinner|main/, 'Dinner'],
 ];

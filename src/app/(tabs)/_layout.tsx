@@ -2,6 +2,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { Tabs } from 'expo-router/js-tabs';
 import { Platform, type ColorValue } from 'react-native';
 
+import { Features } from '@/constants/features';
 import { useTheme } from '@/constants/theme';
 import { useKitchen } from '@/store/kitchen';
 import { useRecipes } from '@/store/recipes';
@@ -45,6 +46,7 @@ export default function TabLayout() {
         options={{
           title: 'Discover',
           headerShown: false,
+          href: Features.discover ? undefined : null,
           tabBarIcon: icon('play-circle-outline'),
         }}
       />
@@ -61,18 +63,28 @@ export default function TabLayout() {
         options={{
           title: 'Make next',
           tabBarLabel: 'Next',
+          href: Features.makeNextTab ? undefined : null,
           tabBarIcon: icon('list-outline'),
-          tabBarBadge: nextCount || undefined,
-          tabBarBadgeStyle: { backgroundColor: c.accent, color: c.accentText },
         }}
       />
       <Tabs.Screen
         name="plan"
-        options={{ title: 'Meal plan', tabBarLabel: 'Plan', tabBarIcon: icon('calendar-outline') }}
+        options={{
+          title: 'Meal plan',
+          tabBarLabel: 'Plan',
+          tabBarIcon: icon('calendar-outline'),
+          href: Features.mealPlan ? undefined : null,
+        }}
       />
       <Tabs.Screen
         name="pantry"
-        options={{ title: 'My Pantry', tabBarLabel: 'Pantry', tabBarIcon: icon('basket-outline') }}
+        options={{
+          title: 'My Pantry',
+          tabBarLabel: 'Pantry',
+          tabBarIcon: icon('basket-outline'),
+          // In version 1 the pantry is part of the Cook tab.
+          href: null,
+        }}
       />
       <Tabs.Screen
         name="shopping"
@@ -80,6 +92,9 @@ export default function TabLayout() {
           title: 'Shopping list',
           tabBarLabel: 'Shopping',
           tabBarIcon: icon('cart-outline'),
+          // Without the Make next tab, its count shows here: recipes you're shopping for.
+          tabBarBadge: (!Features.makeNextTab && nextCount) || undefined,
+          tabBarBadgeStyle: { backgroundColor: c.accent, color: c.accentText },
         }}
       />
     </Tabs>

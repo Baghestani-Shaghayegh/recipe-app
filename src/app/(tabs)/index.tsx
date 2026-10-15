@@ -15,6 +15,7 @@ import {
 import { DIETS, type DietId } from '@/lib/diet';
 import { RecipeCard } from '@/components/recipe-card';
 import { Button, Chip } from '@/components/ui';
+import { Features } from '@/constants/features';
 import { MaxContentWidth, Spacing, useTheme } from '@/constants/theme';
 import { allTags, CATEGORIES, filterRecipes, TIME_FILTERS, type Category } from '@/lib/recipe';
 import { useRecipes } from '@/store/recipes';
@@ -86,10 +87,7 @@ export default function RecipeListScreen() {
         clearButtonMode="while-editing"
         style={[styles.search, { color: c.text, backgroundColor: c.card, borderColor: c.border }]}
       />
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.chipRow}>
+      <View style={styles.wrapRow}>
         {CATEGORIES.map((cat) => (
           <Chip
             key={cat}
@@ -98,16 +96,18 @@ export default function RecipeListScreen() {
             onPress={() => setCategory(category === cat ? undefined : cat)}
           />
         ))}
-      </ScrollView>
+      </View>
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.chipRow}>
-        <Chip
-          label="♥ Favorites"
-          selected={favoritesOnly}
-          onPress={() => setFavoritesOnly(!favoritesOnly)}
-        />
+        {Features.favoritesAndRatings ? (
+          <Chip
+            label="♥ Favorites"
+            selected={favoritesOnly}
+            onPress={() => setFavoritesOnly(!favoritesOnly)}
+          />
+        ) : null}
         {TIME_FILTERS.map((t) => (
           <Chip
             key={t.maxMinutes}
@@ -116,27 +116,29 @@ export default function RecipeListScreen() {
             onPress={() => setMaxMinutes(maxMinutes === t.maxMinutes ? undefined : t.maxMinutes)}
           />
         ))}
-        {tagOptions.map((t) => (
+        {(Features.tagFilters ? tagOptions : []).map((t) => (
           <Chip key={t} label={`#${t}`} selected={tags.includes(t)} onPress={() => toggleTag(t)} />
         ))}
       </ScrollView>
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.chipRow}>
-        {DIETS.map((d) => (
-          <Chip
-            key={d.id}
-            label={d.label}
-            selected={diets.includes(d.id)}
-            onPress={() =>
-              setDiets((prev) =>
-                prev.includes(d.id) ? prev.filter((x) => x !== d.id) : [...prev, d.id],
-              )
-            }
-          />
-        ))}
-      </ScrollView>
+      {Features.dietFilters ? (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.chipRow}>
+          {DIETS.map((d) => (
+            <Chip
+              key={d.id}
+              label={d.label}
+              selected={diets.includes(d.id)}
+              onPress={() =>
+                setDiets((prev) =>
+                  prev.includes(d.id) ? prev.filter((x) => x !== d.id) : [...prev, d.id],
+                )
+              }
+            />
+          ))}
+        </ScrollView>
+      ) : null}
       {hasFilters ? (
         <Pressable onPress={clearFilters} accessibilityRole="button">
           <Text style={[styles.clear, { color: c.accent }]}>
@@ -179,14 +181,18 @@ export default function RecipeListScreen() {
         }
         ListFooterComponent={
           <View>
-            <Pressable onPress={() => router.push('/account')} accessibilityRole="link">
-              <Text style={[styles.footerLink, { color: c.accent }]}>Account & sync</Text>
-            </Pressable>
-            <Pressable onPress={() => router.push('/backup')} accessibilityRole="link">
-              <Text style={[styles.footerLink, { color: c.accent }]}>
-                Back up or restore recipes
-              </Text>
-            </Pressable>
+            {Features.accounts ? (
+              <Pressable onPress={() => router.push('/account')} accessibilityRole="link">
+                <Text style={[styles.footerLink, { color: c.accent }]}>Account & sync</Text>
+              </Pressable>
+            ) : null}
+            {Features.backup ? (
+              <Pressable onPress={() => router.push('/backup')} accessibilityRole="link">
+                <Text style={[styles.footerLink, { color: c.accent }]}>
+                  Back up or restore recipes
+                </Text>
+              </Pressable>
+            ) : null}
           </View>
         }
         contentContainerStyle={styles.list}
@@ -198,6 +204,7 @@ export default function RecipeListScreen() {
 }
 
 const styles = StyleSheet.create({
+  wrapRow: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two },
   screen: { flex: 1 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   headerButtons: { flexDirection: 'row', gap: Spacing.two, paddingRight: Spacing.two },

@@ -5,7 +5,8 @@ import { Tabs } from 'expo-router/js-tabs';
 import { useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
-import { Button, SectionTitle } from '@/components/ui';
+import { Button, Chip, SectionTitle } from '@/components/ui';
+import { Features } from '@/constants/features';
 import { MaxContentWidth, Spacing, useTheme } from '@/constants/theme';
 import { STORE_SECTIONS } from '@/lib/foods';
 import type { Recipe } from '@/lib/recipe';
@@ -19,7 +20,7 @@ import { extraKey, useShopping } from '@/store/shopping';
 export default function ShoppingScreen() {
   const c = useTheme();
   const { recipes } = useRecipes();
-  const { makeNext, pantry, addToPantry } = useKitchen();
+  const { makeNext, pantry, addToPantry, toggleMakeNext } = useKitchen();
   const { plan } = usePlan();
   const { isChecked, toggleChecked, extras, addExtras, removeExtra, clearChecked } = useShopping();
   const [text, setText] = useState('');
@@ -30,7 +31,7 @@ export default function ShoppingScreen() {
     // Make next first, then recipes planned for today or later; each recipe once.
     const ids = new Set([
       ...makeNext.map((m) => m.recipeId),
-      ...upcomingRecipeIds(plan, dateKey(new Date())),
+      ...(Features.mealPlan ? upcomingRecipeIds(plan, dateKey(new Date())) : []),
     ]);
     return [...ids].map((id) => byId.get(id)).filter((r): r is Recipe => !!r);
   }, [recipes, makeNext, plan]);
@@ -108,7 +109,23 @@ export default function ShoppingScreen() {
 
       {note ? <Text style={[styles.note, { color: c.textSecondary }]}>{note}</Text> : null}
 
-      {queue.length ? (
+      {queue.length && !Features.makeNextTab ? (
+        <View style={styles.forRecipes}>
+          <Text style={[styles.note, { color: c.textSecondary }]}>
+            Shopping for{pantry.length ? ' (things in your pantry are left out)' : ''}:
+          </Text>
+          <View style={styles.chips}>
+            {queue.map((r) => (
+              <Chip
+                key={r.id}
+                label={`${r.title}  ✕`}
+                onPress={() => toggleMakeNext(r.id)}
+                accessibilityLabel={`Stop shopping for ${r.title}`}
+              />
+            ))}
+          </View>
+        </View>
+      ) : queue.length ? (
         <Pressable onPress={() => router.navigate('/next')} accessibilityRole="link">
           <Text style={[styles.note, { color: c.textSecondary }]}>
             For {queue.length} recipe{queue.length === 1 ? '' : 's'} from Make next and your meal
@@ -122,8 +139,9 @@ export default function ShoppingScreen() {
         <View style={styles.empty}>
           <Text style={[styles.emptyTitle, { color: c.text }]}>Your list is empty</Text>
           <Text style={[styles.emptyText, { color: c.textSecondary }]}>
-            Add recipes to Make next or your meal plan and everything you need shows up here, minus
-            what’s already in your pantry.
+            {Features.makeNextTab
+              ? 'Add recipes to Make next or your meal plan and everything you need shows up here, minus what’s already in your pantry.'
+              : 'Tap “Add to shopping list” on a recipe and everything it needs shows up here, minus what’s already in your pantry.'}
           </Text>
           <Button
             label="Find something to cook"
@@ -135,7 +153,7 @@ export default function ShoppingScreen() {
 
       {queue.length && !items.length ? (
         <Text style={[styles.emptyText, { color: c.textSecondary }]}>
-          You already have everything for your Make next and planned recipes.
+          You already have everything for these recipes.
         </Text>
       ) : null}
 
@@ -251,6 +269,8 @@ function ItemRow({
 }
 
 const styles = StyleSheet.create({
+  forRecipes: { gap: Spacing.two },
+  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two },
   headerButton: { fontSize: 17, fontWeight: '600', paddingHorizontal: Spacing.four },
   content: {
     padding: Spacing.four,

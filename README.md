@@ -3,6 +3,30 @@
 A personal recipe app for phone and web, built with [Expo](https://expo.dev) (React Native) and Expo Router.
 See [FEATURES.md](FEATURES.md) for the full plan.
 
+## Version 1 (what's switched on)
+
+The first release does one job: **save recipes from anywhere, decide what to cook, and buy
+what's missing.** Three tabs:
+
+- **Recipes:** your recipes, search, category (Breakfast, Lunch, Dinner, Snack, Baking) and time
+  filters. **Import** from an Instagram, TikTok or YouTube link, any recipe website, pasted
+  text, or **a photo of a cookbook page or handwritten card** (read on the phone). A recipe page
+  has two buttons, *Start cooking* and *+ Shopping list*; sharing, "I cooked this" and delete are
+  in the ⋯ menu. Calories, protein, carbs and fat per serving are estimated.
+- **Cook:** *What can I make* (ready to cook, or missing just 1–2 things, with category and time
+  filters) and *My pantry* on the same screen.
+- **Shopping:** everything the recipes you're shopping for need, minus your pantry.
+
+Everything else described below is built and tested but **switched off** in
+`src/constants/features.ts` (Discover videos, accounts and sync, meal plan, diet filters,
+ratings, unit switch, substitutions, suggestions, best-before dates, extra nutrients, backup).
+Turn one back on by changing its line to `true`.
+
+**Photo import** uses on-device text recognition (`expo-text-extractor`: Apple Vision on iPhone,
+Google ML Kit on Android). It isn't in Expo Go, so it works in a development or store build
+(`npx eas-cli@latest build`); in Expo Go and the browser the Import screen says so and you can
+paste the text instead. The cleanup of recognised text is in `src/lib/ocr.ts`.
+
 ## Phase 1
 
 - Add, edit and delete recipes: name, photo, category, tags, prep/cook time, servings,

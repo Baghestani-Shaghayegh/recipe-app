@@ -41,7 +41,7 @@ test('suggests recipes like the ones you love, best match first', () => {
     tags: ['vegetarian', 'soup'],
     category: 'Dinner',
   });
-  const far = recipe('Brownies', '200 g chocolate\n2 eggs', { category: 'Dessert' });
+  const far = recipe('Brownies', '200 g chocolate\n2 eggs', { category: 'Baking' });
   const okish = recipe('Veg Curry', '1 onion\n2 potatoes', { tags: ['vegetarian'] });
   const result = suggestForYou([loved, close, far, okish], [], now);
   assert.deepEqual(

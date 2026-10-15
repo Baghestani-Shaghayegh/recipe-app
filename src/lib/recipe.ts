@@ -2,8 +2,18 @@ import { fitsDiet, type DietId } from './diet';
 import type { Ingredient } from './ingredients';
 import type { Nutrients } from './nutrition';
 
-export const CATEGORIES = ['Breakfast', 'Lunch', 'Dinner', 'Dessert', 'Snack', 'Drinks'] as const;
+export const CATEGORIES = ['Breakfast', 'Lunch', 'Dinner', 'Snack', 'Baking'] as const;
 export type Category = (typeof CATEGORIES)[number];
+
+// Categories from earlier versions of the app, and what they became.
+const OLD_CATEGORIES: Record<string, Category> = { Dessert: 'Baking', Drinks: 'Snack' };
+
+/** A saved or imported category in today's list ("Dessert" -> "Baking"); unknown ones are dropped. */
+export function normalizeCategory(value: unknown): Category | undefined {
+  if (typeof value !== 'string') return undefined;
+  if ((CATEGORIES as readonly string[]).includes(value)) return value as Category;
+  return OLD_CATEGORIES[value];
+}
 
 export type Recipe = {
   id: string;

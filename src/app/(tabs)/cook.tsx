@@ -3,7 +3,9 @@ import { useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { CardAction, RecipeCard } from '@/components/recipe-card';
-import { Button, Chip, SectionTitle } from '@/components/ui';
+import { PantryList } from '@/components/pantry-list';
+import { Button, Chip, SectionTitle, Segmented } from '@/components/ui';
+import { Features } from '@/constants/features';
 import { MaxContentWidth, Spacing, useTheme } from '@/constants/theme';
 import { describeExpiry, expiringItems, recipesToUseUp } from '@/lib/expiry';
 import { suggestForYou } from '@/lib/suggest';
@@ -13,7 +15,35 @@ import { CATEGORIES, filterRecipes, TIME_FILTERS, type Category } from '@/lib/re
 import { useKitchen } from '@/store/kitchen';
 import { useRecipes } from '@/store/recipes';
 
-export default function CookNowScreen() {
+export default function CookScreen() {
+  const c = useTheme();
+  const { pantry } = useKitchen();
+  // Starts on the pantry until there's something in it.
+  const [view, setView] = useState<'cook' | 'pantry'>();
+  const current = view ?? (pantry.length ? 'cook' : 'pantry');
+
+  return (
+    <View style={[styles.screen, { backgroundColor: c.background }]}>
+      <View style={styles.segmentWrap}>
+        <Segmented
+          value={current}
+          onChange={setView}
+          options={[
+            { value: 'cook', label: 'What can I make' },
+            { value: 'pantry', label: `My pantry (${pantry.length})` },
+          ]}
+        />
+      </View>
+      {current === 'pantry' ? (
+        <PantryList onSeeRecipes={() => setView('cook')} />
+      ) : (
+        <Suggestions onOpenPantry={() => setView('pantry')} />
+      )}
+    </View>
+  );
+}
+
+function Suggestions({ onOpenPantry }: { onOpenPantry: () => void }) {
   const c = useTheme();
   const { recipes } = useRecipes();
   const { pantry, expiry, cooked } = useKitchen();
@@ -45,7 +75,7 @@ export default function CookNowScreen() {
           Add the ingredients you have to your pantry, and this page will show which recipes you can
           make.
         </Text>
-        <Button label="Fill my pantry" onPress={() => router.navigate('/pantry')} />
+        <Button label="Fill my pantry" onPress={onOpenPantry} />
       </View>
     );
   }
@@ -53,10 +83,7 @@ export default function CookNowScreen() {
   return (
     <ScrollView style={{ backgroundColor: c.background }} contentContainerStyle={styles.content}>
       <View style={styles.filters}>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.chipRow}>
+        <View style={styles.wrapRow}>
           {CATEGORIES.map((cat) => (
             <Chip
               key={cat}
@@ -65,7 +92,7 @@ export default function CookNowScreen() {
               onPress={() => setCategory(category === cat ? undefined : cat)}
             />
           ))}
-        </ScrollView>
+        </View>
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -79,26 +106,28 @@ export default function CookNowScreen() {
             />
           ))}
         </ScrollView>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.chipRow}>
-          {DIETS.map((d) => (
-            <Chip
-              key={d.id}
-              label={d.label}
-              selected={diets.includes(d.id)}
-              onPress={() =>
-                setDiets((prev) =>
-                  prev.includes(d.id) ? prev.filter((x) => x !== d.id) : [...prev, d.id],
-                )
-              }
-            />
-          ))}
-        </ScrollView>
+        {Features.dietFilters ? (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.chipRow}>
+            {DIETS.map((d) => (
+              <Chip
+                key={d.id}
+                label={d.label}
+                selected={diets.includes(d.id)}
+                onPress={() =>
+                  setDiets((prev) =>
+                    prev.includes(d.id) ? prev.filter((x) => x !== d.id) : [...prev, d.id],
+                  )
+                }
+              />
+            ))}
+          </ScrollView>
+        ) : null}
       </View>
 
-      {useSoon.length ? (
+      {Features.expiryDates && useSoon.length ? (
         <View style={styles.section}>
           <SectionTitle>Use it up ({useSoon.length})</SectionTitle>
           {useSoon.map(({ recipe, uses }) => (
@@ -135,7 +164,7 @@ export default function CookNowScreen() {
           </Text>
         )}
       </View>
-      {forYou.length ? (
+      {Features.suggestions && forYou.length ? (
         <View style={styles.section}>
           <SectionTitle>You might like</SectionTitle>
           {forYou.map(({ recipe, similarTo }) => (
@@ -156,18 +185,38 @@ function MatchCard({ match }: { match: RecipeMatch }) {
   const { isInMakeNext, toggleMakeNext } = useKitchen();
   const inList = isInMakeNext(match.recipe.id);
   const total = match.have.length + match.missing.length;
+  const missing = match.missing.length > 0;
+
+  // Version 1 has no Make next tab: the list is "what I'm shopping for" on the Shopping tab.
+  const listLabel = Features.makeNextTab
+    ? inList
+      ? '✓ In make next'
+      : '+ Make next'
+    : inList
+      ? '✓ On shopping list'
+      : '+ Add missing to shopping list';
 
   return (
     <RecipeCard
       recipe={match.recipe}
       actions={
-        <CardAction
-          label={inList ? '✓ In make next' : '+ Make next'}
-          emphasis={!inList}
-          onPress={() => toggleMakeNext(match.recipe.id)}
-        />
+        missing || Features.makeNextTab ? (
+          <CardAction
+            label={listLabel}
+            emphasis={!inList}
+            onPress={() => toggleMakeNext(match.recipe.id)}
+          />
+        ) : Features.cookingMode && match.recipe.steps.length ? (
+          <CardAction
+            label="Start cooking"
+            emphasis
+            onPress={() =>
+              router.push({ pathname: '/recipe/cook', params: { id: match.recipe.id } })
+            }
+          />
+        ) : undefined
       }>
-      {match.missing.length ? (
+      {missing ? (
         <Text style={[styles.missing, { color: c.danger }]} numberOfLines={2}>
           Missing: {match.missing.map((i) => i.name).join(', ')}
         </Text>
@@ -181,6 +230,15 @@ function MatchCard({ match }: { match: RecipeMatch }) {
 }
 
 const styles = StyleSheet.create({
+  wrapRow: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two },
+  screen: { flex: 1 },
+  segmentWrap: {
+    paddingHorizontal: Spacing.four,
+    paddingTop: Spacing.three,
+    width: '100%',
+    maxWidth: MaxContentWidth,
+    alignSelf: 'center',
+  },
   center: {
     flex: 1,
     alignItems: 'center',

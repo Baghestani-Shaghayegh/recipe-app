@@ -2,7 +2,7 @@ import { createContext, useCallback, useContext, useMemo } from 'react';
 
 import { mergeRecipes } from '@/lib/backup';
 import { parseIngredientList } from '@/lib/ingredients';
-import type { Recipe } from '@/lib/recipe';
+import { normalizeCategory, type Recipe } from '@/lib/recipe';
 
 import { usePersistedState } from './persisted';
 
@@ -74,7 +74,16 @@ function sampleRecipes(): Recipe[] {
 }
 
 export function RecipesProvider({ children }: { children: React.ReactNode }) {
-  const [recipes, setRecipes, loaded] = usePersistedState<Recipe[]>('recipes.v1', sampleRecipes);
+  const [stored, setRecipes, loaded] = usePersistedState<Recipe[]>('recipes.v1', sampleRecipes);
+  // Recipes saved (or synced/restored) with an older category list show the new one.
+  const recipes = useMemo(
+    () =>
+      stored.map((r) => {
+        const category = normalizeCategory(r.category);
+        return category === r.category ? r : { ...r, category };
+      }),
+    [stored],
+  );
 
   const addRecipe = useCallback(
     (input: RecipeInput) => {

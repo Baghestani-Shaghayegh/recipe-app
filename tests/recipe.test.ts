@@ -41,7 +41,7 @@ const stew = recipe({
   tags: ['persian'],
   ingredients: parseIngredientList('500 g lamb\n1 cup kidney beans\n4 dried limes'),
 });
-const noTime = recipe({ title: 'Mystery Cake', category: 'Dessert' });
+const noTime = recipe({ title: 'Mystery Cake', category: 'Baking' });
 const all = [omelette, stew, noTime];
 
 test('total time', () => {
@@ -107,4 +107,13 @@ test('tapping the same star clears the rating', () => {
   assert.equal(nextRating(undefined, 4), 4);
   assert.equal(nextRating(2, 5), 5);
   assert.equal(nextRating(4, 4), undefined);
+});
+
+test('old categories map to the new list', async () => {
+  const { normalizeCategory } = await import('../src/lib/recipe.ts');
+  assert.equal(normalizeCategory('Dessert'), 'Baking');
+  assert.equal(normalizeCategory('Drinks'), 'Snack');
+  assert.equal(normalizeCategory('Dinner'), 'Dinner');
+  assert.equal(normalizeCategory('Brunch'), undefined);
+  assert.equal(normalizeCategory(undefined), undefined);
 });

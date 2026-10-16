@@ -137,7 +137,7 @@ export default function ImportScreen() {
     }
   };
 
-  const headerLeft = () => (
+  const headerRight = () => (
     <Pressable onPress={() => router.back()} hitSlop={8} accessibilityRole="button">
       <Text style={[styles.headerButton, { color: c.accent }]}>Cancel</Text>
     </Pressable>
@@ -147,7 +147,15 @@ export default function ImportScreen() {
     <KeyboardAvoidingView
       style={{ flex: 1, backgroundColor: c.background }}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <Stack.Screen options={{ title: 'Paste a link', headerLeft }} />
+      <Stack.Screen
+        options={{
+          title: 'Paste a link',
+          headerTitleAlign: 'center',
+          headerLeft: () => null,
+          headerBackVisible: false,
+          headerRight,
+        }}
+      />
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <View style={styles.group}>
           <Field

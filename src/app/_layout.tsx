@@ -64,7 +64,7 @@ export default function RootLayout() {
                     />
                     <Stack.Screen
                       name="recipe/import"
-                      options={{ title: 'Import a recipe', presentation: 'modal' }}
+                      options={{ title: 'Paste a link', presentation: 'modal' }}
                     />
                   </Stack>
                 </FeedProvider>

@@ -47,15 +47,12 @@ export default function ImportScreen() {
   const params = useLocalSearchParams<{ url?: string; share?: string }>();
   const { fetchSharedRecipe } = useAccount();
   const [link, setLink] = useState(params.url ?? params.share ?? '');
-  const [caption, setCaption] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ text: string; error?: boolean }>();
   const autoFetched = useRef(false);
 
   const shareId = shareIdFrom(link);
-  // The paste-text box is a fallback: shown when a link can't be read, and on the web.
   const [focused, setFocused] = useState(false);
-  const [showText, setShowText] = useState(!CAN_FETCH);
   const parsedLink = parseInstagramUrl(link);
   const videoUrl = parsedLink ? undefined : (parseYoutubeUrl(link) ?? parseTiktokUrl(link));
   const webUrl = parsedLink || videoUrl ? undefined : parseWebUrl(link);
@@ -120,8 +117,7 @@ export default function ImportScreen() {
           : e instanceof InstagramError || e instanceof WebsiteError || e instanceof VideoError
             ? e.message
             : 'Something went wrong reading that link.';
-      setMessage({ text: `${text} You can paste the recipe text below instead.`, error: true });
-      setShowText(true);
+      setMessage({ text: `${text} You can add it with “Write it yourself” instead.`, error: true });
     } finally {
       setLoading(false);
     }
@@ -251,47 +247,9 @@ export default function ImportScreen() {
           ) : null}
           {message ? <Notice tone={message.error ? 'error' : 'info'} text={message.text} /> : null}
           {!CAN_FETCH ? (
-            <Notice tone="info" text="In the browser, paste the recipe text below." />
+            <Notice tone="info" text="Saving from a link works in the app on your phone." />
           ) : null}
         </View>
-
-        {showText ? (
-          <View style={[styles.textCard, { backgroundColor: c.card, borderColor: c.border }]}>
-            <Text style={[styles.textTitle, { color: c.text }]}>Paste the recipe text</Text>
-            <Text style={[styles.textHint, { color: c.textSecondary }]}>
-              Copy the recipe from the post and paste it here
-            </Text>
-            <TextInput
-              value={caption}
-              onChangeText={setCaption}
-              multiline
-              placeholder={
-                'Garlic noodles\n\nIngredients\n200 g spaghetti\n2 tbsp butter\n\nMethod\n1. Cook the noodles…'
-              }
-              placeholderTextColor={c.textSecondary}
-              accessibilityLabel="Recipe text"
-              style={[
-                styles.textBox,
-                { color: c.text, backgroundColor: c.background, borderColor: c.border },
-              ]}
-              textAlignVertical="top"
-            />
-            <Pressable
-              onPress={() => openDraft(caption)}
-              disabled={!caption.trim() || loading}
-              accessibilityRole="button"
-              accessibilityLabel="Add recipe from text"
-              style={({ pressed }) => [
-                styles.addButton,
-                {
-                  backgroundColor: c.accent,
-                  opacity: !caption.trim() ? 0.4 : pressed ? 0.85 : 1,
-                },
-              ]}>
-              <Text style={[styles.addButtonText, { color: c.accentText }]}>Add recipe</Text>
-            </Pressable>
-          </View>
-        ) : null}
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -389,21 +347,4 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
   },
   noticeText: { flex: 1, fontSize: 14, lineHeight: 20 },
-  textCard: {
-    borderWidth: StyleSheet.hairlineWidth,
-    borderRadius: 20,
-    padding: Spacing.four,
-    gap: Spacing.two,
-  },
-  textTitle: { fontSize: 17, fontWeight: '700' },
-  textHint: { fontSize: 14, marginBottom: Spacing.one },
-  textBox: {
-    minHeight: 180,
-    borderWidth: 1,
-    borderRadius: 14,
-    padding: Spacing.three,
-    fontSize: 15,
-    lineHeight: 21,
-    marginBottom: Spacing.two,
-  },
 });

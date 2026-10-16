@@ -1,3 +1,4 @@
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { router } from 'expo-router';
 import { Tabs } from 'expo-router/js-tabs';
 import { useMemo, useState } from 'react';
@@ -118,9 +119,6 @@ export default function RecipeListScreen() {
         accessibilityRole="button">
         <Text style={[styles.headerButton, { color: c.accent }]}>Import</Text>
       </Pressable>
-      <Pressable onPress={() => router.push('/recipe/edit')} hitSlop={8} accessibilityRole="button">
-        <Text style={[styles.headerButton, { color: c.accent }]}>+ Add</Text>
-      </Pressable>
     </View>
   );
 
@@ -210,17 +208,42 @@ export default function RecipeListScreen() {
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="on-drag"
       />
+      <Pressable
+        onPress={() => router.push('/recipe/edit')}
+        accessibilityRole="button"
+        accessibilityLabel="Add a recipe"
+        style={({ pressed }) => [
+          styles.addButton,
+          { backgroundColor: c.accent, transform: [{ scale: pressed ? 0.94 : 1 }] },
+        ]}>
+        <Ionicons name="add" size={32} color={c.accentText} />
+      </Pressable>
     </View>
   );
 }
 
+const ADD_BUTTON_SIZE = 60;
+
 const styles = StyleSheet.create({
+  addButton: {
+    position: 'absolute',
+    right: Spacing.four,
+    bottom: Spacing.four,
+    width: ADD_BUTTON_SIZE,
+    height: ADD_BUTTON_SIZE,
+    borderRadius: ADD_BUTTON_SIZE / 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.25)',
+  },
   screen: { flex: 1 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   headerButtons: { flexDirection: 'row', gap: Spacing.two, paddingRight: Spacing.two },
   headerButton: { fontSize: 17, fontWeight: '600', paddingHorizontal: Spacing.two },
   list: {
     padding: Spacing.four,
+    // Room under the last recipes so the + button doesn't cover them.
+    paddingBottom: ADD_BUTTON_SIZE + Spacing.four * 2,
     gap: Spacing.four,
     width: '100%',
     maxWidth: MaxContentWidth,

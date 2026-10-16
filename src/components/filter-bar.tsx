@@ -50,11 +50,8 @@ export function FilterBar({
 
   return (
     <>
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={styles.scroller}
-        contentContainerStyle={styles.row}>
+      {/* The icon stays put; only the filters next to it scroll sideways. */}
+      <View style={styles.bar}>
         <Pressable
           onPress={() => setOpen('all')}
           accessibilityRole="button"
@@ -70,19 +67,25 @@ export function FilterBar({
             </View>
           ) : null}
         </Pressable>
-        {groups.map((g) => (
-          <GroupPill key={g.key} group={g} onOpen={() => setOpen(g.key)} />
-        ))}
-        {toggles.map((t) => (
-          <Pill
-            key={t.key}
-            label={t.label}
-            selected={t.on}
-            onPress={() => t.onChange(!t.on)}
-            onClear={t.on ? () => t.onChange(false) : undefined}
-          />
-        ))}
-      </ScrollView>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.scroller}
+          contentContainerStyle={styles.row}>
+          {groups.map((g) => (
+            <GroupPill key={g.key} group={g} onOpen={() => setOpen(g.key)} />
+          ))}
+          {toggles.map((t) => (
+            <Pill
+              key={t.key}
+              label={t.label}
+              selected={t.on}
+              onPress={() => t.onChange(!t.on)}
+              onClear={t.on ? () => t.onChange(false) : undefined}
+            />
+          ))}
+        </ScrollView>
+      </View>
 
       <Sheet
         visible={!!open}
@@ -259,13 +262,20 @@ function Sheet({
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <View style={styles.backdropWrap}>
-        <Pressable style={styles.backdrop} onPress={onClose} accessibilityLabel="Close filters" />
+        <Pressable style={styles.backdrop} onPress={onClose} accessibilityLabel="Dismiss filters" />
         <View
           style={[
             styles.sheet,
             { backgroundColor: c.card, paddingBottom: Spacing.four + insets.bottom },
           ]}>
-          <View style={[styles.grab, { backgroundColor: c.border }]} />
+          <Pressable
+            onPress={onClose}
+            hitSlop={{ top: 10, bottom: 6 }}
+            accessibilityRole="button"
+            accessibilityLabel="Close filters"
+            style={styles.grabArea}>
+            <View style={[styles.grab, { backgroundColor: c.border }]} />
+          </Pressable>
           <Text style={[styles.sheetTitle, { color: c.text }]}>{title}</Text>
           <ScrollView style={styles.sheetBody} contentContainerStyle={styles.sheetContent}>
             {children}
@@ -303,9 +313,10 @@ function Sheet({
 const PILL_HEIGHT = 38;
 
 const styles = StyleSheet.create({
-  // The row runs to the screen edges so it scrolls under them, while lining up with the content.
-  scroller: { marginHorizontal: -Spacing.four, flexGrow: 0 },
-  row: { gap: Spacing.two, paddingHorizontal: Spacing.four, alignItems: 'center' },
+  bar: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
+  // The filters run to the right edge of the screen so they scroll under it.
+  scroller: { flex: 1, marginRight: -Spacing.four },
+  row: { gap: Spacing.two, paddingRight: Spacing.four, alignItems: 'center' },
   iconButton: {
     width: PILL_HEIGHT,
     height: PILL_HEIGHT,
@@ -350,13 +361,13 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 22,
     borderTopRightRadius: 22,
     paddingHorizontal: Spacing.five,
-    paddingTop: Spacing.two,
     width: '100%',
     maxWidth: 560,
     maxHeight: '85%',
     alignSelf: 'center',
   },
-  grab: { width: 40, height: 5, borderRadius: 3, alignSelf: 'center', marginBottom: Spacing.three },
+  grabArea: { alignSelf: 'stretch', alignItems: 'center', paddingVertical: Spacing.two },
+  grab: { width: 40, height: 5, borderRadius: 3 },
   sheetTitle: { fontSize: 19, fontWeight: '700', marginBottom: Spacing.one },
   sheetBody: { flexGrow: 0 },
   sheetContent: { gap: Spacing.four, paddingVertical: Spacing.two },

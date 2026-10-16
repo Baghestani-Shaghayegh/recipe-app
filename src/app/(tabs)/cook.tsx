@@ -4,7 +4,7 @@ import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { CardAction, RecipeCard } from '@/components/recipe-card';
 import { Button, Chip, SectionTitle } from '@/components/ui';
-import { MaxContentWidth, Spacing, useTheme } from '@/constants/theme';
+import { Fonts, MaxContentWidth, Spacing, useTheme } from '@/constants/theme';
 import { describeExpiry, expiringItems, recipesToUseUp } from '@/lib/expiry';
 import { suggestForYou } from '@/lib/suggest';
 import { recommend, type RecipeMatch } from '@/lib/pantry';
@@ -188,8 +188,14 @@ const styles = StyleSheet.create({
     gap: Spacing.three,
     padding: Spacing.five,
   },
-  emptyTitle: { fontSize: 20, fontWeight: '700' },
-  emptyText: { fontSize: 15, textAlign: 'center', lineHeight: 21, maxWidth: 360 },
+  emptyTitle: { fontSize: 20, fontFamily: Fonts.bold },
+  emptyText: {
+    fontFamily: Fonts.regular,
+    fontSize: 15,
+    textAlign: 'center',
+    lineHeight: 21,
+    maxWidth: 360,
+  },
   content: {
     padding: Spacing.four,
     gap: Spacing.five,
@@ -200,7 +206,7 @@ const styles = StyleSheet.create({
   filters: { gap: Spacing.three },
   chipRow: { gap: Spacing.two },
   section: { gap: Spacing.three },
-  none: { fontSize: 15 },
-  missing: { fontSize: 14, fontWeight: '500' },
-  have: { fontSize: 14 },
+  none: { fontFamily: Fonts.regular, fontSize: 15 },
+  missing: { fontSize: 14, fontFamily: Fonts.medium },
+  have: { fontFamily: Fonts.regular, fontSize: 14 },
 });

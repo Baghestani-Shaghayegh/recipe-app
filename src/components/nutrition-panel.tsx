@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { SectionTitle } from '@/components/ui';
-import { Spacing, useTheme } from '@/constants/theme';
+import { Fonts, Spacing, useTheme } from '@/constants/theme';
 import {
   estimateExtras,
   estimateNutrition,
@@ -126,7 +126,7 @@ export function NutritionPanel({ recipe }: { recipe: Recipe }) {
 
 const styles = StyleSheet.create({
   block: { gap: Spacing.two },
-  note: { fontSize: 14, lineHeight: 20 },
+  note: { fontFamily: Fonts.regular, fontSize: 14, lineHeight: 20 },
   box: {
     flexDirection: 'row',
     justifyContent: 'space-around',
@@ -135,9 +135,9 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.four,
   },
   item: { alignItems: 'center', gap: 2 },
-  value: { fontSize: 18, fontWeight: '700' },
-  label: { fontSize: 13 },
-  toggle: { fontSize: 15, fontWeight: '600', paddingVertical: Spacing.one },
+  value: { fontSize: 18, fontFamily: Fonts.bold },
+  label: { fontFamily: Fonts.regular, fontSize: 13 },
+  toggle: { fontSize: 15, fontFamily: Fonts.semibold, paddingVertical: Spacing.one },
   details: { gap: 0 },
   line: {
     flexDirection: 'row',
@@ -146,6 +146,6 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.two,
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
-  lineName: { flex: 1, fontSize: 15 },
-  lineValue: { fontSize: 14, textAlign: 'right' },
+  lineName: { fontFamily: Fonts.regular, flex: 1, fontSize: 15 },
+  lineValue: { fontFamily: Fonts.regular, fontSize: 14, textAlign: 'right' },
 });

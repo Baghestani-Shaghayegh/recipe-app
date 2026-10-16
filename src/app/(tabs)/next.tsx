@@ -4,7 +4,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { CardAction, RecipeCard } from '@/components/recipe-card';
 import { Button, SectionTitle } from '@/components/ui';
-import { MaxContentWidth, Spacing, useTheme } from '@/constants/theme';
+import { Fonts, MaxContentWidth, Spacing, useTheme } from '@/constants/theme';
 import type { Recipe } from '@/lib/recipe';
 import { useKitchen } from '@/store/kitchen';
 import { useRecipes } from '@/store/recipes';
@@ -100,10 +100,16 @@ const styles = StyleSheet.create({
   },
   section: { gap: Spacing.three },
   spacer: { flex: 1 },
-  upNext: { fontSize: 13, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5 },
+  upNext: { fontSize: 13, fontFamily: Fonts.bold, textTransform: 'uppercase', letterSpacing: 0.5 },
   empty: { alignItems: 'center', gap: Spacing.three, paddingVertical: Spacing.six },
-  emptyTitle: { fontSize: 20, fontWeight: '700' },
-  emptyText: { fontSize: 15, textAlign: 'center', lineHeight: 21, maxWidth: 360 },
+  emptyTitle: { fontSize: 20, fontFamily: Fonts.bold },
+  emptyText: {
+    fontFamily: Fonts.regular,
+    fontSize: 15,
+    textAlign: 'center',
+    lineHeight: 21,
+    maxWidth: 360,
+  },
   historyRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -111,6 +117,6 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
-  historyTitle: { flex: 1, fontSize: 16 },
-  historyDate: { fontSize: 15 },
+  historyTitle: { fontFamily: Fonts.regular, flex: 1, fontSize: 16 },
+  historyDate: { fontFamily: Fonts.regular, fontSize: 15 },
 });

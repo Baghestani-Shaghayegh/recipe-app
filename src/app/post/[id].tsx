@@ -5,7 +5,7 @@ import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-nati
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Reel } from '@/components/reel';
-import { Spacing } from '@/constants/theme';
+import { Fonts, Spacing } from '@/constants/theme';
 import type { FeedPost } from '@/lib/feed';
 import { useFeed } from '@/store/feed';
 
@@ -81,7 +81,7 @@ export default function PostScreen() {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: '#000' },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: Spacing.five },
-  text: { color: '#fff', fontSize: 16, textAlign: 'center' },
+  text: { fontFamily: Fonts.regular, color: '#fff', fontSize: 16, textAlign: 'center' },
   back: {
     position: 'absolute',
     left: Spacing.three,
@@ -102,5 +102,5 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     maxWidth: '85%',
   },
-  toastText: { color: '#fff', fontSize: 15, fontWeight: '600', textAlign: 'center' },
+  toastText: { color: '#fff', fontSize: 15, fontFamily: Fonts.semibold, textAlign: 'center' },
 });

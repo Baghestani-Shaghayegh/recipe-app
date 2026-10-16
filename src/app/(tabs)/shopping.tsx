@@ -6,7 +6,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { Button, SectionTitle } from '@/components/ui';
-import { MaxContentWidth, Spacing, useTheme } from '@/constants/theme';
+import { Fonts, MaxContentWidth, Spacing, useTheme } from '@/constants/theme';
 import { STORE_SECTIONS } from '@/lib/foods';
 import type { Recipe } from '@/lib/recipe';
 import { dateKey, upcomingRecipeIds } from '@/lib/plan';
@@ -219,7 +219,7 @@ function ItemRow({
         <Ionicons
           name={checked ? 'checkbox' : 'square-outline'}
           size={24}
-          color={checked ? c.accent : c.textSecondary}
+          color={checked ? c.secondary : c.textSecondary}
         />
         <View style={styles.itemText}>
           <Text
@@ -251,7 +251,7 @@ function ItemRow({
 }
 
 const styles = StyleSheet.create({
-  headerButton: { fontSize: 17, fontWeight: '600', paddingHorizontal: Spacing.four },
+  headerButton: { fontSize: 17, fontFamily: Fonts.semibold, paddingHorizontal: Spacing.four },
   content: {
     padding: Spacing.four,
     gap: Spacing.four,
@@ -262,6 +262,7 @@ const styles = StyleSheet.create({
   },
   addRow: { flexDirection: 'row', gap: Spacing.two, alignItems: 'center' },
   input: {
+    fontFamily: Fonts.regular,
     flex: 1,
     borderWidth: 1,
     borderRadius: 10,
@@ -269,11 +270,17 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     fontSize: 16,
   },
-  note: { fontSize: 14, lineHeight: 20 },
+  note: { fontFamily: Fonts.regular, fontSize: 14, lineHeight: 20 },
   section: { gap: Spacing.one },
   empty: { alignItems: 'center', gap: Spacing.three, paddingVertical: Spacing.five },
-  emptyTitle: { fontSize: 20, fontWeight: '700' },
-  emptyText: { fontSize: 15, textAlign: 'center', lineHeight: 21, maxWidth: 360 },
+  emptyTitle: { fontSize: 20, fontFamily: Fonts.bold },
+  emptyText: {
+    fontFamily: Fonts.regular,
+    fontSize: 15,
+    textAlign: 'center',
+    lineHeight: 21,
+    maxWidth: 360,
+  },
   item: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -288,7 +295,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   itemText: { flex: 1, gap: 2 },
-  itemLabel: { fontSize: 16 },
-  itemDetail: { fontSize: 13 },
+  itemLabel: { fontFamily: Fonts.regular, fontSize: 16 },
+  itemDetail: { fontFamily: Fonts.regular, fontSize: 13 },
   done: { textDecorationLine: 'line-through' },
 });

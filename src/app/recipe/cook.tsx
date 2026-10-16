@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, Vibration, View } from 'react-native';
 
 import { Button } from '@/components/ui';
-import { MaxContentWidth, Spacing, useTheme } from '@/constants/theme';
+import { Fonts, MaxContentWidth, Spacing, useTheme } from '@/constants/theme';
 import { scaleFactor, scaleIngredientText } from '@/lib/scale';
 import { findTimers, formatClock } from '@/lib/timers';
 import { convertTemperatures, type UnitSystem } from '@/lib/units';
@@ -166,16 +166,21 @@ const styles = StyleSheet.create({
     maxWidth: MaxContentWidth,
     alignSelf: 'center',
   },
-  progress: { fontSize: 15, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5 },
-  step: { fontSize: 28, lineHeight: 38, fontWeight: '500' },
+  progress: {
+    fontSize: 15,
+    fontFamily: Fonts.bold,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  step: { fontSize: 28, lineHeight: 38, fontFamily: Fonts.medium },
   timerButtons: { gap: Spacing.two },
   ingredients: { gap: Spacing.two, marginTop: Spacing.three },
-  toggle: { fontSize: 15, fontWeight: '600' },
-  ingredient: { fontSize: 18, lineHeight: 26 },
+  toggle: { fontSize: 15, fontFamily: Fonts.semibold },
+  ingredient: { fontFamily: Fonts.regular, fontSize: 18, lineHeight: 26 },
   timers: { borderTopWidth: 1, padding: Spacing.three, gap: Spacing.two },
   timerRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three },
-  timerLabel: { fontSize: 15, minWidth: 64 },
-  clock: { flex: 1, fontSize: 24, fontWeight: '700', fontVariant: ['tabular-nums'] },
+  timerLabel: { fontFamily: Fonts.regular, fontSize: 15, minWidth: 64 },
+  clock: { flex: 1, fontSize: 24, fontFamily: Fonts.bold, fontVariant: ['tabular-nums'] },
   nav: { flexDirection: 'row', gap: Spacing.three, padding: Spacing.four, borderTopWidth: 1 },
   flex: { flex: 1 },
 });

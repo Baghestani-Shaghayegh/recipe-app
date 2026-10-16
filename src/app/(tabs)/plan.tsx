@@ -3,7 +3,7 @@ import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { Button, Field } from '@/components/ui';
-import { MaxContentWidth, Spacing, useTheme } from '@/constants/theme';
+import { Fonts, MaxContentWidth, Spacing, useTheme } from '@/constants/theme';
 import { addDays, dateKey, weekDays } from '@/lib/plan';
 import { goalProgress, parseGoal, planNutrition } from '@/lib/plan-nutrition';
 import { filterRecipes } from '@/lib/recipe';
@@ -255,16 +255,21 @@ const styles = StyleSheet.create({
   },
   weekBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   weekTitle: { alignItems: 'center', gap: 2 },
-  range: { fontSize: 17, fontWeight: '700' },
-  arrow: { fontSize: 32, lineHeight: 34, paddingHorizontal: Spacing.three },
+  range: { fontSize: 17, fontFamily: Fonts.bold },
+  arrow: {
+    fontFamily: Fonts.regular,
+    fontSize: 32,
+    lineHeight: 34,
+    paddingHorizontal: Spacing.three,
+  },
   summary: { borderWidth: 1, borderRadius: 14, padding: Spacing.three, gap: Spacing.two },
   day: { borderWidth: 1, borderRadius: 14, padding: Spacing.three, gap: Spacing.two },
   dayHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  dayName: { fontSize: 16, fontWeight: '700' },
+  dayName: { fontSize: 16, fontFamily: Fonts.bold },
   planned: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three },
   flex: { flex: 1 },
-  recipeTitle: { fontSize: 16 },
-  small: { fontSize: 14, lineHeight: 20 },
+  recipeTitle: { fontFamily: Fonts.regular, fontSize: 16 },
+  small: { fontFamily: Fonts.regular, fontSize: 14, lineHeight: 20 },
   picker: { gap: Spacing.two },
   option: { borderRadius: 10, paddingVertical: Spacing.three, paddingHorizontal: Spacing.three },
 });

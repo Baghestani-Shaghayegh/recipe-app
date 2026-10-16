@@ -15,7 +15,7 @@ import {
 import { DIETS, type DietId } from '@/lib/diet';
 import { RecipeCard } from '@/components/recipe-card';
 import { Button, Chip } from '@/components/ui';
-import { MaxContentWidth, Spacing, useTheme } from '@/constants/theme';
+import { Fonts, MaxContentWidth, Spacing, useTheme } from '@/constants/theme';
 import { allTags, CATEGORIES, filterRecipes, TIME_FILTERS, type Category } from '@/lib/recipe';
 import { useRecipes } from '@/store/recipes';
 
@@ -201,7 +201,7 @@ const styles = StyleSheet.create({
   screen: { flex: 1 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   headerButtons: { flexDirection: 'row', gap: Spacing.two, paddingRight: Spacing.two },
-  headerButton: { fontSize: 17, fontWeight: '600', paddingHorizontal: Spacing.two },
+  headerButton: { fontSize: 17, fontFamily: Fonts.semibold, paddingHorizontal: Spacing.two },
   list: {
     padding: Spacing.four,
     gap: Spacing.three,
@@ -211,6 +211,7 @@ const styles = StyleSheet.create({
   },
   filters: { gap: Spacing.three, marginBottom: Spacing.two },
   search: {
+    fontFamily: Fonts.regular,
     borderWidth: 1,
     borderRadius: 12,
     paddingHorizontal: Spacing.four,
@@ -218,9 +219,14 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   chipRow: { gap: Spacing.two },
-  footerLink: { fontSize: 14, textAlign: 'center', paddingVertical: Spacing.four },
-  clear: { fontSize: 14, fontWeight: '600' },
+  footerLink: {
+    fontFamily: Fonts.regular,
+    fontSize: 14,
+    textAlign: 'center',
+    paddingVertical: Spacing.four,
+  },
+  clear: { fontSize: 14, fontFamily: Fonts.semibold },
   empty: { alignItems: 'center', gap: Spacing.three, paddingVertical: Spacing.six },
-  emptyTitle: { fontSize: 20, fontWeight: '700' },
-  emptyText: { fontSize: 15, textAlign: 'center' },
+  emptyTitle: { fontSize: 20, fontFamily: Fonts.bold },
+  emptyText: { fontFamily: Fonts.regular, fontSize: 15, textAlign: 'center' },
 });

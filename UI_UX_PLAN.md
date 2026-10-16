@@ -81,10 +81,13 @@ The original `#E4572E` was dropped because white text on it fails AA contrast.
 | Sparkle icons, "AI-powered" badges | Name smart features by what they do ("Cook with what's in my fridge") |
 
 ## 4. Implementation notes
-- Put the colors in one theme file (e.g. `src/constants/theme.ts`) with light and dark tokens, and switch with `useColorScheme()`.
+- Theme lives in `src/constants/theme.ts`: `Colors` (light/dark), `Fonts`, `TypeSize`, `Radius`, `Spacing`; read colors with `useTheme()`.
+  - `accent` = red text/icons/tints; `primary` + `onPrimary` = filled buttons and selected chips; `secondary` (olive) = done/have states; `highlight` (saffron) = timers.
+  - Custom fonts come one family per weight, so styles set `fontFamily: Fonts.bold` etc. instead of `fontWeight`.
+  - Fonts load in `src/app/_layout.tsx`; the splash screen stays up until they are ready.
 - Navigation via Expo Router tabs in `src/app/`.
 - Suggested build order:
-  1. Theme tokens + typography
+  1. ~~Theme tokens + typography~~ (done)
   2. Tab layout
   3. Recipe detail screen (hero, quick facts, ingredients, steps)
   4. Cook Mode

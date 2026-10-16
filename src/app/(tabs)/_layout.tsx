@@ -2,7 +2,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { Tabs } from 'expo-router/js-tabs';
 import { Platform, type ColorValue } from 'react-native';
 
-import { useTheme } from '@/constants/theme';
+import { Fonts, useTheme } from '@/constants/theme';
 import { useKitchen } from '@/store/kitchen';
 import { useRecipes } from '@/store/recipes';
 
@@ -26,7 +26,8 @@ export default function TabLayout() {
       screenOptions={{
         headerShadowVisible: false,
         headerTintColor: c.accent,
-        headerTitleStyle: { color: c.text },
+        headerTitleStyle: { color: c.text, fontFamily: Fonts.semibold },
+        tabBarLabelStyle: { fontFamily: Fonts.medium },
         tabBarActiveTintColor: c.accent,
         tabBarInactiveTintColor: c.textSecondary,
         tabBarStyle: {
@@ -63,7 +64,7 @@ export default function TabLayout() {
           tabBarLabel: 'Next',
           tabBarIcon: icon('list-outline'),
           tabBarBadge: nextCount || undefined,
-          tabBarBadgeStyle: { backgroundColor: c.accent, color: c.accentText },
+          tabBarBadgeStyle: { backgroundColor: c.primary, color: c.onPrimary },
         }}
       />
       <Tabs.Screen

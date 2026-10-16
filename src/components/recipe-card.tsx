@@ -1,8 +1,9 @@
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { Spacing, useTheme } from '@/constants/theme';
+import { Fonts, Radius, Spacing, TypeSize, useTheme } from '@/constants/theme';
 import { servingNutrition } from '@/lib/nutrition';
 import { formatMinutes, totalMinutes, type Recipe } from '@/lib/recipe';
 
@@ -46,7 +47,7 @@ export function RecipeCard({
           <Image source={{ uri: recipe.photoUri }} style={styles.thumb} contentFit="cover" />
         ) : (
           <View style={[styles.thumb, styles.thumbPlaceholder, { backgroundColor: c.chip }]}>
-            <Text style={styles.thumbEmoji}>🍽️</Text>
+            <Ionicons name="restaurant-outline" size={28} color={c.textSecondary} />
           </View>
         )}
         <View style={styles.body}>
@@ -98,15 +99,14 @@ export function CardAction({
 }
 
 const styles = StyleSheet.create({
-  card: { borderWidth: 1, borderRadius: 14, overflow: 'hidden' },
+  card: { borderWidth: 1, borderRadius: Radius.medium, overflow: 'hidden' },
   row: { flexDirection: 'row' },
   thumb: { width: 96, minHeight: 96, alignSelf: 'stretch' },
   thumbPlaceholder: { alignItems: 'center', justifyContent: 'center' },
-  thumbEmoji: { fontSize: 32 },
   body: { flex: 1, padding: Spacing.three, gap: Spacing.one, justifyContent: 'center' },
-  title: { fontSize: 17, fontWeight: '700' },
-  meta: { fontSize: 14 },
-  tags: { fontSize: 13, fontWeight: '500' },
+  title: { fontSize: TypeSize.lead, lineHeight: 22, fontFamily: Fonts.serif },
+  meta: { fontFamily: Fonts.regular, fontSize: 14 },
+  tags: { fontSize: 13, fontFamily: Fonts.medium },
   actions: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -115,5 +115,5 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.two,
   },
   action: { paddingVertical: 10, paddingHorizontal: Spacing.two },
-  actionText: { fontSize: 15, fontWeight: '600' },
+  actionText: { fontSize: 15, fontFamily: Fonts.semibold },
 });

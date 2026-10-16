@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react';
 import { FlatList, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { Button, Chip } from '@/components/ui';
-import { MaxContentWidth, Spacing, useTheme } from '@/constants/theme';
+import { Fonts, MaxContentWidth, Spacing, useTheme } from '@/constants/theme';
 import { daysLeft, describeExpiry, EXPIRY_OPTIONS, expiryIn, USE_SOON_DAYS } from '@/lib/expiry';
 import { useKitchen } from '@/store/kitchen';
 
@@ -131,9 +131,10 @@ const styles = StyleSheet.create({
   screen: { flex: 1 },
   list: { padding: Spacing.four, width: '100%', maxWidth: MaxContentWidth, alignSelf: 'center' },
   header: { gap: Spacing.three, marginBottom: Spacing.three },
-  intro: { fontSize: 15, lineHeight: 21 },
+  intro: { fontFamily: Fonts.regular, fontSize: 15, lineHeight: 21 },
   addRow: { flexDirection: 'row', gap: Spacing.two, alignItems: 'center' },
   input: {
+    fontFamily: Fonts.regular,
     flex: 1,
     borderWidth: 1,
     borderRadius: 10,
@@ -141,13 +142,18 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     fontSize: 16,
   },
-  message: { fontSize: 14 },
-  link: { fontSize: 15, fontWeight: '600' },
+  message: { fontFamily: Fonts.regular, fontSize: 14 },
+  link: { fontSize: 15, fontFamily: Fonts.semibold },
   itemBlock: { borderBottomWidth: StyleSheet.hairlineWidth, paddingVertical: 12, gap: Spacing.two },
   item: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   itemMain: { flex: 1, gap: 2 },
-  expiry: { fontSize: 13 },
+  expiry: { fontFamily: Fonts.regular, fontSize: 13 },
   expiryRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: Spacing.two },
-  itemText: { fontSize: 16, textTransform: 'capitalize' },
-  empty: { fontSize: 15, textAlign: 'center', paddingVertical: Spacing.five },
+  itemText: { fontFamily: Fonts.regular, fontSize: 16, textTransform: 'capitalize' },
+  empty: {
+    fontFamily: Fonts.regular,
+    fontSize: 15,
+    textAlign: 'center',
+    paddingVertical: Spacing.five,
+  },
 });

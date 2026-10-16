@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 
 import { Button, Field } from '@/components/ui';
-import { MaxContentWidth, Spacing, useTheme } from '@/constants/theme';
+import { Fonts, MaxContentWidth, Spacing, useTheme } from '@/constants/theme';
 import { fetchInstagramPost, InstagramError, parseInstagramUrl } from '@/lib/instagram';
 import { saveRemotePhoto } from '@/lib/photos';
 import { recipeDraftFromText } from '@/lib/recipe-text';
@@ -253,7 +253,7 @@ export default function ImportScreen() {
 }
 
 const styles = StyleSheet.create({
-  headerButton: { fontSize: 17, paddingHorizontal: Spacing.two },
+  headerButton: { fontFamily: Fonts.regular, fontSize: 17, paddingHorizontal: Spacing.two },
   content: {
     padding: Spacing.four,
     gap: Spacing.five,
@@ -265,7 +265,7 @@ const styles = StyleSheet.create({
   group: { gap: Spacing.three },
   row: { flexDirection: 'row', gap: Spacing.two, alignItems: 'center' },
   flex: { flex: 1 },
-  message: { fontSize: 14, lineHeight: 20, flexShrink: 1 },
+  message: { fontFamily: Fonts.regular, fontSize: 14, lineHeight: 20, flexShrink: 1 },
   divider: { height: StyleSheet.hairlineWidth },
   captionBox: { minHeight: 180 },
 });

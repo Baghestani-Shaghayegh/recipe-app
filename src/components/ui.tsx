@@ -9,7 +9,7 @@ import {
   type TextInputProps,
 } from 'react-native';
 
-import { Spacing, useTheme } from '@/constants/theme';
+import { Fonts, Radius, Spacing, TypeSize, useTheme } from '@/constants/theme';
 
 export function Chip({
   label,
@@ -28,9 +28,9 @@ export function Chip({
       accessibilityState={{ selected }}
       style={({ pressed }) => [
         styles.chip,
-        { backgroundColor: selected ? c.accent : c.chip, opacity: pressed ? 0.7 : 1 },
+        { backgroundColor: selected ? c.primary : c.chip, opacity: pressed ? 0.7 : 1 },
       ]}>
-      <Text style={[styles.chipText, { color: selected ? c.accentText : c.text }]}>{label}</Text>
+      <Text style={[styles.chipText, { color: selected ? c.onPrimary : c.text }]}>{label}</Text>
     </Pressable>
   );
 }
@@ -47,8 +47,8 @@ export function Button({
   disabled?: boolean;
 }) {
   const c = useTheme();
-  const bg = variant === 'primary' ? c.accent : 'transparent';
-  const fg = variant === 'primary' ? c.accentText : variant === 'danger' ? c.danger : c.text;
+  const bg = variant === 'primary' ? c.primary : 'transparent';
+  const fg = variant === 'primary' ? c.onPrimary : variant === 'danger' ? c.danger : c.text;
   return (
     <Pressable
       onPress={onPress}
@@ -59,7 +59,7 @@ export function Button({
         {
           backgroundColor: bg,
           borderColor:
-            variant === 'primary' ? c.accent : variant === 'danger' ? c.danger : c.border,
+            variant === 'primary' ? c.primary : variant === 'danger' ? c.danger : c.border,
           opacity: disabled ? 0.5 : pressed ? 0.7 : 1,
         },
       ]}>
@@ -115,25 +115,26 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.three,
     borderRadius: 999,
   },
-  chipText: { fontSize: 14, fontWeight: '500' },
+  chipText: { fontSize: 14, fontFamily: Fonts.medium },
   button: {
     paddingVertical: Spacing.three,
     paddingHorizontal: Spacing.four,
-    borderRadius: 10,
+    borderRadius: Radius.medium,
     borderWidth: 1,
     alignItems: 'center',
   },
-  buttonText: { fontSize: 16, fontWeight: '600' },
+  buttonText: { fontSize: 16, fontFamily: Fonts.semibold },
   field: { gap: Spacing.one },
-  label: { fontSize: 15, fontWeight: '600' },
-  hint: { fontSize: 13 },
+  label: { fontSize: 15, fontFamily: Fonts.semibold },
+  hint: { fontFamily: Fonts.regular, fontSize: 13 },
   input: {
+    fontFamily: Fonts.regular,
     borderWidth: 1,
-    borderRadius: 10,
+    borderRadius: Radius.small,
     paddingHorizontal: Spacing.three,
     paddingVertical: 10,
     fontSize: 16,
   },
   multiline: { minHeight: 110, textAlignVertical: 'top' },
-  sectionTitle: { fontSize: 20, fontWeight: '700', marginBottom: Spacing.two },
+  sectionTitle: { fontSize: TypeSize.title, fontFamily: Fonts.bold, marginBottom: Spacing.two },
 });

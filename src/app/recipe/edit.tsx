@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 
 import { Button, Chip, Field } from '@/components/ui';
-import { MaxContentWidth, Spacing, useTheme } from '@/constants/theme';
+import { Fonts, MaxContentWidth, Spacing, useTheme } from '@/constants/theme';
 import { parseIngredientList } from '@/lib/ingredients';
 import { estimateNutrition, type Nutrients } from '@/lib/nutrition';
 import { deleteRecipePhoto, pickRecipePhoto } from '@/lib/photos';
@@ -339,8 +339,8 @@ function EditForm({ existing, imported }: { existing?: Recipe; imported?: Recipe
 }
 
 const styles = StyleSheet.create({
-  headerButton: { fontSize: 17, paddingHorizontal: Spacing.two },
-  bold: { fontWeight: '700' },
+  headerButton: { fontFamily: Fonts.regular, fontSize: 17, paddingHorizontal: Spacing.two },
+  bold: { fontFamily: Fonts.bold },
   content: {
     padding: Spacing.four,
     gap: Spacing.five,
@@ -350,14 +350,14 @@ const styles = StyleSheet.create({
     paddingBottom: Spacing.six * 2,
   },
   group: { gap: Spacing.two },
-  label: { fontSize: 15, fontWeight: '600' },
+  label: { fontSize: 15, fontFamily: Fonts.semibold },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two },
   photo: { width: '100%', aspectRatio: 4 / 3, borderRadius: 14 },
   photoButtons: { flexDirection: 'row', gap: Spacing.two },
   numbers: { flexDirection: 'row', gap: Spacing.three },
   number: { flex: 1 },
-  hint: { fontSize: 13 },
+  hint: { fontFamily: Fonts.regular, fontSize: 13 },
   nutrientGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.three },
   nutrientCell: { flexBasis: '45%', flexGrow: 1 },
-  error: { fontSize: 15, fontWeight: '600' },
+  error: { fontSize: 15, fontFamily: Fonts.semibold },
 });

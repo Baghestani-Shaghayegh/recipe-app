@@ -6,7 +6,7 @@ import { Linking, Share, Pressable, ScrollView, StyleSheet, Text, View } from 'r
 
 import { NutritionPanel } from '@/components/nutrition-panel';
 import { Button, Chip, confirm, SectionTitle } from '@/components/ui';
-import { MaxContentWidth, Spacing, useTheme } from '@/constants/theme';
+import { Fonts, MaxContentWidth, Spacing, TypeSize, useTheme } from '@/constants/theme';
 import { isStaple, pantryHas } from '@/lib/pantry';
 import { recipeToText, sharedPayload } from '@/lib/share';
 import { findSubstitutions } from '@/lib/substitutions';
@@ -275,7 +275,10 @@ export default function RecipeDetailScreen() {
             return (
               <View key={i} style={styles.row}>
                 <Text
-                  style={[styles.bullet, { color: status === 'have' ? c.accent : c.textSecondary }]}
+                  style={[
+                    styles.bullet,
+                    { color: status === 'have' ? c.secondary : c.textSecondary },
+                  ]}
                   accessibilityLabel={
                     status === 'have' ? 'In pantry' : status === 'missing' ? 'Missing' : undefined
                   }>
@@ -335,7 +338,7 @@ export default function RecipeDetailScreen() {
 
 const styles = StyleSheet.create({
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  headerButton: { fontSize: 17, fontWeight: '600', paddingHorizontal: Spacing.two },
+  headerButton: { fontSize: 17, fontFamily: Fonts.semibold, paddingHorizontal: Spacing.two },
   content: {
     padding: Spacing.four,
     gap: Spacing.five,
@@ -346,14 +349,14 @@ const styles = StyleSheet.create({
   },
   photo: { width: '100%', aspectRatio: 4 / 3, borderRadius: 16 },
   block: { gap: Spacing.two },
-  title: { fontSize: 28, fontWeight: '800' },
-  meta: { fontSize: 15 },
-  swap: { fontSize: 14, lineHeight: 20, fontStyle: 'italic' },
+  title: { fontSize: TypeSize.display, lineHeight: 34, fontFamily: Fonts.serif },
+  meta: { fontFamily: Fonts.regular, fontSize: 15 },
+  swap: { fontFamily: Fonts.regular, fontSize: 14, lineHeight: 20, fontStyle: 'italic' },
   unitRow: { flexDirection: 'row', gap: Spacing.two, flexWrap: 'wrap' },
   ratingRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.four },
-  heart: { fontSize: 30, lineHeight: 34 },
+  heart: { fontFamily: Fonts.regular, fontSize: 30, lineHeight: 34 },
   stars: { flexDirection: 'row', gap: Spacing.one },
-  star: { fontSize: 28, lineHeight: 34 },
+  star: { fontFamily: Fonts.regular, fontSize: 28, lineHeight: 34 },
   facts: {
     flexDirection: 'row',
     justifyContent: 'space-around',
@@ -362,10 +365,16 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.four,
   },
   fact: { alignItems: 'center', gap: 2 },
-  factLabel: { fontSize: 13 },
-  factValue: { fontSize: 16, fontWeight: '700' },
+  factLabel: { fontFamily: Fonts.regular, fontSize: 13 },
+  factValue: { fontSize: 16, fontFamily: Fonts.bold },
   row: { flexDirection: 'row', gap: Spacing.three, alignItems: 'flex-start' },
-  bullet: { fontSize: 16, lineHeight: 24, minWidth: 18, textAlign: 'center' },
+  bullet: {
+    fontFamily: Fonts.regular,
+    fontSize: 16,
+    lineHeight: 24,
+    minWidth: 18,
+    textAlign: 'center',
+  },
   stepper: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three },
   stepButton: {
     width: 36,
@@ -375,11 +384,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  stepButtonText: { fontSize: 20, fontWeight: '600', lineHeight: 24 },
-  servings: { fontSize: 18, fontWeight: '700', minWidth: 24, textAlign: 'center' },
+  stepButtonText: { fontSize: 20, fontFamily: Fonts.semibold, lineHeight: 24 },
+  servings: { fontSize: 18, fontFamily: Fonts.bold, minWidth: 24, textAlign: 'center' },
   buttons: { flexDirection: 'row', gap: Spacing.two },
   flex: { flex: 1 },
-  stepNumber: { fontSize: 16, fontWeight: '800', lineHeight: 24, minWidth: 18 },
-  body: { flex: 1, fontSize: 16, lineHeight: 24 },
-  link: { fontSize: 15 },
+  stepNumber: { fontSize: 16, fontFamily: Fonts.extrabold, lineHeight: 24, minWidth: 18 },
+  body: { fontFamily: Fonts.regular, flex: 1, fontSize: 16, lineHeight: 24 },
+  link: { fontFamily: Fonts.regular, fontSize: 15 },
 });

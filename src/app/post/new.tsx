@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 
 import { Button, Field, SectionTitle } from '@/components/ui';
-import { MaxContentWidth, Spacing, useTheme } from '@/constants/theme';
+import { Fonts, MaxContentWidth, Spacing, useTheme } from '@/constants/theme';
 import { MAX_VIDEO_SECONDS, normalizeUsername, postProblems, usernameProblem } from '@/lib/feed';
 import { chooseVideo, VideoProblem, type PickedVideo } from '@/lib/post-video';
 import { useAccount } from '@/store/account';
@@ -247,7 +247,7 @@ function VideoPreview({ uri }: { uri: string }) {
 }
 
 const styles = StyleSheet.create({
-  headerButton: { fontSize: 17, paddingHorizontal: Spacing.two },
+  headerButton: { fontFamily: Fonts.regular, fontSize: 17, paddingHorizontal: Spacing.two },
   content: {
     padding: Spacing.four,
     gap: Spacing.five,
@@ -257,9 +257,9 @@ const styles = StyleSheet.create({
     paddingBottom: Spacing.six * 2,
   },
   group: { gap: Spacing.three },
-  lead: { fontSize: 20, fontWeight: '700' },
-  note: { fontSize: 14, lineHeight: 20 },
-  error: { fontSize: 15, fontWeight: '600' },
+  lead: { fontSize: 20, fontFamily: Fonts.bold },
+  note: { fontFamily: Fonts.regular, fontSize: 14, lineHeight: 20 },
+  error: { fontSize: 15, fontFamily: Fonts.semibold },
   flex: { flex: 1 },
   row: { flexDirection: 'row', gap: Spacing.two },
   choice: {
@@ -270,8 +270,8 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: Spacing.three,
   },
-  choiceTitle: { fontSize: 16, fontWeight: '700' },
-  choiceMeta: { fontSize: 13 },
+  choiceTitle: { fontSize: 16, fontFamily: Fonts.bold },
+  choiceMeta: { fontFamily: Fonts.regular, fontSize: 13 },
   preview: {
     width: 180,
     height: 320,

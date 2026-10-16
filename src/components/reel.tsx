@@ -7,7 +7,7 @@ import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-nati
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/ui';
-import { Spacing, useTheme } from '@/constants/theme';
+import { Fonts, Spacing, useTheme } from '@/constants/theme';
 import { compactCount, type FeedPost } from '@/lib/feed';
 import { isStaple, pantryHas } from '@/lib/pantry';
 import { formatMinutes, totalMinutes } from '@/lib/recipe';
@@ -279,7 +279,7 @@ function RecipeSheet({
               const have = pantry.length > 0 && !isStaple(ing.name) && pantryHas(pantry, ing.name);
               return (
                 <View key={i} style={styles.row}>
-                  <Text style={[styles.bullet, { color: have ? c.accent : c.textSecondary }]}>
+                  <Text style={[styles.bullet, { color: have ? c.secondary : c.textSecondary }]}>
                     {have ? '✓' : '•'}
                   </Text>
                   <Text style={[styles.body, { color: c.text }]}>{ing.text}</Text>
@@ -369,7 +369,7 @@ const styles = StyleSheet.create({
   },
   rail: { position: 'absolute', right: Spacing.three, alignItems: 'center', gap: Spacing.five },
   railButton: { alignItems: 'center', gap: 2 },
-  railLabel: { color: '#fff', fontSize: 13, fontWeight: '700', ...shadowText },
+  railLabel: { color: '#fff', fontSize: 13, fontFamily: Fonts.bold, ...shadowText },
   shadow: shadowText,
   caption: {
     position: 'absolute',
@@ -379,9 +379,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.four,
     gap: Spacing.one,
   },
-  username: { color: '#fff', fontSize: 15, fontWeight: '700', ...shadowText },
-  title: { color: '#fff', fontSize: 22, fontWeight: '800', ...shadowText },
-  meta: { color: 'rgba(255,255,255,0.9)', fontSize: 14, ...shadowText },
+  username: { color: '#fff', fontSize: 15, fontFamily: Fonts.bold, ...shadowText },
+  title: { color: '#fff', fontSize: 22, fontFamily: Fonts.extrabold, ...shadowText },
+  meta: { fontFamily: Fonts.regular, color: 'rgba(255,255,255,0.9)', fontSize: 14, ...shadowText },
   recipeButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -393,22 +393,33 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.three,
     borderRadius: 999,
   },
-  recipeButtonText: { color: '#1F1A17', fontSize: 14, fontWeight: '700' },
+  recipeButtonText: { color: '#1F1A17', fontSize: 14, fontFamily: Fonts.bold },
   flex: { flex: 1 },
   backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end' },
   sheet: { maxHeight: '80%', borderTopLeftRadius: 20, borderTopRightRadius: 20 },
   grabber: { width: 40, height: 5, borderRadius: 3, alignSelf: 'center', marginTop: Spacing.two },
   sheetContent: { padding: Spacing.four, gap: Spacing.three, paddingBottom: Spacing.six },
-  sheetTitle: { fontSize: 24, fontWeight: '800' },
-  sheetMeta: { fontSize: 14 },
-  sheetSection: { fontSize: 18, fontWeight: '700', marginTop: Spacing.two },
+  sheetTitle: { fontSize: 24, fontFamily: Fonts.extrabold },
+  sheetMeta: { fontFamily: Fonts.regular, fontSize: 14 },
+  sheetSection: { fontSize: 18, fontFamily: Fonts.bold, marginTop: Spacing.two },
   row: { flexDirection: 'row', gap: Spacing.three, alignItems: 'flex-start' },
-  bullet: { fontSize: 16, lineHeight: 24, minWidth: 18, textAlign: 'center' },
-  stepNumber: { fontSize: 16, fontWeight: '800', lineHeight: 24, minWidth: 18 },
-  body: { flex: 1, fontSize: 16, lineHeight: 24 },
+  bullet: {
+    fontFamily: Fonts.regular,
+    fontSize: 16,
+    lineHeight: 24,
+    minWidth: 18,
+    textAlign: 'center',
+  },
+  stepNumber: { fontSize: 16, fontFamily: Fonts.extrabold, lineHeight: 24, minWidth: 18 },
+  body: { fontFamily: Fonts.regular, flex: 1, fontSize: 16, lineHeight: 24 },
   menu: { margin: Spacing.four, borderRadius: 14, overflow: 'hidden' },
-  menuTitle: { fontSize: 14, textAlign: 'center', paddingVertical: Spacing.three },
+  menuTitle: {
+    fontFamily: Fonts.regular,
+    fontSize: 14,
+    textAlign: 'center',
+    paddingVertical: Spacing.three,
+  },
   menuItem: { paddingVertical: 14, alignItems: 'center', borderTopWidth: StyleSheet.hairlineWidth },
-  menuText: { fontSize: 17 },
-  bold: { fontWeight: '700' },
+  menuText: { fontFamily: Fonts.regular, fontSize: 17 },
+  bold: { fontFamily: Fonts.bold },
 });

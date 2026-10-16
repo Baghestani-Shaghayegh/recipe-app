@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 
 import { Button, Field, SectionTitle } from '@/components/ui';
-import { MaxContentWidth, Spacing, useTheme } from '@/constants/theme';
+import { Fonts, MaxContentWidth, Spacing, useTheme } from '@/constants/theme';
 import { createBackup, parseBackup } from '@/lib/backup';
 import { useKitchen } from '@/store/kitchen';
 import { useRecipes } from '@/store/recipes';
@@ -113,7 +113,7 @@ export default function BackupScreen() {
 }
 
 const styles = StyleSheet.create({
-  headerButton: { fontSize: 17, paddingHorizontal: Spacing.two },
+  headerButton: { fontFamily: Fonts.regular, fontSize: 17, paddingHorizontal: Spacing.two },
   content: {
     padding: Spacing.four,
     gap: Spacing.five,
@@ -125,6 +125,6 @@ const styles = StyleSheet.create({
   group: { gap: Spacing.three },
   row: { flexDirection: 'row', gap: Spacing.two },
   flex: { flex: 1 },
-  body: { fontSize: 15, lineHeight: 21 },
+  body: { fontFamily: Fonts.regular, fontSize: 15, lineHeight: 21 },
   box: { minHeight: 140 },
 });

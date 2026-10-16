@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 
 import { Button, confirm, Field, SectionTitle } from '@/components/ui';
-import { MaxContentWidth, Spacing, useTheme } from '@/constants/theme';
+import { Fonts, MaxContentWidth, Spacing, useTheme } from '@/constants/theme';
 import { useAccount } from '@/store/account';
 
 function timeAgo(ms: number): string {
@@ -212,7 +212,7 @@ export default function AccountScreen() {
 }
 
 const styles = StyleSheet.create({
-  headerButton: { fontSize: 17, paddingHorizontal: Spacing.two },
+  headerButton: { fontFamily: Fonts.regular, fontSize: 17, paddingHorizontal: Spacing.two },
   content: {
     padding: Spacing.four,
     gap: Spacing.five,
@@ -224,6 +224,6 @@ const styles = StyleSheet.create({
   group: { gap: Spacing.three },
   row: { flexDirection: 'row', gap: Spacing.two },
   flex: { flex: 1 },
-  body: { fontSize: 15, lineHeight: 21 },
-  code: { fontSize: 28, fontWeight: '800', letterSpacing: 2 },
+  body: { fontFamily: Fonts.regular, fontSize: 15, lineHeight: 21 },
+  code: { fontSize: 28, fontFamily: Fonts.extrabold, letterSpacing: 2 },
 });

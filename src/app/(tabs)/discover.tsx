@@ -16,7 +16,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Reel } from '@/components/reel';
 import { Button, Chip } from '@/components/ui';
-import { MaxContentWidth, Spacing, useTheme } from '@/constants/theme';
+import { Fonts, MaxContentWidth, Spacing, useTheme } from '@/constants/theme';
 import { DIETS, type DietId } from '@/lib/diet';
 import { compactCount, filterFeed, hasFilters, type FeedFilters, type FeedPost } from '@/lib/feed';
 import { CATEGORIES, TIME_FILTERS } from '@/lib/recipe';
@@ -77,7 +77,7 @@ export default function DiscoverScreen() {
                 hitSlop={8}
                 accessibilityRole="button"
                 accessibilityLabel="Filters"
-                style={[styles.roundButton, hasFilters(filters) && { backgroundColor: c.accent }]}>
+                style={[styles.roundButton, hasFilters(filters) && { backgroundColor: c.primary }]}>
                 <Ionicons name="options-outline" size={22} color="#fff" />
               </Pressable>
             ) : null}
@@ -86,7 +86,7 @@ export default function DiscoverScreen() {
               hitSlop={8}
               accessibilityRole="button"
               accessibilityLabel="Post a recipe video"
-              style={[styles.roundButton, { backgroundColor: c.accent }]}>
+              style={[styles.roundButton, { backgroundColor: c.primary }]}>
               <Ionicons name="add" size={24} color="#fff" />
             </Pressable>
           </View>
@@ -442,8 +442,14 @@ const styles = StyleSheet.create({
     gap: Spacing.three,
     padding: Spacing.five,
   },
-  emptyTitle: { fontSize: 20, fontWeight: '700', textAlign: 'center' },
-  emptyText: { fontSize: 15, lineHeight: 21, textAlign: 'center', maxWidth: 360 },
+  emptyTitle: { fontSize: 20, fontFamily: Fonts.bold, textAlign: 'center' },
+  emptyText: {
+    fontFamily: Fonts.regular,
+    fontSize: 15,
+    lineHeight: 21,
+    textAlign: 'center',
+    maxWidth: 360,
+  },
   light: { color: '#fff' },
   lightSecondary: { color: 'rgba(255,255,255,0.8)' },
   topBar: {
@@ -457,7 +463,7 @@ const styles = StyleSheet.create({
   topRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   segment: { flexDirection: 'row', borderRadius: 999, padding: 3 },
   segmentItem: { paddingVertical: 6, paddingHorizontal: Spacing.four, borderRadius: 999 },
-  segmentText: { fontSize: 15, fontWeight: '700' },
+  segmentText: { fontSize: 15, fontFamily: Fonts.bold },
   topActions: { flexDirection: 'row', gap: Spacing.two },
   roundButton: {
     width: 40,
@@ -468,9 +474,9 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.35)',
   },
   panel: { borderRadius: 16, padding: Spacing.three, gap: Spacing.two },
-  panelNote: { fontSize: 13 },
+  panelNote: { fontFamily: Fonts.regular, fontSize: 13 },
   panelButtons: { flexDirection: 'row', justifyContent: 'space-between' },
-  panelLink: { fontSize: 15, fontWeight: '700', paddingVertical: Spacing.one },
+  panelLink: { fontSize: 15, fontFamily: Fonts.bold, paddingVertical: Spacing.one },
   chipRow: { flexDirection: 'row', gap: Spacing.two, alignItems: 'center' },
   toast: {
     position: 'absolute',
@@ -482,7 +488,7 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     maxWidth: '85%',
   },
-  toastText: { color: '#fff', fontSize: 15, fontWeight: '600', textAlign: 'center' },
+  toastText: { color: '#fff', fontSize: 15, fontFamily: Fonts.semibold, textAlign: 'center' },
   topContent: {
     padding: Spacing.four,
     gap: Spacing.three,
@@ -499,10 +505,10 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     padding: Spacing.two,
   },
-  rank: { fontSize: 22, fontWeight: '800', width: 32, textAlign: 'center' },
+  rank: { fontSize: 22, fontFamily: Fonts.extrabold, width: 32, textAlign: 'center' },
   rankThumb: { width: 64, height: 86, borderRadius: 10 },
   thumbEmpty: { alignItems: 'center', justifyContent: 'center' },
-  rankTitle: { fontSize: 16, fontWeight: '700' },
-  rankMeta: { fontSize: 13 },
-  rankScore: { fontSize: 14, fontWeight: '700', marginTop: 2 },
+  rankTitle: { fontSize: 16, fontFamily: Fonts.bold },
+  rankMeta: { fontFamily: Fonts.regular, fontSize: 13 },
+  rankScore: { fontSize: 14, fontFamily: Fonts.bold, marginTop: 2 },
 });

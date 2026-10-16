@@ -9,7 +9,7 @@
  * PDFs store their letters today), the standard Latin encodings for older ones, text inside
  * form XObjects, and spaces/line breaks rebuilt from where the text sits on the page.
  */
-import { unzlibSync, inflateSync } from 'fflate';
+import { inflateSync, unzlibSync, zlibSync } from 'fflate';
 
 export class PdfProblem extends Error {}
 
@@ -303,14 +303,18 @@ class PdfFile {
   }
 
   /** A stream's bytes with its compression undone. */
+  /** The stream's filter names, in the order they apply. */
+  filters(obj: PdfObject): string[] {
+    const d = isDict(obj.value) ? obj.value : EMPTY;
+    const f = this.resolve(d.Filter);
+    return (Array.isArray(f) ? f : f ? [f] : []).map((x) => (isName(x) ? x.name : ''));
+  }
+
   streamData(obj: PdfObject): Uint8Array {
     const cached = this.decoded.get(obj);
     if (cached) return cached;
     let data = obj.stream ?? new Uint8Array();
-    const d = isDict(obj.value) ? obj.value : EMPTY;
-    const f = this.resolve(d.Filter);
-    const filters = (Array.isArray(f) ? f : f ? [f] : []).map((x) => (isName(x) ? x.name : ''));
-    for (const filter of filters) {
+    for (const filter of this.filters(obj)) {
       if (filter === 'FlateDecode' || filter === 'Fl') data = inflate(data);
       else if (filter === 'ASCIIHexDecode' || filter === 'AHx') data = asciiHex(data);
       else if (filter === 'ASCII85Decode' || filter === 'A85') data = ascii85(data);
@@ -869,4 +873,151 @@ export function pdfLines(bytes: Uint8Array): string[] {
       .replace(/[\u0000-\u0008\u000b-\u001f�]/g, '')
       .trim(),
   );
+}
+
+// ---------- Scanned PDFs: the pictures of the pages ----------
+
+/** A page picture, ready to save as an image file for text recognition. */
+export type PdfImage = { type: 'jpeg' | 'png'; data: Uint8Array; width: number; height: number };
+
+const TEXT_FILTERS = new Set([
+  'FlateDecode',
+  'Fl',
+  'ASCIIHexDecode',
+  'AHx',
+  'ASCII85Decode',
+  'A85',
+]);
+
+/**
+ * The biggest picture on each page, for PDFs made by a scanner or a scanning app: those are
+ * photos of the pages with no text. JPEG pictures come out as they are; uncompressed or
+ * zip-compressed ones are turned into PNG. Other kinds (JPEG 2000, fax-style JBIG2/CCITT)
+ * are skipped.
+ */
+export function pdfPageImages(bytes: Uint8Array, maxPages = 10): PdfImage[] {
+  const pdf = new PdfFile(bytes);
+  const out: PdfImage[] = [];
+  for (const { resources } of pdf.pages().slice(0, maxPages)) {
+    let best: PdfImage | undefined;
+    const visit = (res: PdfDict, depth: number) => {
+      const xobjects = pdf.dict(res.XObject) ?? EMPTY;
+      for (const key of Object.keys(xobjects)) {
+        const obj = pdf.objectFor(xobjects[key]);
+        const d = obj && isDict(obj.value) ? obj.value : undefined;
+        if (!obj?.stream || !d || !isName(d.Subtype)) continue;
+        if (d.Subtype.name === 'Form' && depth < 3)
+          visit(pdf.dict(d.Resources) ?? EMPTY, depth + 1);
+        if (d.Subtype.name !== 'Image') continue;
+        const image = pictureOf(pdf, obj, d);
+        if (image && (!best || image.width * image.height > best.width * best.height)) best = image;
+      }
+    };
+    visit(resources, 0);
+    if (best) out.push(best);
+  }
+  return out;
+}
+
+function pictureOf(pdf: PdfFile, obj: PdfObject, d: PdfDict): PdfImage | undefined {
+  const width = pdf.num(d.Width);
+  const height = pdf.num(d.Height);
+  // Too small to hold a page of text (logos, icons, little photos).
+  if (width < 300 || height < 300) return undefined;
+  const imageFilters = pdf.filters(obj).filter((f) => !TEXT_FILTERS.has(f));
+  const data = pdf.streamData(obj);
+
+  if (imageFilters.length === 1 && (imageFilters[0] === 'DCTDecode' || imageFilters[0] === 'DCT')) {
+    return { type: 'jpeg', data, width, height };
+  }
+  if (imageFilters.length) return undefined;
+
+  // Raw pixels: rebuild them as a PNG.
+  const mask = d.ImageMask === true;
+  const bits = mask ? 1 : pdf.num(d.BitsPerComponent) || 8;
+  const cs = pdf.resolve(d.ColorSpace);
+  let colors = 1;
+  if (isName(cs) && cs.name === 'DeviceRGB') colors = 3;
+  else if (Array.isArray(cs) && isName(cs[0]) && cs[0].name === 'ICCBased') {
+    const icc = pdf.objectFor(cs[1]);
+    colors = icc && isDict(icc.value) ? pdf.num(icc.value.N) || 3 : 3;
+  } else if (!mask && !(isName(cs) && (cs.name === 'DeviceGray' || cs.name === 'CalGray'))) {
+    return undefined; // CMYK, indexed colours and others aren't worth the trouble here.
+  }
+  if (colors !== 1 && colors !== 3) return undefined;
+  if (colors === 3 ? bits !== 8 : ![1, 2, 4, 8].includes(bits)) return undefined;
+
+  const rowBytes = Math.ceil((width * colors * bits) / 8);
+  const parms = pdf.dict(Array.isArray(d.DecodeParms) ? d.DecodeParms[0] : d.DecodeParms);
+  const pngRows = !!parms && pdf.num(parms.Predictor) >= 10;
+  // A stencil mask paints its 0 bits, and /Decode [1 0] flips the values: either way, white is 0.
+  const decode = pdf.resolve(d.Decode);
+  const invert = Array.isArray(decode) && decode[0] === 1 && decode[1] === 0;
+
+  let rows: Uint8Array;
+  if (pngRows) {
+    // Already stored as PNG rows (a filter byte, then the pixels).
+    if (data.length < (rowBytes + 1) * height || invert) return undefined;
+    rows = data.subarray(0, (rowBytes + 1) * height);
+  } else {
+    if (data.length < rowBytes * height) return undefined;
+    rows = new Uint8Array((rowBytes + 1) * height);
+    for (let y = 0; y < height; y++) {
+      const row = data.subarray(y * rowBytes, (y + 1) * rowBytes);
+      rows.set(invert ? row.map((v) => 255 - v) : row, y * (rowBytes + 1) + 1);
+    }
+  }
+  return {
+    type: 'png',
+    data: encodePng(width, height, bits, colors === 3 ? 2 : 0, rows),
+    width,
+    height,
+  };
+}
+
+const CRC_TABLE = (() => {
+  const t = new Uint32Array(256);
+  for (let n = 0; n < 256; n++) {
+    let c = n;
+    for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
+    t[n] = c >>> 0;
+  }
+  return t;
+})();
+
+function crc32(bytes: Uint8Array): number {
+  let c = 0xffffffff;
+  for (const b of bytes) c = CRC_TABLE[(c ^ b) & 255] ^ (c >>> 8);
+  return (c ^ 0xffffffff) >>> 0;
+}
+
+function pngChunk(type: string, data: Uint8Array): Uint8Array {
+  const out = new Uint8Array(12 + data.length);
+  const view = new DataView(out.buffer);
+  view.setUint32(0, data.length);
+  for (let i = 0; i < 4; i++) out[4 + i] = type.charCodeAt(i);
+  out.set(data, 8);
+  view.setUint32(8 + data.length, crc32(out.subarray(4, 8 + data.length)));
+  return out;
+}
+
+/** A PNG file from rows that each start with a PNG filter byte. */
+export function encodePng(
+  width: number,
+  height: number,
+  bitDepth: number,
+  colorType: 0 | 2,
+  rows: Uint8Array,
+): Uint8Array {
+  const header = new Uint8Array(13);
+  const view = new DataView(header.buffer);
+  view.setUint32(0, width);
+  view.setUint32(4, height);
+  header.set([bitDepth, colorType, 0, 0, 0], 8);
+  return concat([
+    Uint8Array.of(137, 80, 78, 71, 13, 10, 26, 10),
+    pngChunk('IHDR', header),
+    pngChunk('IDAT', zlibSync(rows)),
+    pngChunk('IEND', new Uint8Array()),
+  ]);
 }

@@ -1,7 +1,9 @@
 import { requireOptionalNativeModule } from 'expo';
+import { File, Paths } from 'expo-file-system';
 import * as ImagePicker from 'expo-image-picker';
 import { Platform } from 'react-native';
 
+import type { ReadImages } from './file-import';
 import { cleanOcrText } from './ocr';
 
 type TextExtractor = {
@@ -50,3 +52,30 @@ export async function readRecipePhoto(
   }
   return text;
 }
+
+/**
+ * Reads the text in the page pictures of a scanned PDF, page by page, with the same text
+ * recognition as photos. Undefined where that isn't available (Expo Go and the web).
+ */
+export const readImagesText: ReadImages | undefined =
+  extractor && canReadPhotos
+    ? async (images) => {
+        const lines: string[] = [];
+        for (const [i, image] of images.entries()) {
+          const file = new File(
+            Paths.cache,
+            `scan-page-${Date.now()}-${i}.${image.type === 'jpeg' ? 'jpg' : 'png'}`,
+          );
+          try {
+            file.write(image.data);
+            lines.push(
+              ...(await extractor.extractTextFromImage(file.uri.replace('file://', ''))),
+              '',
+            );
+          } finally {
+            if (file.exists) file.delete();
+          }
+        }
+        return lines;
+      }
+    : undefined;

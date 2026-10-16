@@ -8,9 +8,19 @@
 import { strFromU8, unzipSync } from 'fflate';
 
 import { cleanOcrText } from './ocr';
-import { PdfProblem, pdfLines } from './pdf-text';
+import { type PdfImage, PdfProblem, pdfLines, pdfPageImages } from './pdf-text';
 
 export class FileProblem extends Error {}
+
+/** Thrown for a PDF made of page pictures (a scan) rather than text. */
+export class ScannedPdf extends FileProblem {
+  constructor() {
+    super('That PDF is a scan: its pages are pictures, not text.');
+  }
+}
+
+/** Reads the text in page pictures (text recognition). Missing where it isn't available. */
+export type ReadImages = (images: PdfImage[]) => Promise<string[]>;
 
 export const MAX_FILE_BYTES = 30 * 1024 * 1024;
 
@@ -44,11 +54,7 @@ export function textFromFile(file: { name: string; mimeType?: string; bytes: Uin
       } catch (e) {
         throw new FileProblem(e instanceof PdfProblem ? e.message : 'Couldn’t read that PDF.');
       }
-      if (!text.trim()) {
-        throw new FileProblem(
-          'That PDF is a scanned picture, so there’s no text in it to read. Take a screenshot of it and add it as a photo instead.',
-        );
-      }
+      if (!text.trim()) throw new ScannedPdf();
       return text;
     case 'docx':
       text = docxText(bytes);
@@ -72,6 +78,39 @@ export function textFromFile(file: { name: string; mimeType?: string; bytes: Uin
   }
   text = tidy(text);
   if (!text) throw new FileProblem('That file is empty.');
+  return text;
+}
+
+/**
+ * Like textFromFile, but a scanned PDF is read like a photo: its page pictures go through
+ * `readImages` (text recognition on the phone), one page after another.
+ */
+export async function recipeTextFromFile(
+  file: { name: string; mimeType?: string; bytes: Uint8Array },
+  readImages?: ReadImages,
+): Promise<string> {
+  try {
+    return textFromFile(file);
+  } catch (e) {
+    if (!(e instanceof ScannedPdf)) throw e;
+  }
+  if (!readImages) {
+    throw new FileProblem(
+      'That PDF is a scan, so its pages are pictures. Reading pictures works in the installed app, not here.',
+    );
+  }
+  const images = pdfPageImages(file.bytes);
+  if (!images.length) {
+    throw new FileProblem(
+      'That PDF is a scan in a format the app can’t open. Take a screenshot of the page and add it as a photo instead.',
+    );
+  }
+  const text = cleanOcrText(await readImages(images));
+  if (!text.trim()) {
+    throw new FileProblem(
+      'Couldn’t find any text in that scan. If it’s blurry or sideways, try a clearer copy.',
+    );
+  }
   return text;
 }
 

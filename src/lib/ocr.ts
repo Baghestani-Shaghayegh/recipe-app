@@ -28,7 +28,9 @@ export function cleanOcrText(blocks: string[]): string {
     .split('\n')
     .map((l) => l.replace(/\s+/g, ' ').trim())
     // Page numbers and stray single characters.
-    .filter((l) => l && !/^(\d{1,3}|[^\p{L}\p{N}])$/u.test(l));
+    .filter((l) => l && !/^(\d{1,3}|[^\p{L}\p{N}])$/u.test(l))
+    // List bullets often come out as other symbols, and "2." as "2,".
+    .map((l) => l.replace(/^[+*»·•◦▪●■]\s+/, '- ').replace(/^(\d{1,2}),\s/, '$1. '));
 
   const out: string[] = [];
   for (const line of lines) {

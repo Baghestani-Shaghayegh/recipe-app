@@ -88,7 +88,8 @@ These are the core of the app. Build them first, in roughly this order.
 - ✅ Import from TikTok and YouTube links (description / caption only, not speech)
 - ✅ Scan a photo of a cookbook page or handwritten recipe (needs the installed app)
 - ✅ Import a file: PDF, Word (.docx), Notion export (Markdown/HTML, also zipped), HTML or text
-  (scanned PDFs have no text; those go through the photo option)
+  Scanned PDFs are read like photos in the installed app (JPEG and grey/colour pages;
+  fax-style black-and-white scans aren't supported yet)
 - Transcribe recipe videos that have no caption
 
 ### Smarter recommendations

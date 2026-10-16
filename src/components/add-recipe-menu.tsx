@@ -16,8 +16,8 @@ import {
 
 import { BottomSheet } from '@/components/bottom-sheet';
 import { Spacing, useTheme } from '@/constants/theme';
-import { FileProblem, MAX_FILE_BYTES, textFromFile } from '@/lib/file-import';
-import { canReadPhotos, PhotoProblem, readRecipePhoto } from '@/lib/recipe-photo';
+import { FileProblem, MAX_FILE_BYTES, recipeTextFromFile } from '@/lib/file-import';
+import { canReadPhotos, PhotoProblem, readImagesText, readRecipePhoto } from '@/lib/recipe-photo';
 import { recipeDraftFromText } from '@/lib/recipe-text';
 import { setRecipeDraft } from '@/store/draft';
 
@@ -74,7 +74,10 @@ export function AddRecipeMenu({ visible, onClose }: { visible: boolean; onClose:
       // Let the overlay show before the (synchronous) reading starts.
       await new Promise((r) => setTimeout(r, 30));
       openDraft(
-        textFromFile({ name: asset.name, mimeType: asset.mimeType, bytes: new Uint8Array(buffer) }),
+        await recipeTextFromFile(
+          { name: asset.name, mimeType: asset.mimeType, bytes: new Uint8Array(buffer) },
+          readImagesText,
+        ),
       );
     } catch (e) {
       tell(

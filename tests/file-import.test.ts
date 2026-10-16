@@ -2,9 +2,16 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 
-import { strToU8, zipSync, zlibSync } from 'fflate';
+import { strToU8, unzlibSync, zipSync, zlibSync } from 'fflate';
 
-import { FileProblem, markdownText, textFromFile } from '../src/lib/file-import.ts';
+import {
+  FileProblem,
+  markdownText,
+  recipeTextFromFile,
+  ScannedPdf,
+  textFromFile,
+} from '../src/lib/file-import.ts';
+import { pdfPageImages } from '../src/lib/pdf-text.ts';
 import { parseRecipeText } from '../src/lib/recipe-text.ts';
 
 // The same recipe saved five ways (made with Chromium, LibreOffice, ReportLab and pandoc).
@@ -159,14 +166,14 @@ const problem = (bytes: Uint8Array, name: string) => {
   assert.fail('expected a FileProblem');
 };
 
-test('explains a scanned PDF that has no text', () => {
+test('a PDF with no text and no pictures counts as a scan', () => {
   const pdf = strToU8(
     '%PDF-1.4\n1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj\n' +
       '2 0 obj << /Type /Pages /Kids [3 0 R] /Count 1 >> endobj\n' +
       '3 0 obj << /Type /Page /Parent 2 0 R /Contents 4 0 R >> endobj\n' +
       '4 0 obj << /Length 18 >>\nstream\nq 1 0 0 1 0 0 cm Q\nendstream endobj\n%%EOF',
   );
-  assert.match(problem(pdf, 'scan.pdf'), /scanned picture/);
+  assert.throws(() => textFromFile({ name: 'scan.pdf', bytes: pdf }), ScannedPdf);
 });
 
 test('explains a locked PDF', () => {
@@ -177,4 +184,102 @@ test('explains a locked PDF', () => {
 test('refuses file types it can’t read', () => {
   assert.match(problem(Uint8Array.of(1, 2, 3), 'photo.heic'), /can’t be imported/);
   assert.match(problem(strToU8('PK\u0003\u0004 broken'), 'x.zip'), /damaged/);
+});
+
+// ---------- Scanned PDFs (pages that are pictures) ----------
+
+/** The parts of a PNG file, to check what was written. */
+function readPng(png: Uint8Array) {
+  assert.deepEqual([...png.subarray(0, 8)], [137, 80, 78, 71, 13, 10, 26, 10]);
+  const view = new DataView(png.buffer, png.byteOffset, png.byteLength);
+  const chunks: Record<string, Uint8Array> = {};
+  for (let at = 8; at < png.length; ) {
+    const len = view.getUint32(at);
+    const type = String.fromCharCode(...png.subarray(at + 4, at + 8));
+    chunks[type] = png.subarray(at + 8, at + 8 + len);
+    at += 12 + len;
+  }
+  const ihdr = new DataView(chunks.IHDR.buffer, chunks.IHDR.byteOffset, 13);
+  return {
+    width: ihdr.getUint32(0),
+    height: ihdr.getUint32(4),
+    bitDepth: chunks.IHDR[8],
+    colorType: chunks.IHDR[9],
+    rows: unzlibSync(chunks.IDAT),
+    ended: 'IEND' in chunks,
+  };
+}
+
+test('takes the JPEG page picture out of a scan from a phone scanning app', () => {
+  const [page, ...rest] = pdfPageImages(fixture('scan-jpeg.pdf'));
+  assert.equal(rest.length, 0);
+  assert.equal(page.type, 'jpeg');
+  assert.deepEqual([page.width, page.height], [700, 900]);
+  assert.deepEqual([...page.data.subarray(0, 2)], [0xff, 0xd8]); // JPEG start
+  assert.deepEqual([...page.data.subarray(-2)], [0xff, 0xd9]); // and end
+});
+
+test('turns a grey zip-compressed page picture into a PNG', () => {
+  const [page] = pdfPageImages(fixture('scan-gray.pdf'));
+  assert.equal(page.type, 'png');
+  const png = readPng(page.data);
+  assert.deepEqual([png.width, png.height, png.bitDepth, png.colorType], [700, 900, 8, 0]);
+  assert.equal(png.rows.length, (700 + 1) * 900);
+  assert.ok(png.ended);
+});
+
+test('turns a black-and-white page with flipped values into a 1-bit PNG', () => {
+  // 320×300 pixels, 1 bit each: 40 bytes a row. /Decode [1 0] means 1 is black.
+  const raw = new Uint8Array(40 * 300).fill(0b11110000);
+  const flate = zlibSync(raw);
+  const head =
+    '%PDF-1.4\n1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj\n' +
+    '2 0 obj << /Type /Pages /Kids [3 0 R] /Count 1 >> endobj\n' +
+    '3 0 obj << /Type /Page /Parent 2 0 R /Resources << /XObject << /Im0 4 0 R >> >> >> endobj\n' +
+    `4 0 obj << /Type /XObject /Subtype /Image /Width 320 /Height 300 /BitsPerComponent 1 /ColorSpace /DeviceGray /Decode [1 0] /Filter /FlateDecode /Length ${flate.length} >>\nstream\n`;
+  const tail = '\nendstream endobj\n%%EOF';
+  const pdf = new Uint8Array([...strToU8(head), ...flate, ...strToU8(tail)]);
+
+  const [page] = pdfPageImages(pdf);
+  const png = readPng(page.data);
+  assert.deepEqual([png.width, png.height, png.bitDepth, png.colorType], [320, 300, 1, 0]);
+  // Each row: filter byte 0, then the pixels flipped so that black is 0 as PNG expects.
+  assert.deepEqual([...png.rows.subarray(0, 3)], [0, 0b00001111, 0b00001111]);
+});
+
+test('reads a scan with the phone’s text recognition, then cleans the text up', async () => {
+  const seen: string[] = [];
+  const text = await recipeTextFromFile(
+    { name: 'scan.pdf', bytes: fixture('scan-jpeg.pdf') },
+    async (images) => {
+      seen.push(...images.map((i) => i.type));
+      return ['Toast', '+ 1 slice bread', '2, Toast it until golden and crisp on both', 'sides.'];
+    },
+  );
+  assert.deepEqual(seen, ['jpeg']);
+  assert.equal(text, 'Toast\n- 1 slice bread\n2. Toast it until golden and crisp on both sides.');
+});
+
+test('explains scans it can’t read', async () => {
+  const fail = (name: string, readImages?: () => Promise<string[]>) =>
+    recipeTextFromFile({ name, bytes: fixture(name) }, readImages).then(
+      () => assert.fail('expected a FileProblem'),
+      (e: unknown) => {
+        assert.ok(e instanceof FileProblem);
+        return e.message;
+      },
+    );
+  // Expo Go and the web have no text recognition.
+  assert.match(await fail('scan-jpeg.pdf'), /works in the installed app/);
+  // Fax-style black-and-white compression isn't something phones can open as a picture.
+  assert.match(await fail('scan-black-and-white.pdf', async () => []), /format the app can’t open/);
+  // Recognition found nothing.
+  assert.match(await fail('scan-gray.pdf', async () => ['', ' ']), /Couldn’t find any text/);
+  // Text PDFs never reach text recognition.
+  assert.match(
+    await recipeTextFromFile({ name: 'r.pdf', bytes: fixture('recipe-browser.pdf') }, async () =>
+      assert.fail('should not run'),
+    ),
+    /Lemon Garlic Pasta/,
+  );
 });

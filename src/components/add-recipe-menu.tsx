@@ -18,7 +18,8 @@ import { BottomSheet } from '@/components/bottom-sheet';
 import { Spacing, useTheme } from '@/constants/theme';
 import { FileProblem, MAX_FILE_BYTES, recipeTextFromFile } from '@/lib/file-import';
 import { canReadPhotos, PhotoProblem, readImagesText, readRecipePhoto } from '@/lib/recipe-photo';
-import { recipeDraftFromText } from '@/lib/recipe-text';
+import { smartDraftFromText } from '@/lib/ai-recipe';
+import { supabaseConfig } from '@/lib/app-config';
 import { setRecipeDraft } from '@/store/draft';
 
 type IconName = React.ComponentProps<typeof Ionicons>['name'];
@@ -32,8 +33,9 @@ function tell(title: string, message: string) {
   else Alert.alert(title, message);
 }
 
-function openDraft(text: string) {
-  const draft = recipeDraftFromText(text, { sourceUrl: undefined });
+/** Reads the text with the smart reader (translating it if needed) and opens it for review. */
+async function openDraft(text: string) {
+  const draft = await smartDraftFromText(text, {}, supabaseConfig);
   router.push({ pathname: '/recipe/edit', params: { draft: setRecipeDraft(draft) } });
 }
 
@@ -48,7 +50,7 @@ export function AddRecipeMenu({ visible, onClose }: { visible: boolean; onClose:
     try {
       // The overlay waits until a photo is chosen: iOS can't show it over the camera.
       const text = await readRecipePhoto(source, () => setBusy('Reading the photo…'));
-      if (text) openDraft(text);
+      if (text) await openDraft(text);
     } catch (e) {
       tell('Couldn’t read that photo', e instanceof PhotoProblem ? e.message : 'Please try again.');
     } finally {
@@ -73,12 +75,12 @@ export function AddRecipeMenu({ visible, onClose }: { visible: boolean; onClose:
         : await new FsFile(asset.uri).arrayBuffer();
       // Let the overlay show before the (synchronous) reading starts.
       await new Promise((r) => setTimeout(r, 30));
-      openDraft(
-        await recipeTextFromFile(
-          { name: asset.name, mimeType: asset.mimeType, bytes: new Uint8Array(buffer) },
-          readImagesText,
-        ),
+      const text = await recipeTextFromFile(
+        { name: asset.name, mimeType: asset.mimeType, bytes: new Uint8Array(buffer) },
+        readImagesText,
       );
+      setBusy('Reading the recipe…');
+      await openDraft(text);
     } catch (e) {
       tell(
         'Couldn’t import that file',

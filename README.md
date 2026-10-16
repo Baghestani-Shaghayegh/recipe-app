@@ -90,6 +90,25 @@ paste the text instead. The cleanup of recognised text is in `src/lib/ocr.ts`.
   ingredients), each with "Similar to …". Recipes rated 1–2 stars are never suggested, nor ones you already rate 4–5 stars or favorited. Needs at
   least one liked recipe. Logic in `src/lib/suggest.ts`.
 
+## Smart recipe reader (translation)
+
+Captions, photos, files and foreign recipe sites go through a small Supabase function,
+`supabase/functions/parse-recipe`, which asks Claude (`claude-opus-5-5`) to translate the text into
+English and sort it into name, ingredients, steps, times, servings and category. Persian captions
+with emojis and no headings work. The Anthropic key lives only in the function's secrets, never
+in the app. Without it (or offline) the app falls back to its own English-only reader.
+
+Setup, once:
+
+1. Get an API key at console.anthropic.com (API keys), and set a monthly spend limit there.
+2. In the Supabase project the app uses, add the secret `ANTHROPIC_API_KEY`
+   (Edge Functions -> Secrets), and deploy the function:
+   `supabase functions deploy parse-recipe --no-verify-jwt`
+3. Put the project's URL and publishable key in `.env` (see `.env.example`) and restart Expo.
+
+Each import costs a few cents at most (one short request; effort is set low). The function only
+accepts 12,000 characters at a time and 20 requests a minute per caller. Code: `src/lib/ai-recipe.ts`.
+
 ## Sync and sharing (Supabase)
 
 Optional: the app works fully offline without it. With it you get:

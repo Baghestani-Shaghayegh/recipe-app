@@ -16,7 +16,8 @@ import {
 import { Spacing, useTheme } from '@/constants/theme';
 import { fetchInstagramPost, InstagramError, parseInstagramUrl } from '@/lib/instagram';
 import { saveRemotePhoto } from '@/lib/photos';
-import { recipeDraftFromText } from '@/lib/recipe-text';
+import { draftAsText, needsTranslation, smartDraftFromText } from '@/lib/ai-recipe';
+import { supabaseConfig } from '@/lib/app-config';
 import { recipeFromShared } from '@/lib/share';
 import { parseShareId } from '@/lib/supabase';
 import { useAccount } from '@/store/account';
@@ -60,15 +61,20 @@ export default function ImportScreen() {
   const notALink = !!link.trim() && !isLink;
   const canAdd = isLink && !loading;
 
-  const openDraft = (
+  // Captions go through the smart reader, which also translates them into English.
+  const openDraft = async (
     text: string,
     extra: { author?: string; photoUri?: string; site?: string; sourceUrl?: string } = {},
   ) => {
-    const draft = recipeDraftFromText(text, {
-      ...extra,
-      sourceUrl:
-        extra.sourceUrl ?? parsedLink?.url ?? videoUrl ?? webUrl ?? (link.trim() || undefined),
-    });
+    const draft = await smartDraftFromText(
+      text,
+      {
+        ...extra,
+        sourceUrl:
+          extra.sourceUrl ?? parsedLink?.url ?? videoUrl ?? webUrl ?? (link.trim() || undefined),
+      },
+      supabaseConfig,
+    );
     const key = setRecipeDraft(draft);
     router.replace({ pathname: '/recipe/edit', params: { draft: key } });
   };
@@ -88,23 +94,31 @@ export default function ImportScreen() {
         const photoUri = post.imageUrl
           ? await saveRemotePhoto(post.imageUrl).catch(() => undefined)
           : undefined;
-        openDraft(post.caption, { author: post.author, photoUri });
+        await openDraft(post.caption, { author: post.author, photoUri });
       } else if (parseYoutubeUrl(url) || parseTiktokUrl(url)) {
         const post = await fetchVideoPost(url);
         const photoUri = post.imageUrl
           ? await saveRemotePhoto(post.imageUrl).catch(() => undefined)
           : undefined;
-        openDraft(post.caption, {
+        await openDraft(post.caption, {
           author: post.author,
           photoUri,
           site: post.site,
           sourceUrl: post.url,
         });
       } else {
-        const { imageUrl, ...draft } = await fetchWebsiteRecipe(url);
+        const { imageUrl, ...found } = await fetchWebsiteRecipe(url);
         const photoUri = imageUrl
           ? await saveRemotePhoto(imageUrl).catch(() => undefined)
           : undefined;
+        // A recipe site in another language goes through the smart reader to be translated.
+        const draft = needsTranslation(draftAsText(found))
+          ? await smartDraftFromText(
+              draftAsText(found),
+              { sourceUrl: found.sourceUrl ?? url },
+              supabaseConfig,
+            )
+          : found;
         router.replace({
           pathname: '/recipe/edit',
           params: { draft: setRecipeDraft({ ...draft, photoUri }) },

@@ -52,7 +52,7 @@ export default function ImportScreen() {
   const autoFetched = useRef(false);
 
   const shareId = shareIdFrom(link);
-  // The paste-text box is a fallback: shown when a link can't be read, on the web, or on request.
+  // The paste-text box is a fallback: shown when a link can't be read, and on the web.
   const [showText, setShowText] = useState(!CAN_FETCH);
   const parsedLink = parseInstagramUrl(link);
   const videoUrl = parsedLink ? undefined : (parseYoutubeUrl(link) ?? parseTiktokUrl(link));
@@ -222,13 +222,7 @@ export default function ImportScreen() {
               />
             </View>
           </>
-        ) : (
-          <Pressable onPress={() => setShowText(true)} accessibilityRole="button" hitSlop={8}>
-            <Text style={[styles.message, styles.textLink, { color: c.accent }]}>
-              Have the recipe text instead? Paste it here
-            </Text>
-          </Pressable>
-        )}
+        ) : null}
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -249,6 +243,5 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   message: { fontSize: 14, lineHeight: 20, flexShrink: 1 },
   divider: { height: StyleSheet.hairlineWidth },
-  textLink: { fontWeight: '600' },
   captionBox: { minHeight: 180 },
 });

@@ -4,7 +4,8 @@
 
 **One job: save recipes from anywhere, decide what to cook, and buy what's missing.**
 
-- Save: links (Instagram, TikTok, YouTube, websites), pasted text, photo of a paper recipe
+- Save: links (Instagram, TikTok, YouTube, websites), pasted text, photo of a paper recipe,
+  files (PDF, Word, Notion export), all from the + button on the Recipes tab
 - Decide: categories Breakfast / Lunch / Dinner / Snack / Baking, cooking time, simple nutrition,
   pantry → what can I make
 - Buy: shopping list from the recipes you pick, minus the pantry
@@ -85,7 +86,9 @@ These are the core of the app. Build them first, in roughly this order.
 ### More import options
 - ✅ Import from any recipe website (most use a standard recipe format that's easy to read)
 - ✅ Import from TikTok and YouTube links (description / caption only, not speech)
-- Scan a photo of a cookbook page or handwritten recipe
+- ✅ Scan a photo of a cookbook page or handwritten recipe (needs the installed app)
+- ✅ Import a file: PDF, Word (.docx), Notion export (Markdown/HTML, also zipped), HTML or text
+  (scanned PDFs have no text; those go through the photo option)
 - Transcribe recipe videos that have no caption
 
 ### Smarter recommendations

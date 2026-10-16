@@ -1,3 +1,4 @@
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import {
@@ -8,11 +9,11 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from 'react-native';
 
-import { Button, Field } from '@/components/ui';
-import { MaxContentWidth, Spacing, useTheme } from '@/constants/theme';
+import { Spacing, useTheme } from '@/constants/theme';
 import { fetchInstagramPost, InstagramError, parseInstagramUrl } from '@/lib/instagram';
 import { saveRemotePhoto } from '@/lib/photos';
 import { recipeDraftFromText } from '@/lib/recipe-text';
@@ -53,10 +54,14 @@ export default function ImportScreen() {
 
   const shareId = shareIdFrom(link);
   // The paste-text box is a fallback: shown when a link can't be read, and on the web.
+  const [focused, setFocused] = useState(false);
   const [showText, setShowText] = useState(!CAN_FETCH);
   const parsedLink = parseInstagramUrl(link);
   const videoUrl = parsedLink ? undefined : (parseYoutubeUrl(link) ?? parseTiktokUrl(link));
   const webUrl = parsedLink || videoUrl ? undefined : parseWebUrl(link);
+  const isLink = !!(shareId || parsedLink || videoUrl || webUrl);
+  const notALink = !!link.trim() && !isLink;
+  const canAdd = isLink && !loading;
 
   const openDraft = (
     text: string,
@@ -154,94 +159,251 @@ export default function ImportScreen() {
         }}
       />
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+        <View style={styles.hero}>
+          <View style={[styles.heroIcon, { backgroundColor: c.chip }]}>
+            <Ionicons name="link" size={30} color={c.accent} />
+          </View>
+          <Text style={[styles.heroTitle, { color: c.text }]}>Save a recipe from a link</Text>
+          <Text style={[styles.heroText, { color: c.textSecondary }]}>
+            Share your recipe link from Instagram, TikTok or YouTube
+          </Text>
+          <View style={styles.sources}>
+            {SOURCES.map((s) => (
+              <View
+                key={s.label}
+                style={[styles.source, { backgroundColor: c.card, borderColor: c.border }]}>
+                <Ionicons name={s.icon} size={16} color={c.text} />
+                <Text style={[styles.sourceText, { color: c.text }]}>{s.label}</Text>
+              </View>
+            ))}
+          </View>
+        </View>
+
         <View style={styles.group}>
-          <Field
-            label="Recipe link"
-            hint="Share your recipe link from Instagram, TikTok or YouTube"
-            value={link}
-            onChangeText={(t) => {
-              // Pasted share text often has words around the link: keep just the link.
-              setLink(/\s/.test(t.trim()) ? (linkIn(t) ?? t) : t);
-              setMessage(undefined);
-            }}
-            placeholder="https://…"
-            autoCapitalize="none"
-            autoCorrect={false}
-            keyboardType="url"
-          />
+          <View
+            style={[
+              styles.inputWrap,
+              {
+                backgroundColor: c.card,
+                borderColor: focused ? c.accent : c.border,
+              },
+            ]}>
+            <Ionicons name="link-outline" size={20} color={c.textSecondary} />
+            <TextInput
+              value={link}
+              onChangeText={(t) => {
+                // Pasted share text often has words around the link: keep just the link.
+                setLink(/\s/.test(t.trim()) ? (linkIn(t) ?? t) : t);
+                setMessage(undefined);
+              }}
+              onFocus={() => setFocused(true)}
+              onBlur={() => setFocused(false)}
+              onSubmitEditing={() => canAdd && fetchFromLink()}
+              placeholder="Paste a link here"
+              placeholderTextColor={c.textSecondary}
+              autoCapitalize="none"
+              autoCorrect={false}
+              keyboardType="url"
+              returnKeyType="go"
+              accessibilityLabel="Recipe link"
+              style={[styles.input, { color: c.text }]}
+            />
+            {link ? (
+              <Pressable
+                onPress={() => {
+                  setLink('');
+                  setMessage(undefined);
+                }}
+                hitSlop={10}
+                accessibilityRole="button"
+                accessibilityLabel="Clear link">
+                <Ionicons name="close-circle" size={20} color={c.textSecondary} />
+              </Pressable>
+            ) : null}
+          </View>
+
           {CAN_FETCH || shareId ? (
-            <Button
-              label="Add recipe"
+            <Pressable
               onPress={() => fetchFromLink()}
-              disabled={(!shareId && !parsedLink && !videoUrl && !webUrl) || loading}
+              disabled={!canAdd}
+              accessibilityRole="button"
+              accessibilityLabel="Add recipe"
+              accessibilityState={{ disabled: !canAdd, busy: loading }}
+              style={({ pressed }) => [
+                styles.addButton,
+                {
+                  backgroundColor: c.accent,
+                  opacity: !canAdd && !loading ? 0.4 : pressed ? 0.85 : 1,
+                },
+              ]}>
+              {loading ? <ActivityIndicator color={c.accentText} /> : null}
+              <Text style={[styles.addButtonText, { color: c.accentText }]}>
+                {loading ? 'Reading the recipe…' : 'Add recipe'}
+              </Text>
+            </Pressable>
+          ) : null}
+
+          {notALink ? (
+            <Notice
+              tone="error"
+              text="That doesn’t look like a link. It should start with https://"
             />
           ) : null}
-          {link.trim() && !shareId && !parsedLink && !videoUrl && !webUrl ? (
-            <Text style={[styles.message, { color: c.danger }]}>
-              That doesn’t look like a link. It should start with https://
-            </Text>
-          ) : null}
+          {message ? <Notice tone={message.error ? 'error' : 'info'} text={message.text} /> : null}
           {!CAN_FETCH ? (
-            <Text style={[styles.message, { color: c.textSecondary }]}>
-              In the browser, paste the recipe text below.
-            </Text>
-          ) : null}
-          {loading ? (
-            <View style={styles.row}>
-              <ActivityIndicator color={c.accent} />
-              <Text style={[styles.message, { color: c.textSecondary }]}>Reading the page…</Text>
-            </View>
-          ) : null}
-          {message ? (
-            <Text style={[styles.message, { color: message.error ? c.danger : c.textSecondary }]}>
-              {message.text}
-            </Text>
+            <Notice tone="info" text="In the browser, paste the recipe text below." />
           ) : null}
         </View>
 
         {showText ? (
-          <>
-            <View style={[styles.divider, { backgroundColor: c.border }]} />
-
-            <View style={styles.group}>
-              <Field
-                label={CAN_FETCH ? 'Or paste the recipe text' : 'Recipe text'}
-                hint="Copy the recipe from the post and paste it here"
-                value={caption}
-                onChangeText={setCaption}
-                multiline
-                placeholder={
-                  'Garlic noodles\n\nIngredients:\n200 g spaghetti\n2 tbsp butter\n\nMethod:\n1. Cook the noodles…'
-                }
-                style={styles.captionBox}
-              />
-              <Button
-                label="Add recipe"
-                onPress={() => openDraft(caption)}
-                disabled={!caption.trim() || loading}
-              />
-            </View>
-          </>
+          <View style={[styles.textCard, { backgroundColor: c.card, borderColor: c.border }]}>
+            <Text style={[styles.textTitle, { color: c.text }]}>Paste the recipe text</Text>
+            <Text style={[styles.textHint, { color: c.textSecondary }]}>
+              Copy the recipe from the post and paste it here
+            </Text>
+            <TextInput
+              value={caption}
+              onChangeText={setCaption}
+              multiline
+              placeholder={
+                'Garlic noodles\n\nIngredients\n200 g spaghetti\n2 tbsp butter\n\nMethod\n1. Cook the noodles…'
+              }
+              placeholderTextColor={c.textSecondary}
+              accessibilityLabel="Recipe text"
+              style={[
+                styles.textBox,
+                { color: c.text, backgroundColor: c.background, borderColor: c.border },
+              ]}
+              textAlignVertical="top"
+            />
+            <Pressable
+              onPress={() => openDraft(caption)}
+              disabled={!caption.trim() || loading}
+              accessibilityRole="button"
+              accessibilityLabel="Add recipe from text"
+              style={({ pressed }) => [
+                styles.addButton,
+                {
+                  backgroundColor: c.accent,
+                  opacity: !caption.trim() ? 0.4 : pressed ? 0.85 : 1,
+                },
+              ]}>
+              <Text style={[styles.addButtonText, { color: c.accentText }]}>Add recipe</Text>
+            </Pressable>
+          </View>
         ) : null}
       </ScrollView>
     </KeyboardAvoidingView>
   );
 }
 
+/** A soft coloured card for a short message under the link box. */
+function Notice({ tone, text }: { tone: 'error' | 'info'; text: string }) {
+  const c = useTheme();
+  const error = tone === 'error';
+  return (
+    <View
+      style={[styles.notice, { backgroundColor: error ? c.dangerSoft : c.chip }]}
+      accessibilityLiveRegion="polite">
+      <Ionicons
+        name={error ? 'alert-circle' : 'information-circle'}
+        size={18}
+        color={error ? c.danger : c.textSecondary}
+      />
+      <Text style={[styles.noticeText, { color: error ? c.danger : c.text }]}>{text}</Text>
+    </View>
+  );
+}
+
+const SOURCES: { label: string; icon: React.ComponentProps<typeof Ionicons>['name'] }[] = [
+  { label: 'Instagram', icon: 'logo-instagram' },
+  { label: 'TikTok', icon: 'logo-tiktok' },
+  { label: 'YouTube', icon: 'logo-youtube' },
+];
+
 const styles = StyleSheet.create({
   headerButton: { fontSize: 17, paddingHorizontal: Spacing.two },
   content: {
     padding: Spacing.four,
+    paddingTop: Spacing.five,
     gap: Spacing.five,
     width: '100%',
-    maxWidth: MaxContentWidth,
+    maxWidth: 520,
     alignSelf: 'center',
     paddingBottom: Spacing.six * 2,
   },
+  hero: { alignItems: 'center', gap: Spacing.two },
+  heroIcon: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: Spacing.two,
+  },
+  heroTitle: { fontSize: 22, fontWeight: '700', textAlign: 'center' },
+  heroText: { fontSize: 15, lineHeight: 21, textAlign: 'center', maxWidth: 300 },
+  sources: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    gap: Spacing.two,
+    marginTop: Spacing.two,
+  },
+  source: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 999,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+  sourceText: { fontSize: 13, fontWeight: '600' },
   group: { gap: Spacing.three },
-  row: { flexDirection: 'row', gap: Spacing.two, alignItems: 'center' },
-  flex: { flex: 1 },
-  message: { fontSize: 14, lineHeight: 20, flexShrink: 1 },
-  divider: { height: StyleSheet.hairlineWidth },
-  captionBox: { minHeight: 180 },
+  inputWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
+    borderWidth: 1.5,
+    borderRadius: 16,
+    paddingHorizontal: Spacing.four,
+    minHeight: 56,
+  },
+  // The box's border shows focus, so the browser's own outline is turned off.
+  input: { flex: 1, fontSize: 16, paddingVertical: 14, outlineWidth: 0 },
+  addButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.two,
+    minHeight: 54,
+    borderRadius: 16,
+  },
+  addButtonText: { fontSize: 17, fontWeight: '700' },
+  notice: {
+    flexDirection: 'row',
+    gap: Spacing.two,
+    padding: Spacing.three,
+    borderRadius: 12,
+    alignItems: 'flex-start',
+  },
+  noticeText: { flex: 1, fontSize: 14, lineHeight: 20 },
+  textCard: {
+    borderWidth: StyleSheet.hairlineWidth,
+    borderRadius: 20,
+    padding: Spacing.four,
+    gap: Spacing.two,
+  },
+  textTitle: { fontSize: 17, fontWeight: '700' },
+  textHint: { fontSize: 14, marginBottom: Spacing.one },
+  textBox: {
+    minHeight: 180,
+    borderWidth: 1,
+    borderRadius: 14,
+    padding: Spacing.three,
+    fontSize: 15,
+    lineHeight: 21,
+    marginBottom: Spacing.two,
+  },
 });

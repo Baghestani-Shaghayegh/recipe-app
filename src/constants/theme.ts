@@ -11,6 +11,7 @@ export const Colors = {
     accentText: '#FFFFFF',
     chip: '#F1EBE5',
     danger: '#B91C1C',
+    dangerSoft: '#FDECEC',
   },
   dark: {
     text: '#F5F0EB',
@@ -22,6 +23,7 @@ export const Colors = {
     accentText: '#1F1A17',
     chip: '#2C2622',
     danger: '#F87171',
+    dangerSoft: '#3A1F1D',
   },
 } as const;
 

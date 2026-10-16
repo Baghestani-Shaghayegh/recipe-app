@@ -1,4 +1,3 @@
-import * as Clipboard from 'expo-clipboard';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import {
@@ -29,6 +28,14 @@ const shareIdFrom = (text: string) =>
   /recipeapp:\/\/recipe\/import\?share=|^[0-9a-f-]{36}$/i.test(text.trim())
     ? parseShareId(text)
     : undefined;
+
+/** The link inside some pasted text, if there is one. */
+const linkIn = (text: string) =>
+  (shareIdFrom(text) ? text.trim() : undefined) ??
+  parseInstagramUrl(text)?.url ??
+  parseYoutubeUrl(text) ??
+  parseTiktokUrl(text) ??
+  parseWebUrl(text);
 
 // Browsers block reading Instagram and recipe sites from another site, so on the web the text is pasted.
 const CAN_FETCH = Platform.OS !== 'web';
@@ -127,16 +134,6 @@ export default function ImportScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [params.url, params.share]);
 
-  const pasteInto = async (set: (s: string) => void) => {
-    try {
-      const text = await Clipboard.getStringAsync();
-      if (text) set(text);
-      else setMessage({ text: 'Nothing to paste. Copy something first.' });
-    } catch {
-      setMessage({ text: 'Couldn’t read the clipboard. Long-press the box and choose Paste.' });
-    }
-  };
-
   const headerRight = () => (
     <Pressable onPress={() => router.back()} hitSlop={8} accessibilityRole="button">
       <Text style={[styles.headerButton, { color: c.accent }]}>Cancel</Text>
@@ -160,10 +157,11 @@ export default function ImportScreen() {
         <View style={styles.group}>
           <Field
             label="Recipe link"
-            hint="An Instagram, TikTok or YouTube video, or any recipe website. Use Share → Copy link."
+            hint="Share your recipe link from Instagram, TikTok or YouTube"
             value={link}
             onChangeText={(t) => {
-              setLink(t);
+              // Pasted share text often has words around the link: keep just the link.
+              setLink(/\s/.test(t.trim()) ? (linkIn(t) ?? t) : t);
               setMessage(undefined);
             }}
             placeholder="https://…"
@@ -171,35 +169,13 @@ export default function ImportScreen() {
             autoCorrect={false}
             keyboardType="url"
           />
-          <View style={styles.row}>
-            <View style={styles.flex}>
-              <Button
-                label="Paste link"
-                variant="secondary"
-                onPress={() =>
-                  pasteInto((t) =>
-                    setLink(
-                      (shareIdFrom(t) ? t.trim() : undefined) ??
-                        parseInstagramUrl(t)?.url ??
-                        parseYoutubeUrl(t) ??
-                        parseTiktokUrl(t) ??
-                        parseWebUrl(t) ??
-                        t.trim(),
-                    ),
-                  )
-                }
-              />
-            </View>
-            {CAN_FETCH || shareId ? (
-              <View style={styles.flex}>
-                <Button
-                  label="Get recipe"
-                  onPress={() => fetchFromLink()}
-                  disabled={(!shareId && !parsedLink && !videoUrl && !webUrl) || loading}
-                />
-              </View>
-            ) : null}
-          </View>
+          {CAN_FETCH || shareId ? (
+            <Button
+              label="Add recipe"
+              onPress={() => fetchFromLink()}
+              disabled={(!shareId && !parsedLink && !videoUrl && !webUrl) || loading}
+            />
+          ) : null}
           {link.trim() && !shareId && !parsedLink && !videoUrl && !webUrl ? (
             <Text style={[styles.message, { color: c.danger }]}>
               That doesn’t look like a link. It should start with https://
@@ -207,8 +183,7 @@ export default function ImportScreen() {
           ) : null}
           {!CAN_FETCH ? (
             <Text style={[styles.message, { color: c.textSecondary }]}>
-              In the browser the app can’t open other sites itself. The link will be saved with the
-              recipe. Paste the recipe text below to fill in the rest.
+              In the browser, paste the recipe text below.
             </Text>
           ) : null}
           {loading ? (
@@ -231,7 +206,7 @@ export default function ImportScreen() {
             <View style={styles.group}>
               <Field
                 label={CAN_FETCH ? 'Or paste the recipe text' : 'Recipe text'}
-                hint="The recipe text from the post or page. Headings like “Ingredients” and “Method” help."
+                hint="Copy the recipe from the post and paste it here"
                 value={caption}
                 onChangeText={setCaption}
                 multiline
@@ -240,26 +215,11 @@ export default function ImportScreen() {
                 }
                 style={styles.captionBox}
               />
-              <View style={styles.row}>
-                <View style={styles.flex}>
-                  <Button
-                    label="Paste text"
-                    variant="secondary"
-                    onPress={() => pasteInto(setCaption)}
-                  />
-                </View>
-                <View style={styles.flex}>
-                  <Button
-                    label="Create recipe"
-                    onPress={() => openDraft(caption)}
-                    disabled={!caption.trim() || loading}
-                  />
-                </View>
-              </View>
-              <Text style={[styles.message, { color: c.textSecondary }]}>
-                You’ll see the recipe before it’s saved, so you can fix anything that came out
-                wrong.
-              </Text>
+              <Button
+                label="Add recipe"
+                onPress={() => openDraft(caption)}
+                disabled={!caption.trim() || loading}
+              />
             </View>
           </>
         ) : (

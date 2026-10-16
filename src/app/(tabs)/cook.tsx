@@ -2,7 +2,7 @@ import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
-import { CardAction, RecipeCard } from '@/components/recipe-card';
+import { CardAction, RecipeCard, RecipeGrid } from '@/components/recipe-card';
 import { PantryList } from '@/components/pantry-list';
 import { Button, Chip, SectionTitle, Segmented } from '@/components/ui';
 import { Features } from '@/constants/features';
@@ -130,23 +130,29 @@ function Suggestions({ onOpenPantry }: { onOpenPantry: () => void }) {
       {Features.expiryDates && useSoon.length ? (
         <View style={styles.section}>
           <SectionTitle>Use it up ({useSoon.length})</SectionTitle>
-          {useSoon.map(({ recipe, uses }) => (
-            <RecipeCard key={recipe.id} recipe={recipe}>
-              <Text style={[styles.missing, { color: c.danger }]} numberOfLines={3}>
-                Uses{' '}
-                {uses
-                  .map((u) => `${u.item} (${describeExpiry(u.daysLeft).toLowerCase()})`)
-                  .join(', ')}
-              </Text>
-            </RecipeCard>
-          ))}
+          <RecipeGrid>
+            {useSoon.map(({ recipe, uses }) => (
+              <RecipeCard key={recipe.id} recipe={recipe}>
+                <Text style={[styles.missing, { color: c.danger }]} numberOfLines={3}>
+                  Uses{' '}
+                  {uses
+                    .map((u) => `${u.item} (${describeExpiry(u.daysLeft).toLowerCase()})`)
+                    .join(', ')}
+                </Text>
+              </RecipeCard>
+            ))}
+          </RecipeGrid>
         </View>
       ) : null}
 
       <View style={styles.section}>
         <SectionTitle>Ready to cook ({ready.length})</SectionTitle>
         {ready.length ? (
-          ready.map((m) => <MatchCard key={m.recipe.id} match={m} />)
+          <RecipeGrid>
+            {ready.map((m) => (
+              <MatchCard key={m.recipe.id} match={m} />
+            ))}
+          </RecipeGrid>
         ) : (
           <Text style={[styles.none, { color: c.textSecondary }]}>
             Nothing you can make with exactly what you have yet.
@@ -157,7 +163,11 @@ function Suggestions({ onOpenPantry }: { onOpenPantry: () => void }) {
       <View style={styles.section}>
         <SectionTitle>Almost there ({almost.length})</SectionTitle>
         {almost.length ? (
-          almost.map((m) => <MatchCard key={m.recipe.id} match={m} />)
+          <RecipeGrid>
+            {almost.map((m) => (
+              <MatchCard key={m.recipe.id} match={m} />
+            ))}
+          </RecipeGrid>
         ) : (
           <Text style={[styles.none, { color: c.textSecondary }]}>
             No recipes missing just 1 or 2 things.
@@ -167,13 +177,15 @@ function Suggestions({ onOpenPantry }: { onOpenPantry: () => void }) {
       {Features.suggestions && forYou.length ? (
         <View style={styles.section}>
           <SectionTitle>You might like</SectionTitle>
-          {forYou.map(({ recipe, similarTo }) => (
-            <RecipeCard key={recipe.id} recipe={recipe}>
-              <Text style={[styles.have, { color: c.textSecondary }]} numberOfLines={2}>
-                Similar to {similarTo.title}
-              </Text>
-            </RecipeCard>
-          ))}
+          <RecipeGrid>
+            {forYou.map(({ recipe, similarTo }) => (
+              <RecipeCard key={recipe.id} recipe={recipe}>
+                <Text style={[styles.have, { color: c.textSecondary }]} numberOfLines={2}>
+                  Similar to {similarTo.title}
+                </Text>
+              </RecipeCard>
+            ))}
+          </RecipeGrid>
         </View>
       ) : null}
     </ScrollView>
@@ -194,7 +206,7 @@ function MatchCard({ match }: { match: RecipeMatch }) {
       : '+ Make next'
     : inList
       ? '✓ On shopping list'
-      : '+ Add missing to shopping list';
+      : '+ Shopping list';
 
   return (
     <RecipeCard
@@ -221,7 +233,7 @@ function MatchCard({ match }: { match: RecipeMatch }) {
           Missing: {match.missing.map((i) => i.name).join(', ')}
         </Text>
       ) : (
-        <Text style={[styles.have, { color: c.textSecondary }]}>
+        <Text style={[styles.have, { color: c.textSecondary }]} numberOfLines={2}>
           You have all {total} ingredient{total === 1 ? '' : 's'}
         </Text>
       )}

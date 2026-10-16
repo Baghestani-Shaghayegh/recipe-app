@@ -2,15 +2,15 @@ import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { Features } from '@/constants/features';
 import { Spacing, useTheme } from '@/constants/theme';
-import { servingNutrition } from '@/lib/nutrition';
-import { formatMinutes, totalMinutes, type Recipe } from '@/lib/recipe';
+import { type Recipe } from '@/lib/recipe';
 
 /**
- * A recipe row that opens the recipe when tapped.
- * `children` adds extra lines under the title (e.g. "Missing: bread");
- * `actions` sits underneath, full width, for buttons.
+ * A recipe tile: a square photo with the name under it. Tapping it opens the recipe.
+ * The name is cut to two lines so long names never push the tile out of shape.
+ * `children` adds extra lines under the name (e.g. "Missing: bread");
+ * `actions` sits underneath, for buttons.
+ * Tiles fill their parent's width; put them in a `RecipeGrid` (or a 2-column list).
  */
 export function RecipeCard({
   recipe,
@@ -22,50 +22,46 @@ export function RecipeCard({
   actions?: React.ReactNode;
 }) {
   const c = useTheme();
-  const minutes = totalMinutes(recipe);
-  const nutrition = servingNutrition(recipe);
-  const kcal = nutrition
-    ? `${nutrition.source === 'estimate' ? '~' : ''}${Math.round(nutrition.values.kcal)} kcal`
-    : undefined;
-  const meta = [
-    Features.favoritesAndRatings && recipe.favorite ? '♥' : undefined,
-    Features.favoritesAndRatings && recipe.rating ? `★ ${recipe.rating}` : undefined,
-    recipe.category,
-    minutes !== undefined ? formatMinutes(minutes) : undefined,
-    kcal,
-  ]
-    .filter(Boolean)
-    .join(' · ');
-
   return (
-    <View style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}>
+    <View style={styles.card}>
       <Pressable
         onPress={() => router.push({ pathname: '/recipe/[id]', params: { id: recipe.id } })}
         accessibilityRole="button"
-        style={({ pressed }) => [styles.row, { opacity: pressed ? 0.8 : 1 }]}>
+        accessibilityLabel={recipe.title}
+        style={({ pressed }) => [styles.body, { opacity: pressed ? 0.8 : 1 }]}>
         {recipe.photoUri ? (
-          <Image source={{ uri: recipe.photoUri }} style={styles.thumb} contentFit="cover" />
+          <Image
+            source={{ uri: recipe.photoUri }}
+            style={[styles.photo, { backgroundColor: c.chip }]}
+            contentFit="cover"
+          />
         ) : (
-          <View style={[styles.thumb, styles.thumbPlaceholder, { backgroundColor: c.chip }]}>
-            <Text style={styles.thumbEmoji}>🍽️</Text>
+          <View style={[styles.photo, styles.placeholder, { backgroundColor: c.chip }]}>
+            <Text style={styles.placeholderEmoji}>🍽️</Text>
           </View>
         )}
-        <View style={styles.body}>
-          <Text style={[styles.title, { color: c.text }]} numberOfLines={2}>
-            {recipe.title}
-          </Text>
-          {meta ? <Text style={[styles.meta, { color: c.textSecondary }]}>{meta}</Text> : null}
-          {recipe.tags.length ? (
-            <Text style={[styles.tags, { color: c.accent }]} numberOfLines={1}>
-              {recipe.tags.map((t) => `#${t}`).join('  ')}
-            </Text>
-          ) : null}
-          {children}
-        </View>
+        <Text style={[styles.title, { color: c.text }]} numberOfLines={2} ellipsizeMode="tail">
+          {recipe.title}
+        </Text>
+        {children}
       </Pressable>
-      {actions ? (
-        <View style={[styles.actions, { borderTopColor: c.border }]}>{actions}</View>
-      ) : null}
+      {actions ? <View style={styles.actions}>{actions}</View> : null}
+    </View>
+  );
+}
+
+/** Lays recipe tiles out two per row. A lone last tile keeps the same width as the others. */
+export function RecipeGrid({ children }: { children: React.ReactNode[] }) {
+  const rows: React.ReactNode[][] = [];
+  for (let i = 0; i < children.length; i += 2) rows.push(children.slice(i, i + 2));
+  return (
+    <View style={styles.grid}>
+      {rows.map((row, i) => (
+        <View key={i} style={styles.gridRow}>
+          <View style={styles.gridCell}>{row[0]}</View>
+          <View style={styles.gridCell}>{row[1]}</View>
+        </View>
+      ))}
     </View>
   );
 }
@@ -91,30 +87,28 @@ export function CardAction({
       accessibilityRole="button"
       accessibilityLabel={label}
       style={({ pressed }) => [styles.action, { opacity: disabled ? 0.3 : pressed ? 0.6 : 1 }]}>
-      <Text style={[styles.actionText, { color: emphasis ? c.accent : c.textSecondary }]}>
+      <Text
+        style={[styles.actionText, { color: emphasis ? c.accent : c.textSecondary }]}
+        numberOfLines={1}>
         {label}
       </Text>
     </Pressable>
   );
 }
 
+export const GRID_GAP = Spacing.three;
+
 const styles = StyleSheet.create({
-  card: { borderWidth: 1, borderRadius: 14, overflow: 'hidden' },
-  row: { flexDirection: 'row' },
-  thumb: { width: 96, minHeight: 96, alignSelf: 'stretch' },
-  thumbPlaceholder: { alignItems: 'center', justifyContent: 'center' },
-  thumbEmoji: { fontSize: 32 },
-  body: { flex: 1, padding: Spacing.three, gap: Spacing.one, justifyContent: 'center' },
-  title: { fontSize: 17, fontWeight: '700' },
-  meta: { fontSize: 14 },
-  tags: { fontSize: 13, fontWeight: '500' },
-  actions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.two,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    paddingHorizontal: Spacing.two,
-  },
-  action: { paddingVertical: 10, paddingHorizontal: Spacing.two },
-  actionText: { fontSize: 15, fontWeight: '600' },
+  card: { flex: 1, minWidth: 0 },
+  body: { gap: Spacing.two },
+  photo: { width: '100%', aspectRatio: 1, borderRadius: 14, overflow: 'hidden' },
+  placeholder: { alignItems: 'center', justifyContent: 'center' },
+  placeholderEmoji: { fontSize: 40 },
+  title: { fontSize: 15, lineHeight: 20, fontWeight: '600' },
+  actions: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', marginTop: Spacing.one },
+  action: { paddingVertical: 8, paddingRight: Spacing.three, maxWidth: '100%' },
+  actionText: { fontSize: 14, fontWeight: '600' },
+  grid: { gap: Spacing.four },
+  gridRow: { flexDirection: 'row', gap: GRID_GAP },
+  gridCell: { flex: 1, minWidth: 0 },
 });

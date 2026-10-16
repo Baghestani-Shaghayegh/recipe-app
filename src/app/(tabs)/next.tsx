@@ -2,7 +2,7 @@ import { router } from 'expo-router';
 import { useMemo } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
-import { CardAction, RecipeCard } from '@/components/recipe-card';
+import { CardAction, RecipeCard, RecipeGrid } from '@/components/recipe-card';
 import { Button, SectionTitle } from '@/components/ui';
 import { MaxContentWidth, Spacing, useTheme } from '@/constants/theme';
 import type { Recipe } from '@/lib/recipe';
@@ -32,30 +32,31 @@ export default function MakeNextScreen() {
     <ScrollView style={{ backgroundColor: c.background }} contentContainerStyle={styles.content}>
       {queue.length ? (
         <View style={styles.section}>
-          {queue.map((recipe, i) => (
-            <RecipeCard
-              key={recipe.id}
-              recipe={recipe}
-              actions={
-                <>
-                  <CardAction
-                    label="↑"
-                    onPress={() => moveMakeNext(recipe.id, -1)}
-                    disabled={i === 0}
-                  />
-                  <CardAction
-                    label="↓"
-                    onPress={() => moveMakeNext(recipe.id, 1)}
-                    disabled={i === queue.length - 1}
-                  />
-                  <View style={styles.spacer} />
-                  <CardAction label="Remove" onPress={() => toggleMakeNext(recipe.id)} />
-                  <CardAction label="✓ Cooked" emphasis onPress={() => markCooked(recipe.id)} />
-                </>
-              }>
-              {i === 0 ? <Text style={[styles.upNext, { color: c.accent }]}>Up next</Text> : null}
-            </RecipeCard>
-          ))}
+          <RecipeGrid>
+            {queue.map((recipe, i) => (
+              <RecipeCard
+                key={recipe.id}
+                recipe={recipe}
+                actions={
+                  <>
+                    <CardAction
+                      label="↑"
+                      onPress={() => moveMakeNext(recipe.id, -1)}
+                      disabled={i === 0}
+                    />
+                    <CardAction
+                      label="↓"
+                      onPress={() => moveMakeNext(recipe.id, 1)}
+                      disabled={i === queue.length - 1}
+                    />
+                    <CardAction label="Remove" onPress={() => toggleMakeNext(recipe.id)} />
+                    <CardAction label="✓ Cooked" emphasis onPress={() => markCooked(recipe.id)} />
+                  </>
+                }>
+                {i === 0 ? <Text style={[styles.upNext, { color: c.accent }]}>Up next</Text> : null}
+              </RecipeCard>
+            ))}
+          </RecipeGrid>
         </View>
       ) : (
         <View style={styles.empty}>
@@ -99,7 +100,6 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
   },
   section: { gap: Spacing.three },
-  spacer: { flex: 1 },
   upNext: { fontSize: 13, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5 },
   empty: { alignItems: 'center', gap: Spacing.three, paddingVertical: Spacing.six },
   emptyTitle: { fontSize: 20, fontWeight: '700' },

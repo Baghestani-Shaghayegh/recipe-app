@@ -13,11 +13,18 @@ import {
 } from 'react-native';
 
 import { DIETS, type DietId } from '@/lib/diet';
-import { RecipeCard } from '@/components/recipe-card';
+import { GRID_GAP, RecipeCard } from '@/components/recipe-card';
 import { Button, Chip } from '@/components/ui';
 import { Features } from '@/constants/features';
 import { MaxContentWidth, Spacing, useTheme } from '@/constants/theme';
-import { allTags, CATEGORIES, filterRecipes, TIME_FILTERS, type Category } from '@/lib/recipe';
+import {
+  allTags,
+  CATEGORIES,
+  filterRecipes,
+  TIME_FILTERS,
+  type Category,
+  type Recipe,
+} from '@/lib/recipe';
 import { useRecipes } from '@/store/recipes';
 
 export default function RecipeListScreen() {
@@ -149,13 +156,20 @@ export default function RecipeListScreen() {
     </View>
   );
 
+  const cells: (Recipe | null)[] = visible.length % 2 ? [...visible, null] : visible;
+
   return (
     <View style={[styles.screen, { backgroundColor: c.background }]}>
       <Tabs.Screen options={{ headerRight: headerButtons }} />
       <FlatList
-        data={visible}
-        keyExtractor={(r) => r.id}
-        renderItem={({ item }) => <RecipeCard recipe={item} />}
+        data={cells}
+        keyExtractor={(r) => r?.id ?? 'filler'}
+        numColumns={2}
+        columnWrapperStyle={styles.gridRow}
+        // An empty cell after an odd last tile keeps it the same width as the others.
+        renderItem={({ item }) =>
+          item ? <RecipeCard recipe={item} /> : <View style={styles.filler} />
+        }
         ListHeaderComponent={filters}
         ListEmptyComponent={
           recipes.length === 0 ? (
@@ -211,12 +225,14 @@ const styles = StyleSheet.create({
   headerButton: { fontSize: 17, fontWeight: '600', paddingHorizontal: Spacing.two },
   list: {
     padding: Spacing.four,
-    gap: Spacing.three,
+    gap: Spacing.four,
     width: '100%',
     maxWidth: MaxContentWidth,
     alignSelf: 'center',
   },
   filters: { gap: Spacing.three, marginBottom: Spacing.two },
+  gridRow: { gap: GRID_GAP },
+  filler: { flex: 1 },
   search: {
     borderWidth: 1,
     borderRadius: 12,

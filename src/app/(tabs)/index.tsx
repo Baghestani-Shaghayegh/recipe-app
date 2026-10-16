@@ -90,8 +90,8 @@ export default function RecipeListScreen() {
       ? [
           {
             key: 'have',
-            label: 'Only what I have',
-            section: 'Ingredients',
+            label: 'Pantry match',
+            section: 'Pantry',
             on: canMakeOnly,
             onChange: setCanMakeOnly,
           },

@@ -18,8 +18,14 @@ export const canReadPhotos = Platform.OS !== 'web' && !!extractor?.isSupported;
 
 export class PhotoProblem extends Error {}
 
-/** Takes or picks a photo of a recipe and returns its text, cleaned up. Undefined if cancelled. */
-export async function readRecipePhoto(source: 'camera' | 'library'): Promise<string | undefined> {
+/**
+ * Takes or picks a photo of a recipe and returns its text, cleaned up. Undefined if cancelled.
+ * `onReading` runs once a photo is chosen, while its text is being read.
+ */
+export async function readRecipePhoto(
+  source: 'camera' | 'library',
+  onReading?: () => void,
+): Promise<string | undefined> {
   if (!extractor || !canReadPhotos) {
     throw new PhotoProblem('Reading recipe photos works in the installed app, not here.');
   }
@@ -33,6 +39,7 @@ export async function readRecipePhoto(source: 'camera' | 'library'): Promise<str
       ? await ImagePicker.launchCameraAsync(options)
       : await ImagePicker.launchImageLibraryAsync(options);
   if (result.canceled || !result.assets[0]) return undefined;
+  onReading?.();
 
   const blocks = await extractor.extractTextFromImage(result.assets[0].uri.replace('file://', ''));
   const text = cleanOcrText(blocks);

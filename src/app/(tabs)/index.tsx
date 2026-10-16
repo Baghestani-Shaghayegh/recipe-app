@@ -1,7 +1,6 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { router } from 'expo-router';
-import { Tabs } from 'expo-router/js-tabs';
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -14,6 +13,7 @@ import {
 
 import { type DietId } from '@/lib/diet';
 import { GRID_GAP, RecipeCard } from '@/components/recipe-card';
+import { AddRecipeMenu } from '@/components/add-recipe-menu';
 import { FilterBar, type FilterGroup, type FilterToggle } from '@/components/filter-bar';
 import { categoryGroup, dietGroup, timeGroup } from '@/components/recipe-filters';
 import { Button } from '@/components/ui';
@@ -33,6 +33,8 @@ export default function RecipeListScreen() {
   const [tags, setTags] = useState<string[]>([]);
   const [favoritesOnly, setFavoritesOnly] = useState(false);
   const [diets, setDiets] = useState<DietId[]>([]);
+  const [adding, setAdding] = useState(false);
+  const closeAdding = useCallback(() => setAdding(false), []);
 
   const { pantry } = useKitchen();
   const [canMakeOnly, setCanMakeOnly] = useState(false);
@@ -111,17 +113,6 @@ export default function RecipeListScreen() {
       : []),
   ];
 
-  const headerButtons = () => (
-    <View style={styles.headerButtons}>
-      <Pressable
-        onPress={() => router.push('/recipe/import')}
-        hitSlop={8}
-        accessibilityRole="button">
-        <Text style={[styles.headerButton, { color: c.accent }]}>Import</Text>
-      </Pressable>
-    </View>
-  );
-
   if (!loaded) {
     return (
       <View style={[styles.center, { backgroundColor: c.background }]}>
@@ -155,7 +146,6 @@ export default function RecipeListScreen() {
 
   return (
     <View style={[styles.screen, { backgroundColor: c.background }]}>
-      <Tabs.Screen options={{ headerRight: headerButtons }} />
       <FlatList
         data={cells}
         keyExtractor={(r) => r?.id ?? 'filler'}
@@ -171,14 +161,9 @@ export default function RecipeListScreen() {
             <View style={styles.empty}>
               <Text style={[styles.emptyTitle, { color: c.text }]}>No recipes yet</Text>
               <Text style={[styles.emptyText, { color: c.textSecondary }]}>
-                Add your first recipe to start your collection.
+                Save one from Instagram or TikTok, snap a recipe card, or write your own.
               </Text>
-              <Button label="Add a recipe" onPress={() => router.push('/recipe/edit')} />
-              <Button
-                label="Import a recipe"
-                variant="secondary"
-                onPress={() => router.push('/recipe/import')}
-              />
+              <Button label="Add a recipe" onPress={() => setAdding(true)} />
             </View>
           ) : (
             <View style={styles.empty}>
@@ -209,7 +194,7 @@ export default function RecipeListScreen() {
         keyboardDismissMode="on-drag"
       />
       <Pressable
-        onPress={() => router.push('/recipe/edit')}
+        onPress={() => setAdding(true)}
         accessibilityRole="button"
         accessibilityLabel="Add a recipe"
         style={({ pressed }) => [
@@ -218,6 +203,7 @@ export default function RecipeListScreen() {
         ]}>
         <Ionicons name="add" size={32} color={c.accentText} />
       </Pressable>
+      <AddRecipeMenu visible={adding} onClose={closeAdding} />
     </View>
   );
 }
@@ -238,8 +224,6 @@ const styles = StyleSheet.create({
   },
   screen: { flex: 1 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  headerButtons: { flexDirection: 'row', gap: Spacing.two, paddingRight: Spacing.two },
-  headerButton: { fontSize: 17, fontWeight: '600', paddingHorizontal: Spacing.two },
   list: {
     padding: Spacing.four,
     // Room under the last recipes so the + button doesn't cover them.

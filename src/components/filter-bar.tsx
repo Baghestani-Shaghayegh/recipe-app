@@ -1,20 +1,8 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { useCallback, useMemo, useState } from 'react';
-import {
-  Animated,
-  Easing,
-  Modal,
-  PanResponder,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  useWindowDimensions,
-  View,
-} from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useCallback, useState } from 'react';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
+import { BottomSheet } from '@/components/bottom-sheet';
 import { Chip } from '@/components/ui';
 import { Spacing, useTheme } from '@/constants/theme';
 
@@ -272,87 +260,10 @@ function Sheet({
   children: React.ReactNode;
 }) {
   const c = useTheme();
-  const insets = useSafeAreaInsets();
-  const { height } = useWindowDimensions();
-  // 0 = off screen, 1 = open. `drag` follows a finger pulling the sheet down.
-  const [progress] = useState(() => new Animated.Value(0));
-  const [drag] = useState(() => new Animated.Value(0));
-
-  const slideOut = useCallback(
-    () =>
-      Animated.timing(progress, {
-        toValue: 0,
-        duration: 220,
-        easing: Easing.in(Easing.cubic),
-        useNativeDriver: NATIVE,
-      }).start(() => {
-        drag.setValue(0);
-        onClose();
-      }),
-    [progress, drag, onClose],
-  );
-
-  const pan = useMemo(
-    () =>
-      PanResponder.create({
-        onStartShouldSetPanResponder: () => true,
-        onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dy) > 4,
-        onPanResponderMove: (_, g) => drag.setValue(Math.max(0, g.dy)),
-        onPanResponderRelease: (_, g) => {
-          // A tap, a long enough pull or a quick flick down closes it; anything else springs back.
-          if (Math.abs(g.dy) < 4 || g.dy > 80 || g.vy > 0.5) slideOut();
-          else Animated.spring(drag, { toValue: 0, useNativeDriver: NATIVE }).start();
-        },
-        onPanResponderTerminate: () =>
-          Animated.spring(drag, { toValue: 0, useNativeDriver: NATIVE }).start(),
-      }),
-    [drag, slideOut],
-  );
-
-  const slideIn = () =>
-    Animated.timing(progress, {
-      toValue: 1,
-      duration: 280,
-      easing: Easing.out(Easing.cubic),
-      useNativeDriver: NATIVE,
-    }).start();
-
-  const translateY = Animated.add(
-    progress.interpolate({ inputRange: [0, 1], outputRange: [height, 0] }),
-    drag,
-  );
-
   return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="none"
-      onShow={slideIn}
-      onRequestClose={slideOut}>
-      <View style={styles.backdropWrap}>
-        <Animated.View style={[styles.backdrop, { opacity: progress }]}>
-          <Pressable style={styles.fill} onPress={slideOut} accessibilityLabel="Dismiss filters" />
-        </Animated.View>
-        <Animated.View
-          style={[
-            styles.sheet,
-            {
-              backgroundColor: c.card,
-              paddingBottom: Spacing.four + insets.bottom,
-              transform: [{ translateY }],
-            },
-          ]}>
-          <View
-            {...pan.panHandlers}
-            accessible
-            accessibilityRole="button"
-            accessibilityLabel="Close filters"
-            accessibilityActions={[{ name: 'activate' }]}
-            onAccessibilityAction={slideOut}
-            style={styles.grabArea}>
-            <View style={[styles.grab, { backgroundColor: c.border }]} />
-          </View>
-          <Text style={[styles.sheetTitle, { color: c.text }]}>{title}</Text>
+    <BottomSheet visible={visible} title={title} closeLabel="Close filters" onClose={onClose}>
+      {(close) => (
+        <>
           <ScrollView style={styles.sheetBody} contentContainerStyle={styles.sheetContent}>
             {children}
           </ScrollView>
@@ -367,7 +278,7 @@ function Sheet({
               <Text style={[styles.buttonText, { color: c.text }]}>{clearLabel}</Text>
             </Pressable>
             <Pressable
-              onPress={slideOut}
+              onPress={() => close()}
               accessibilityRole="button"
               style={({ pressed }) => [
                 styles.button,
@@ -380,14 +291,12 @@ function Sheet({
               </Text>
             </Pressable>
           </View>
-        </Animated.View>
-      </View>
-    </Modal>
+        </>
+      )}
+    </BottomSheet>
   );
 }
 
-// The web has no native animation driver.
-const NATIVE = Platform.OS !== 'web';
 const PILL_HEIGHT = 38;
 // How far the count badge sticks out past the icon.
 const BADGE_ROOM = 6;
@@ -436,28 +345,6 @@ const styles = StyleSheet.create({
   pillMainWithClear: { paddingRight: 4 },
   pillClear: { height: '100%', justifyContent: 'center', paddingLeft: 2, paddingRight: 12 },
   pillText: { fontSize: 15, fontWeight: '500', flexShrink: 1 },
-  backdropWrap: { flex: 1, justifyContent: 'flex-end' },
-  backdrop: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(0,0,0,0.4)' },
-  sheet: {
-    borderTopLeftRadius: 22,
-    borderTopRightRadius: 22,
-    paddingHorizontal: Spacing.five,
-    width: '100%',
-    maxWidth: 560,
-    maxHeight: '85%',
-    alignSelf: 'center',
-  },
-  // Tall enough to grab easily with a thumb.
-  grabArea: {
-    alignSelf: 'stretch',
-    alignItems: 'center',
-    paddingTop: Spacing.two,
-    paddingBottom: Spacing.three,
-    marginTop: -Spacing.one,
-  },
-  fill: { flex: 1 },
-  grab: { width: 40, height: 5, borderRadius: 3 },
-  sheetTitle: { fontSize: 19, fontWeight: '700', marginBottom: Spacing.one },
   sheetBody: { flexGrow: 0 },
   sheetContent: { gap: Spacing.four, paddingVertical: Spacing.two },
   section: { gap: Spacing.two },

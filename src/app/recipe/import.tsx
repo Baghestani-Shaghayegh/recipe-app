@@ -16,7 +16,6 @@ import { Button, Field } from '@/components/ui';
 import { MaxContentWidth, Spacing, useTheme } from '@/constants/theme';
 import { fetchInstagramPost, InstagramError, parseInstagramUrl } from '@/lib/instagram';
 import { saveRemotePhoto } from '@/lib/photos';
-import { canReadPhotos, PhotoProblem, readRecipePhoto } from '@/lib/recipe-photo';
 import { recipeDraftFromText } from '@/lib/recipe-text';
 import { recipeFromShared } from '@/lib/share';
 import { parseShareId } from '@/lib/supabase';
@@ -46,8 +45,8 @@ export default function ImportScreen() {
   const autoFetched = useRef(false);
 
   const shareId = shareIdFrom(link);
-  const [photoBusy, setPhotoBusy] = useState<string>();
-  const [photoError, setPhotoError] = useState<string>();
+  // The paste-text box is a fallback: shown when a link can't be read, on the web, or on request.
+  const [showText, setShowText] = useState(!CAN_FETCH);
   const parsedLink = parseInstagramUrl(link);
   const videoUrl = parsedLink ? undefined : (parseYoutubeUrl(link) ?? parseTiktokUrl(link));
   const webUrl = parsedLink || videoUrl ? undefined : parseWebUrl(link);
@@ -110,6 +109,7 @@ export default function ImportScreen() {
             ? e.message
             : 'Something went wrong reading that link.';
       setMessage({ text: `${text} You can paste the recipe text below instead.`, error: true });
+      setShowText(true);
     } finally {
       setLoading(false);
     }
@@ -126,19 +126,6 @@ export default function ImportScreen() {
     // Only for a link passed in when the screen opens.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [params.url, params.share]);
-
-  const readPhoto = async (source: 'camera' | 'library') => {
-    setPhotoError(undefined);
-    setPhotoBusy('Reading the photo…');
-    try {
-      const text = await readRecipePhoto(source);
-      if (text) openDraft(text, { sourceUrl: undefined });
-    } catch (e) {
-      setPhotoError(e instanceof PhotoProblem ? e.message : 'Couldn’t read that photo.');
-    } finally {
-      setPhotoBusy(undefined);
-    }
-  };
 
   const pasteInto = async (set: (s: string) => void) => {
     try {
@@ -160,7 +147,7 @@ export default function ImportScreen() {
     <KeyboardAvoidingView
       style={{ flex: 1, backgroundColor: c.background }}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <Stack.Screen options={{ title: 'Import a recipe', headerLeft }} />
+      <Stack.Screen options={{ title: 'Paste a link', headerLeft }} />
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <View style={styles.group}>
           <Field
@@ -229,84 +216,51 @@ export default function ImportScreen() {
           ) : null}
         </View>
 
-        <View style={[styles.divider, { backgroundColor: c.border }]} />
+        {showText ? (
+          <>
+            <View style={[styles.divider, { backgroundColor: c.border }]} />
 
-        <View style={styles.group}>
-          <Text style={[styles.sectionLabel, { color: c.text }]}>From a photo</Text>
-          <Text style={[styles.message, { color: c.textSecondary }]}>
-            A cookbook page or a handwritten card. The text is read on your phone; you check it
-            before saving.
-          </Text>
-          {canReadPhotos ? (
-            <View style={styles.row}>
-              <View style={styles.flex}>
-                <Button
-                  label="Take photo"
-                  variant="secondary"
-                  disabled={!!photoBusy}
-                  onPress={() => readPhoto('camera')}
-                />
+            <View style={styles.group}>
+              <Field
+                label={CAN_FETCH ? 'Or paste the recipe text' : 'Recipe text'}
+                hint="The recipe text from the post or page. Headings like “Ingredients” and “Method” help."
+                value={caption}
+                onChangeText={setCaption}
+                multiline
+                placeholder={
+                  'Garlic noodles\n\nIngredients:\n200 g spaghetti\n2 tbsp butter\n\nMethod:\n1. Cook the noodles…'
+                }
+                style={styles.captionBox}
+              />
+              <View style={styles.row}>
+                <View style={styles.flex}>
+                  <Button
+                    label="Paste text"
+                    variant="secondary"
+                    onPress={() => pasteInto(setCaption)}
+                  />
+                </View>
+                <View style={styles.flex}>
+                  <Button
+                    label="Create recipe"
+                    onPress={() => openDraft(caption)}
+                    disabled={!caption.trim() || loading}
+                  />
+                </View>
               </View>
-              <View style={styles.flex}>
-                <Button
-                  label="Choose photo"
-                  variant="secondary"
-                  disabled={!!photoBusy}
-                  onPress={() => readPhoto('library')}
-                />
-              </View>
+              <Text style={[styles.message, { color: c.textSecondary }]}>
+                You’ll see the recipe before it’s saved, so you can fix anything that came out
+                wrong.
+              </Text>
             </View>
-          ) : (
-            <Text style={[styles.message, { color: c.textSecondary }]}>
-              Reading photos works in the installed app (not in Expo Go or the browser). Here, type
-              or paste the recipe below.
+          </>
+        ) : (
+          <Pressable onPress={() => setShowText(true)} accessibilityRole="button" hitSlop={8}>
+            <Text style={[styles.message, styles.textLink, { color: c.accent }]}>
+              Have the recipe text instead? Paste it here
             </Text>
-          )}
-          {photoBusy ? (
-            <View style={styles.row}>
-              <ActivityIndicator color={c.accent} />
-              <Text style={[styles.message, { color: c.textSecondary }]}>{photoBusy}</Text>
-            </View>
-          ) : null}
-          {photoError ? (
-            <Text style={[styles.message, { color: c.danger }]}>{photoError}</Text>
-          ) : null}
-        </View>
-
-        <View style={[styles.divider, { backgroundColor: c.border }]} />
-
-        <View style={styles.group}>
-          <Field
-            label={CAN_FETCH ? 'Or paste the recipe text' : 'Recipe text'}
-            hint="The recipe text from the post or page. Headings like “Ingredients” and “Method” help."
-            value={caption}
-            onChangeText={setCaption}
-            multiline
-            placeholder={
-              'Garlic noodles\n\nIngredients:\n200 g spaghetti\n2 tbsp butter\n\nMethod:\n1. Cook the noodles…'
-            }
-            style={styles.captionBox}
-          />
-          <View style={styles.row}>
-            <View style={styles.flex}>
-              <Button
-                label="Paste caption"
-                variant="secondary"
-                onPress={() => pasteInto(setCaption)}
-              />
-            </View>
-            <View style={styles.flex}>
-              <Button
-                label="Create recipe"
-                onPress={() => openDraft(caption)}
-                disabled={!caption.trim() || loading}
-              />
-            </View>
-          </View>
-          <Text style={[styles.message, { color: c.textSecondary }]}>
-            You’ll see the recipe before it’s saved, so you can fix anything that came out wrong.
-          </Text>
-        </View>
+          </Pressable>
+        )}
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -327,6 +281,6 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   message: { fontSize: 14, lineHeight: 20, flexShrink: 1 },
   divider: { height: StyleSheet.hairlineWidth },
-  sectionLabel: { fontSize: 15, fontWeight: '600' },
+  textLink: { fontWeight: '600' },
   captionBox: { minHeight: 180 },
 });

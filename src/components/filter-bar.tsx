@@ -18,7 +18,7 @@ export type FilterGroup = {
   onChange: (selected: string[]) => void;
 };
 
-/** An on/off filter, e.g. "Only what I have". `section` is its heading on the all-filters sheet. */
+/** An on/off filter, e.g. "Pantry match". `section` is its heading on the all-filters sheet. */
 export type FilterToggle = {
   key: string;
   label: string;

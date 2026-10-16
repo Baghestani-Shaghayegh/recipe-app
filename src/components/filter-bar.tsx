@@ -52,15 +52,15 @@ export function FilterBar({
     <>
       {/* The icon stays put; only the filters next to it scroll sideways. */}
       <View style={styles.bar}>
+        {/* Padding above and to the right of the icon so the count badge is never cut off. */}
         <Pressable
           onPress={() => setOpen('all')}
           accessibilityRole="button"
           accessibilityLabel={active ? `All filters, ${active} on` : 'All filters'}
-          style={({ pressed }) => [
-            styles.iconButton,
-            { backgroundColor: active ? c.text : c.chip, opacity: pressed ? 0.7 : 1 },
-          ]}>
-          <Ionicons name="options-outline" size={20} color={active ? c.background : c.text} />
+          style={({ pressed }) => [styles.iconWrap, { opacity: pressed ? 0.7 : 1 }]}>
+          <View style={[styles.iconButton, { backgroundColor: active ? c.text : c.chip }]}>
+            <Ionicons name="options-outline" size={20} color={active ? c.background : c.text} />
+          </View>
           {active ? (
             <View style={[styles.badge, { backgroundColor: c.accent, borderColor: c.background }]}>
               <Text style={[styles.badgeText, { color: c.accentText }]}>{active}</Text>
@@ -311,9 +311,12 @@ function Sheet({
 }
 
 const PILL_HEIGHT = 38;
+// How far the count badge sticks out past the icon.
+const BADGE_ROOM = 6;
 
 const styles = StyleSheet.create({
-  bar: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
+  bar: { flexDirection: 'row', alignItems: 'flex-end', gap: Spacing.two },
+  iconWrap: { paddingTop: BADGE_ROOM, paddingRight: BADGE_ROOM, marginRight: -BADGE_ROOM },
   // The filters run to the right edge of the screen so they scroll under it.
   scroller: { flex: 1, marginRight: -Spacing.four },
   row: { gap: Spacing.two, paddingRight: Spacing.four, alignItems: 'center' },
@@ -326,8 +329,8 @@ const styles = StyleSheet.create({
   },
   badge: {
     position: 'absolute',
-    top: -4,
-    right: -4,
+    top: 0,
+    right: 0,
     minWidth: 20,
     height: 20,
     borderRadius: 10,

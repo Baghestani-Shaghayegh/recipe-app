@@ -5,26 +5,22 @@ import {
   ActivityIndicator,
   FlatList,
   Pressable,
-  ScrollView,
   StyleSheet,
   Text,
   TextInput,
   View,
 } from 'react-native';
 
-import { DIETS, type DietId } from '@/lib/diet';
+import { type DietId } from '@/lib/diet';
 import { GRID_GAP, RecipeCard } from '@/components/recipe-card';
-import { Button, Chip } from '@/components/ui';
+import { FilterBar, type FilterGroup, type FilterToggle } from '@/components/filter-bar';
+import { categoryGroup, dietGroup, timeGroup } from '@/components/recipe-filters';
+import { Button } from '@/components/ui';
 import { Features } from '@/constants/features';
 import { MaxContentWidth, Spacing, useTheme } from '@/constants/theme';
-import {
-  allTags,
-  CATEGORIES,
-  filterRecipes,
-  TIME_FILTERS,
-  type Category,
-  type Recipe,
-} from '@/lib/recipe';
+import { matchRecipe } from '@/lib/pantry';
+import { allTags, filterRecipes, type Category, type Recipe } from '@/lib/recipe';
+import { useKitchen } from '@/store/kitchen';
 import { useRecipes } from '@/store/recipes';
 
 export default function RecipeListScreen() {
@@ -37,18 +33,30 @@ export default function RecipeListScreen() {
   const [favoritesOnly, setFavoritesOnly] = useState(false);
   const [diets, setDiets] = useState<DietId[]>([]);
 
+  const { pantry } = useKitchen();
+  const [canMakeOnly, setCanMakeOnly] = useState(false);
+  const haveFilter = canMakeOnly && pantry.length > 0;
+
   const tagOptions = useMemo(() => allTags(recipes), [recipes]);
-  const visible = useMemo(
-    () => filterRecipes(recipes, { query, category, maxMinutes, tags, favoritesOnly, diets }),
-    [recipes, query, category, maxMinutes, tags, favoritesOnly, diets],
-  );
+  const visible = useMemo(() => {
+    const found = filterRecipes(recipes, {
+      query,
+      category,
+      maxMinutes,
+      tags,
+      favoritesOnly,
+      diets,
+    });
+    return haveFilter ? found.filter((r) => !matchRecipe(r, pantry).missing.length) : found;
+  }, [recipes, query, category, maxMinutes, tags, favoritesOnly, diets, haveFilter, pantry]);
   const hasFilters =
     !!query ||
     !!category ||
     maxMinutes !== undefined ||
     tags.length > 0 ||
     favoritesOnly ||
-    diets.length > 0;
+    diets.length > 0 ||
+    haveFilter;
 
   const clearFilters = () => {
     setQuery('');
@@ -57,10 +65,50 @@ export default function RecipeListScreen() {
     setTags([]);
     setFavoritesOnly(false);
     setDiets([]);
+    setCanMakeOnly(false);
   };
 
-  const toggleTag = (t: string) =>
-    setTags((prev) => (prev.includes(t) ? prev.filter((x) => x !== t) : [...prev, t]));
+  const filterGroups: FilterGroup[] = [
+    categoryGroup(category, setCategory),
+    timeGroup(maxMinutes, setMaxMinutes),
+    ...(Features.dietFilters ? [dietGroup(diets, setDiets)] : []),
+    ...(Features.tagFilters && tagOptions.length
+      ? [
+          {
+            key: 'tags',
+            title: 'Tags',
+            multi: true,
+            options: tagOptions.map((t) => ({ value: t, label: `#${t}` })),
+            selected: tags,
+            onChange: setTags,
+          },
+        ]
+      : []),
+  ];
+  const filterToggles: FilterToggle[] = [
+    ...(pantry.length
+      ? [
+          {
+            key: 'have',
+            label: 'Only what I have',
+            section: 'Ingredients',
+            on: canMakeOnly,
+            onChange: setCanMakeOnly,
+          },
+        ]
+      : []),
+    ...(Features.favoritesAndRatings
+      ? [
+          {
+            key: 'favorites',
+            label: '♥ Favorites',
+            section: 'Favorites',
+            on: favoritesOnly,
+            onChange: setFavoritesOnly,
+          },
+        ]
+      : []),
+  ];
 
   const headerButtons = () => (
     <View style={styles.headerButtons}>
@@ -94,58 +142,7 @@ export default function RecipeListScreen() {
         clearButtonMode="while-editing"
         style={[styles.search, { color: c.text, backgroundColor: c.card, borderColor: c.border }]}
       />
-      <View style={styles.wrapRow}>
-        {CATEGORIES.map((cat) => (
-          <Chip
-            key={cat}
-            label={cat}
-            selected={category === cat}
-            onPress={() => setCategory(category === cat ? undefined : cat)}
-          />
-        ))}
-      </View>
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.chipRow}>
-        {Features.favoritesAndRatings ? (
-          <Chip
-            label="♥ Favorites"
-            selected={favoritesOnly}
-            onPress={() => setFavoritesOnly(!favoritesOnly)}
-          />
-        ) : null}
-        {TIME_FILTERS.map((t) => (
-          <Chip
-            key={t.maxMinutes}
-            label={t.label}
-            selected={maxMinutes === t.maxMinutes}
-            onPress={() => setMaxMinutes(maxMinutes === t.maxMinutes ? undefined : t.maxMinutes)}
-          />
-        ))}
-        {(Features.tagFilters ? tagOptions : []).map((t) => (
-          <Chip key={t} label={`#${t}`} selected={tags.includes(t)} onPress={() => toggleTag(t)} />
-        ))}
-      </ScrollView>
-      {Features.dietFilters ? (
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.chipRow}>
-          {DIETS.map((d) => (
-            <Chip
-              key={d.id}
-              label={d.label}
-              selected={diets.includes(d.id)}
-              onPress={() =>
-                setDiets((prev) =>
-                  prev.includes(d.id) ? prev.filter((x) => x !== d.id) : [...prev, d.id],
-                )
-              }
-            />
-          ))}
-        </ScrollView>
-      ) : null}
+      <FilterBar groups={filterGroups} toggles={filterToggles} resultCount={visible.length} />
       {hasFilters ? (
         <Pressable onPress={clearFilters} accessibilityRole="button">
           <Text style={[styles.clear, { color: c.accent }]}>
@@ -218,7 +215,6 @@ export default function RecipeListScreen() {
 }
 
 const styles = StyleSheet.create({
-  wrapRow: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two },
   screen: { flex: 1 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   headerButtons: { flexDirection: 'row', gap: Spacing.two, paddingRight: Spacing.two },
@@ -240,7 +236,6 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     fontSize: 16,
   },
-  chipRow: { gap: Spacing.two },
   footerLink: { fontSize: 14, textAlign: 'center', paddingVertical: Spacing.four },
   clear: { fontSize: 14, fontWeight: '600' },
   empty: { alignItems: 'center', gap: Spacing.three, paddingVertical: Spacing.six },

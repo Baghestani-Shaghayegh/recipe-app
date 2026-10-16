@@ -4,14 +4,16 @@ import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { CardAction, RecipeCard, RecipeGrid } from '@/components/recipe-card';
 import { PantryList } from '@/components/pantry-list';
-import { Button, Chip, SectionTitle, Segmented } from '@/components/ui';
+import { FilterBar } from '@/components/filter-bar';
+import { categoryGroup, dietGroup, timeGroup } from '@/components/recipe-filters';
+import { Button, SectionTitle, Segmented } from '@/components/ui';
 import { Features } from '@/constants/features';
 import { MaxContentWidth, Spacing, useTheme } from '@/constants/theme';
 import { describeExpiry, expiringItems, recipesToUseUp } from '@/lib/expiry';
 import { suggestForYou } from '@/lib/suggest';
 import { recommend, type RecipeMatch } from '@/lib/pantry';
-import { DIETS, type DietId } from '@/lib/diet';
-import { CATEGORIES, filterRecipes, TIME_FILTERS, type Category } from '@/lib/recipe';
+import { type DietId } from '@/lib/diet';
+import { filterRecipes, type Category } from '@/lib/recipe';
 import { useKitchen } from '@/store/kitchen';
 import { useRecipes } from '@/store/recipes';
 
@@ -82,50 +84,14 @@ function Suggestions({ onOpenPantry }: { onOpenPantry: () => void }) {
 
   return (
     <ScrollView style={{ backgroundColor: c.background }} contentContainerStyle={styles.content}>
-      <View style={styles.filters}>
-        <View style={styles.wrapRow}>
-          {CATEGORIES.map((cat) => (
-            <Chip
-              key={cat}
-              label={cat}
-              selected={category === cat}
-              onPress={() => setCategory(category === cat ? undefined : cat)}
-            />
-          ))}
-        </View>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.chipRow}>
-          {TIME_FILTERS.map((t) => (
-            <Chip
-              key={t.maxMinutes}
-              label={t.label}
-              selected={maxMinutes === t.maxMinutes}
-              onPress={() => setMaxMinutes(maxMinutes === t.maxMinutes ? undefined : t.maxMinutes)}
-            />
-          ))}
-        </ScrollView>
-        {Features.dietFilters ? (
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.chipRow}>
-            {DIETS.map((d) => (
-              <Chip
-                key={d.id}
-                label={d.label}
-                selected={diets.includes(d.id)}
-                onPress={() =>
-                  setDiets((prev) =>
-                    prev.includes(d.id) ? prev.filter((x) => x !== d.id) : [...prev, d.id],
-                  )
-                }
-              />
-            ))}
-          </ScrollView>
-        ) : null}
-      </View>
+      <FilterBar
+        groups={[
+          categoryGroup(category, setCategory),
+          timeGroup(maxMinutes, setMaxMinutes),
+          ...(Features.dietFilters ? [dietGroup(diets, setDiets)] : []),
+        ]}
+        resultCount={ready.length + almost.length}
+      />
 
       {Features.expiryDates && useSoon.length ? (
         <View style={styles.section}>
@@ -242,7 +208,6 @@ function MatchCard({ match }: { match: RecipeMatch }) {
 }
 
 const styles = StyleSheet.create({
-  wrapRow: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two },
   screen: { flex: 1 },
   segmentWrap: {
     paddingHorizontal: Spacing.four,
@@ -267,8 +232,6 @@ const styles = StyleSheet.create({
     maxWidth: MaxContentWidth,
     alignSelf: 'center',
   },
-  filters: { gap: Spacing.three },
-  chipRow: { gap: Spacing.two },
   section: { gap: Spacing.three },
   none: { fontSize: 15 },
   missing: { fontSize: 14, fontWeight: '500' },

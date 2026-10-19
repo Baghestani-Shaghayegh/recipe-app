@@ -16,7 +16,7 @@ import {
 import { Spacing, useTheme } from '@/constants/theme';
 import { fetchInstagramPost, InstagramError, parseInstagramUrl } from '@/lib/instagram';
 import { saveRemotePhoto } from '@/lib/photos';
-import { draftAsText, needsTranslation, smartDraftFromText } from '@/lib/ai-recipe';
+import { smartDraftFromText, translateWebDraft } from '@/lib/ai-recipe';
 import { supabaseConfig } from '@/lib/app-config';
 import { recipeFromShared } from '@/lib/share';
 import { parseShareId } from '@/lib/supabase';
@@ -112,13 +112,10 @@ export default function ImportScreen() {
           ? await saveRemotePhoto(imageUrl).catch(() => undefined)
           : undefined;
         // A recipe site in another language goes through the smart reader to be translated.
-        const draft = needsTranslation(draftAsText(found))
-          ? await smartDraftFromText(
-              draftAsText(found),
-              { sourceUrl: found.sourceUrl ?? url },
-              supabaseConfig,
-            )
-          : found;
+        const draft = await translateWebDraft(
+          { ...found, sourceUrl: found.sourceUrl ?? url },
+          supabaseConfig,
+        );
         router.replace({
           pathname: '/recipe/edit',
           params: { draft: setRecipeDraft({ ...draft, photoUri }) },
@@ -141,7 +138,7 @@ export default function ImportScreen() {
     if (params.share && !autoFetched.current) {
       autoFetched.current = true;
       fetchFromLink(params.share);
-    } else if (CAN_FETCH && params.url && parseInstagramUrl(params.url) && !autoFetched.current) {
+    } else if (CAN_FETCH && params.url && linkIn(params.url) && !autoFetched.current) {
       autoFetched.current = true;
       fetchFromLink(params.url);
     }
@@ -175,7 +172,7 @@ export default function ImportScreen() {
           </View>
           <Text style={[styles.heroTitle, { color: c.text }]}>Save a recipe from a link</Text>
           <Text style={[styles.heroText, { color: c.textSecondary }]}>
-            Share your recipe link from Instagram, TikTok or YouTube
+            Copy the link from Instagram, TikTok, YouTube or a recipe website and paste it here
           </Text>
           <View style={styles.sources}>
             {SOURCES.map((s) => (

@@ -112,8 +112,8 @@ These are the core of the app. Build them first, in roughly this order.
   report and block
 
 ### Polish
-- Dark mode
-- Works offline
+- ✅ Dark mode (follows the phone's setting)
+- Works offline (recipes, pantry and shopping already work offline; importing from a link needs a connection)
 - ✅ Export / backup all recipes (copy as text; no file export yet)
 
 ---

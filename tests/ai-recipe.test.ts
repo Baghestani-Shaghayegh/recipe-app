@@ -8,7 +8,9 @@ import {
   needsTranslation,
   readWithAi,
   smartDraftFromText,
+  translateWebDraft,
 } from '../src/lib/ai-recipe.ts';
+import { parseIngredientList } from '../src/lib/ingredients.ts';
 import { servingNutrition } from '../src/lib/nutrition.ts';
 
 const CONFIG = { url: 'https://abc.supabase.co', key: 'sb_publishable_test' };
@@ -140,4 +142,46 @@ test('writes a site recipe out as text for translating', () => {
       'Translated from Persian.',
     ].join('\n'),
   );
+});
+
+// A Persian recipe site: the site gives times and tags, the reader translates.
+const SITE = {
+  title: 'املت',
+  tags: ['صبحانه'],
+  servings: 2,
+  prepMinutes: 5,
+  cookMinutes: 10,
+  ingredients: parseIngredientList('تخم مرغ ۳ عدد'),
+  steps: ['تخم مرغ ها را هم بزنید.'],
+  sourceUrl: 'https://example.ir/omlet',
+};
+
+test('a foreign recipe site is translated, keeping its tags and times', async () => {
+  const draft = await translateWebDraft(
+    SITE,
+    CONFIG,
+    fakeFetch(200, { recipe: { ...ANSWER, prepMinutes: 0, cookMinutes: 0 } }),
+  );
+  assert.equal(draft.title, 'Tomato Omelette (Omlet)');
+  assert.deepEqual(draft.tags, ['صبحانه']);
+  assert.deepEqual([draft.prepMinutes, draft.cookMinutes], [5, 10]);
+  assert.equal(draft.sourceUrl, 'https://example.ir/omlet');
+});
+
+test('a foreign recipe site stays as it is when the reader isn’t set up or fails', async () => {
+  assert.equal(await translateWebDraft(SITE, undefined), SITE);
+  assert.equal(await translateWebDraft(SITE, CONFIG, fakeFetch(503, { error: 'x' })), SITE);
+});
+
+test('an English recipe site isn’t sent to the reader', async () => {
+  const seen: Request[] = [];
+  const english = {
+    ...SITE,
+    title: 'Omelette',
+    tags: [],
+    ingredients: parseIngredientList('3 eggs'),
+    steps: ['Whisk the eggs.'],
+  };
+  assert.equal(await translateWebDraft(english, CONFIG, fakeFetch(200, {}, seen)), english);
+  assert.equal(seen.length, 0);
 });

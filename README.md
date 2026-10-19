@@ -39,7 +39,8 @@ paste the text instead. The cleanup of recognised text is in `src/lib/ocr.ts`.
 
 - **Pantry:** list what you have at home (salt, pepper, oil and water are assumed)
 - **Cook** ("What can I make?"): recipes you can make with your pantry, plus ones missing only 1–2 ingredients,
-  with category and time filters. "egg" matches "3 eggs", "lentils" matches "red lentils", etc.
+  with category and time filters. "egg" matches "3 eggs", "lentils" matches "red lentils",
+  "chicken" matches "chicken breast", but "chicken stock" doesn't count as chicken, etc.
 - **Make next:** a to-cook list you can reorder; "Cooked" moves a recipe to your history
 - Recipe pages show which ingredients you have and how often you've cooked it
 
@@ -286,10 +287,9 @@ see, post, like, report and delete what.
 
 Not yet (each needs something the app doesn't have on its own):
 
-- **AI parsing of unstructured captions, and reading what's said in a reel:** need an AI/speech
-  service with a secret key, which must live on a server, not in the app.
-- **Scanning a cookbook page or handwritten recipe:** needs text recognition (a native module,
-  so a development build, or an online service).
+- **Reading what's said in a reel:** needs a speech-to-text service with a secret key, which
+  must live on a server, not in the app. (Captions are read by the smart reader, and photos of
+  paper recipes by on-device text recognition; see above.)
 - **Receiving links from the Instagram / TikTok / YouTube share sheet:** needs a development
   build, not Expo Go.
 - **Vitamins and minerals** other than sodium in the nutrition estimate.

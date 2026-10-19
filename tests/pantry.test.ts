@@ -62,6 +62,24 @@ test('pantry matching works both ways and on whole words', () => {
   assert.ok(!pantryHas([], 'eggs'));
 });
 
+test('pantry matching: a food is not the dish or product named after it', () => {
+  assert.ok(!pantryHas(['chicken stock'], 'chicken'));
+  assert.ok(!pantryHas(['chicken'], 'chicken stock'));
+  assert.ok(!pantryHas(['eggs'], 'egg noodles'));
+  assert.ok(!pantryHas(['onion'], 'onion powder'));
+  assert.ok(!pantryHas(['tomato'], 'tomato paste'));
+  assert.ok(!pantryHas(['garlic powder'], 'garlic'));
+});
+
+test('pantry matching: parts of a food count as the food', () => {
+  assert.ok(pantryHas(['chicken'], 'chicken breasts'));
+  assert.ok(pantryHas(['chicken breast'], 'chicken'));
+  assert.ok(pantryHas(['eggs'], 'egg yolks'));
+  assert.ok(pantryHas(['lemons'], 'lemon juice'));
+  assert.ok(pantryHas(['garlic'], 'garlic cloves, minced'));
+  assert.ok(pantryHas(['basil'], 'fresh basil leaves'));
+});
+
 test('match skips staples', () => {
   const m = matchRecipe(recipe('Omelette', '3 eggs\n1 tbsp butter\nSalt and pepper'), ['eggs']);
   assert.deepEqual(

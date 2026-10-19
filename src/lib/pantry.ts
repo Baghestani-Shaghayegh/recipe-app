@@ -108,15 +108,50 @@ export function containsPhrase(hay: string[], needle: string[]): boolean {
   return false;
 }
 
+// Words for a part of a food: "chicken breast" is still chicken, "egg yolk" is still egg.
+const FOOD_PARTS = new Set([
+  'breast',
+  'thigh',
+  'leg',
+  'drumstick',
+  'wing',
+  'fillet',
+  'yolk',
+  'white',
+  'juice',
+  'zest',
+  'leaf',
+  'leave',
+  'clove',
+  'stalk',
+  'sprig',
+  'floret',
+]);
+
+/**
+ * True if `short` names the same food as `long`: it's the last words ("red lentils" is lentils),
+ * or only a part word follows ("chicken breast" is chicken). "chicken stock" isn't chicken and
+ * "egg noodles" aren't eggs.
+ */
+function namesSameFood(long: string[], short: string[]): boolean {
+  if (!short.length || short.length > long.length) return false;
+  for (let i = 0; i + short.length <= long.length; i++) {
+    if (!short.every((w, j) => long[i + j] === w)) continue;
+    const after = long.slice(i + short.length);
+    if (after.every((w) => FOOD_PARTS.has(w))) return true;
+  }
+  return false;
+}
+
 /**
  * Pantry "egg" covers "3 eggs"; pantry "lentils" covers "red lentils";
- * pantry "cheddar cheese" covers "cheese".
+ * pantry "cheddar cheese" covers "cheese"; pantry "chicken" covers "chicken breast".
  */
 export function pantryHas(pantry: string[], ingredientName: string): boolean {
   const ing = normalizeWords(ingredientName);
   return pantry.some((item) => {
     const p = normalizeWords(item);
-    return containsPhrase(ing, p) || containsPhrase(p, ing);
+    return namesSameFood(ing, p) || namesSameFood(p, ing);
   });
 }
 

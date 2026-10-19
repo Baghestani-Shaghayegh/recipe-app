@@ -110,6 +110,36 @@ export async function smartDraftFromText(
   return recipeDraftFromText(text, extra);
 }
 
+/**
+ * A recipe read from a website, translated into English when it's in another script. The site's
+ * own photo, tags and times are kept where the reader has none, and when the reader isn't set up
+ * or fails the site's recipe is used as it is.
+ */
+export async function translateWebDraft(
+  found: RecipeDraft,
+  config: SupabaseConfig | undefined,
+  fetchImpl: typeof fetch = fetch,
+): Promise<RecipeDraft> {
+  if (!config || !needsTranslation(draftAsText(found))) return found;
+  try {
+    const ai = draftFromAi(await readWithAi(draftAsText(found), config, fetchImpl), {
+      sourceUrl: found.sourceUrl,
+    });
+    if (!ai) return found;
+    return {
+      ...ai,
+      photoUri: found.photoUri,
+      category: ai.category ?? found.category,
+      tags: found.tags,
+      servings: ai.servings ?? found.servings,
+      prepMinutes: ai.prepMinutes ?? found.prepMinutes,
+      cookMinutes: ai.cookMinutes ?? found.cookMinutes,
+    };
+  } catch {
+    return found;
+  }
+}
+
 /** Text in a script other than Latin (Persian, Arabic, Cyrillic, …), so it needs translating. */
 export const needsTranslation = (text: string) =>
   /[Ͱ-ϿЀ-ӿ֐-׿؀-ۿݐ-ݿࢠ-ࣿﭐ-﷿ﹰ-﻿ऀ-෿฀-๿぀-ヿ㐀-鿿가-힯]/.test(text);

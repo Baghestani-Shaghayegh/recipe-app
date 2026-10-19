@@ -31,7 +31,8 @@ paste the text instead. The cleanup of recognised text is in `src/lib/ocr.ts`.
 
 - Add, edit and delete recipes: name, photo, category, tags, prep/cook time, servings,
   ingredients, steps, notes and source link
-- Search by name, ingredient or tag
+- Search by name, ingredient or tag (accents and plurals don't matter: "creme" finds "Crème",
+  "tomatoes" finds "tomato")
 - Filter by category, total time (≤ 15 / 30 / 60 min) and tags
 - Recipes are saved on the device (AsyncStorage; `localStorage` on web)
 
@@ -213,9 +214,10 @@ Code: `src/lib/supabase.ts` (small client over Supabase's REST API, no extra pac
 
 - *Start cooking* on a recipe page: one step at a time in big text, *Back* / *Next step*, and the
   screen stays on. *Show ingredients* lists them at the serving size you picked.
-- Times in a step ("simmer 30 minutes", "fry 5-7 min") get a *Start timer* button (a range uses the
-  shorter time). Several timers can run at once; they vibrate when time is up. Timers only run
-  while the cooking screen is open; there are no notifications when the app is in the background.
+- Times in a step ("simmer 30 minutes", "fry 5-7 min", "bake 1½ hours", "1 hour 30 minutes",
+  "half an hour") get a *Start timer* button (a range uses the shorter time). Several timers can run at once; they vibrate when time is up. Timers only run
+  while the cooking screen is open, so *Done* asks first while one is running (swiping back
+  doesn't ask yet); there are no notifications when the app is in the background.
   Logic in `src/lib/timers.ts`.
 
 ## Backup

@@ -81,13 +81,25 @@ export type RecipeFilters = {
   diets?: DietId[];
 };
 
+/** Lowercase without accents, so "creme" finds "Crème". */
+const fold = (text: string) => text.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase();
+
+/** A search word and its singular, so "tomatoes" finds "tomato" and "cherries" finds "cherry". */
+function searchForms(word: string): string[] {
+  if (word.length <= 3) return [word];
+  if (word.endsWith('ies')) return [word, word.slice(0, -3) + 'y'];
+  if (/(oes|ches|shes|xes)$/.test(word)) return [word, word.slice(0, -2)];
+  if (word.endsWith('s') && !word.endsWith('ss')) return [word, word.slice(0, -1)];
+  return [word];
+}
+
 /**
- * Search matches the title, ingredient names, and tags.
+ * Search matches the title, ingredient names, and tags, ignoring accents and plurals.
  * Recipes with no time set are hidden when a time filter is on.
  * All selected tags must be present.
  */
 export function filterRecipes(recipes: Recipe[], f: RecipeFilters): Recipe[] {
-  const words = f.query.toLowerCase().split(/\s+/).filter(Boolean);
+  const words = fold(f.query).split(/\s+/).filter(Boolean).map(searchForms);
   return recipes.filter((r) => {
     if (f.favoritesOnly && !r.favorite) return false;
     if (f.diets?.some((d) => !fitsDiet(r, d))) return false;
@@ -98,10 +110,8 @@ export function filterRecipes(recipes: Recipe[], f: RecipeFilters): Recipe[] {
     }
     if (f.tags.some((t) => !r.tags.includes(t))) return false;
     if (words.length) {
-      const haystack = [r.title, ...r.ingredients.map((i) => i.name), ...r.tags]
-        .join(' ')
-        .toLowerCase();
-      if (!words.every((w) => haystack.includes(w))) return false;
+      const haystack = fold([r.title, ...r.ingredients.map((i) => i.name), ...r.tags].join(' '));
+      if (!words.every((forms) => forms.some((w) => haystack.includes(w)))) return false;
     }
     return true;
   });

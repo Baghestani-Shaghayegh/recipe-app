@@ -1,7 +1,16 @@
 import { useKeepAwake } from 'expo-keep-awake';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, Vibration, View } from 'react-native';
+import {
+  Alert,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  Vibration,
+  View,
+} from 'react-native';
 
 import { Button } from '@/components/ui';
 import { MaxContentWidth, Spacing, useTheme } from '@/constants/theme';
@@ -69,6 +78,21 @@ export default function CookScreen() {
     ]);
   };
   const stopTimer = (timerId: number) => setTimers((prev) => prev.filter((t) => t.id !== timerId));
+
+  // Timers only run on this screen, so leaving with one still going asks first.
+  const finish = () => {
+    if (!running) return router.back();
+    const title = 'Leave cooking mode?';
+    const message = 'Your timers will stop.';
+    if (Platform.OS === 'web') {
+      if (window.confirm(`${title}\n\n${message}`)) router.back();
+      return;
+    }
+    Alert.alert(title, message, [
+      { text: 'Keep cooking', style: 'cancel' },
+      { text: 'Leave', style: 'destructive', onPress: () => router.back() },
+    ]);
+  };
 
   return (
     <View style={[styles.screen, { backgroundColor: c.background }]}>
@@ -146,7 +170,7 @@ export default function CookScreen() {
         </View>
         <View style={styles.flex}>
           {step >= last ? (
-            <Button label="Done" onPress={() => router.back()} />
+            <Button label="Done" onPress={finish} />
           ) : (
             <Button label="Next step" onPress={() => setStep((s) => Math.min(last, s + 1))} />
           )}

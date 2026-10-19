@@ -76,6 +76,20 @@ test('search by title, ingredient and tag, case insensitive', () => {
   assert.deepEqual(filterRecipes(all, { query: 'lamb eggs', tags: [] }), []);
 });
 
+test('search ignores accents and plurals', () => {
+  const brulee = recipe({
+    title: 'Crème Brûlée',
+    ingredients: parseIngredientList('1 cherry tomato\n2 peaches'),
+  });
+  const list = [omelette, stew, brulee];
+  assert.deepEqual(filterRecipes(list, { query: 'creme brulee', tags: [] }), [brulee]);
+  assert.deepEqual(filterRecipes(list, { query: 'tomatoes', tags: [] }), [brulee]);
+  assert.deepEqual(filterRecipes(list, { query: 'cherries', tags: [] }), [brulee]);
+  assert.deepEqual(filterRecipes(list, { query: 'peaches', tags: [] }), [brulee]);
+  assert.deepEqual(filterRecipes(list, { query: 'limes', tags: [] }), [stew]);
+  assert.deepEqual(filterRecipes(list, { query: 'herbs', tags: [] }), [omelette]);
+});
+
 test('filter by category', () => {
   assert.deepEqual(filterRecipes(all, { query: '', category: 'Dinner', tags: [] }), [stew]);
 });

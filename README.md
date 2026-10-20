@@ -176,8 +176,8 @@ Code: `src/lib/supabase.ts` (small client over Supabase's REST API, no extra pac
   choose another recipe or remove it.
 - From a recipe page: ⋯ → *Add to meal plan*, pick a day in the next two weeks and a meal.
 - **Shopping for it:** the bar at the bottom says how many meals are planned and how many
-  ingredients are missing ("Missing 9 ingredients"). *Review* lists what they need (for *Today*, the *Next 3 days* or the *Rest of week*),
-  grouped by store section, minus your pantry and the basics. A recipe planned twice counts
+  ingredients are missing ("Missing 9 ingredients"). *Review* lists what they need (for *Today*,
+  the *Next 3 days* or the *Rest of week*), grouped by store section, minus your pantry and the basics. A recipe planned twice counts
   twice. Untick what you don't need and add the rest to the Shopping list; those meals are then
   marked as shopped so they aren't added again. Planned meals don't go onto the list on their own.
 - Saved on the device (`plan.v1`, older plans are converted; `planShopped.v1`); logic in

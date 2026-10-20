@@ -19,7 +19,8 @@ import { categoryGroup, dietGroup, timeGroup } from '@/components/recipe-filters
 import { Button } from '@/components/ui';
 import { Features } from '@/constants/features';
 import { MaxContentWidth, Spacing, useTheme } from '@/constants/theme';
-import { matchRecipe } from '@/lib/pantry';
+import { recommend } from '@/lib/pantry';
+import { shoppingName } from '@/lib/shopping';
 import { allTags, filterRecipes, type Category, type Recipe } from '@/lib/recipe';
 import { useKitchen } from '@/store/kitchen';
 import { useRecipes } from '@/store/recipes';
@@ -50,11 +51,12 @@ export function RecipeBrowser({ pick }: { pick?: RecipePick }) {
   const closeAdding = useCallback(() => setAdding(false), []);
 
   const { pantry } = useKitchen();
-  const [canMakeOnly, setCanMakeOnly] = useState(false);
-  const haveFilter = canMakeOnly && pantry.length > 0;
+  // Match my pantry: recipes you can make now, then ones missing only 1–2 things.
+  const [matchPantry, setMatchPantry] = useState(false);
+  const pantryEmpty = matchPantry && !pantry.length;
 
   const tagOptions = useMemo(() => allTags(recipes), [recipes]);
-  const visible = useMemo(() => {
+  const { visible, missing } = useMemo(() => {
     const found = filterRecipes(recipes, {
       query,
       category,
@@ -63,8 +65,16 @@ export function RecipeBrowser({ pick }: { pick?: RecipePick }) {
       favoritesOnly,
       diets,
     });
-    return haveFilter ? found.filter((r) => !matchRecipe(r, pantry).missing.length) : found;
-  }, [recipes, query, category, maxMinutes, tags, favoritesOnly, diets, haveFilter, pantry]);
+    if (!matchPantry) return { visible: found, missing: undefined };
+    const { ready, almost } = recommend(found, pantry);
+    return {
+      visible: [...ready, ...almost].map((m) => m.recipe),
+      // What each recipe still needs, by id; empty when you have everything.
+      missing: new Map(
+        [...ready, ...almost].map((m) => [m.recipe.id, m.missing.map((i) => shoppingName(i.name))]),
+      ),
+    };
+  }, [recipes, query, category, maxMinutes, tags, favoritesOnly, diets, matchPantry, pantry]);
   const hasFilters =
     !!query ||
     !!category ||
@@ -72,7 +82,7 @@ export function RecipeBrowser({ pick }: { pick?: RecipePick }) {
     tags.length > 0 ||
     favoritesOnly ||
     diets.length > 0 ||
-    haveFilter;
+    matchPantry;
 
   const clearFilters = () => {
     setQuery('');
@@ -81,7 +91,7 @@ export function RecipeBrowser({ pick }: { pick?: RecipePick }) {
     setTags([]);
     setFavoritesOnly(false);
     setDiets([]);
-    setCanMakeOnly(false);
+    setMatchPantry(false);
   };
 
   const filterGroups: FilterGroup[] = [
@@ -102,17 +112,6 @@ export function RecipeBrowser({ pick }: { pick?: RecipePick }) {
       : []),
   ];
   const filterToggles: FilterToggle[] = [
-    ...(pantry.length
-      ? [
-          {
-            key: 'have',
-            label: 'Pantry match',
-            section: 'Pantry',
-            on: canMakeOnly,
-            onChange: setCanMakeOnly,
-          },
-        ]
-      : []),
     ...(Features.favoritesAndRatings
       ? [
           {
@@ -150,6 +149,45 @@ export function RecipeBrowser({ pick }: { pick?: RecipePick }) {
         style={[styles.search, { color: c.text, backgroundColor: c.card, borderColor: c.border }]}
       />
       <FilterBar groups={filterGroups} toggles={filterToggles} resultCount={visible.length} />
+      <View style={styles.pantryRow}>
+        <Pressable
+          onPress={() => setMatchPantry((on) => !on)}
+          accessibilityRole="switch"
+          accessibilityState={{ checked: matchPantry }}
+          style={({ pressed }) => [
+            styles.matchButton,
+            {
+              backgroundColor: matchPantry ? c.accent : c.chip,
+              opacity: pressed ? 0.8 : 1,
+            },
+          ]}>
+          <Ionicons
+            name={matchPantry ? 'checkmark-circle' : 'basket-outline'}
+            size={18}
+            color={matchPantry ? c.accentText : c.text}
+          />
+          <Text style={[styles.matchText, { color: matchPantry ? c.accentText : c.text }]}>
+            Match my pantry
+          </Text>
+        </Pressable>
+        <Pressable onPress={() => router.push('/pantry')} hitSlop={8} accessibilityRole="link">
+          <Text style={[styles.pantryLink, { color: c.accent }]}>
+            My pantry ({pantry.length}) ›
+          </Text>
+        </Pressable>
+      </View>
+      {pantryEmpty ? (
+        <View style={[styles.pantryNote, { backgroundColor: c.chip }]}>
+          <Text style={[styles.emptyText, { color: c.text }]}>
+            Your pantry is empty. Add what you have at home to see what you can make.
+          </Text>
+          <Button label="Fill my pantry" onPress={() => router.push('/pantry')} />
+        </View>
+      ) : matchPantry ? (
+        <Text style={[styles.matchHint, { color: c.textSecondary }]}>
+          Ready to cook first, then recipes missing only 1–2 things.
+        </Text>
+      ) : null}
       {hasFilters ? (
         <Pressable onPress={clearFilters} accessibilityRole="button">
           <Text style={[styles.clear, { color: c.accent }]}>
@@ -172,14 +210,16 @@ export function RecipeBrowser({ pick }: { pick?: RecipePick }) {
         // An empty cell after an odd last tile keeps it the same width as the others.
         renderItem={({ item }) =>
           item ? (
-            <RecipeCard recipe={item} onPress={pick ? () => pick.onPick(item) : undefined} />
+            <RecipeCard recipe={item} onPress={pick ? () => pick.onPick(item) : undefined}>
+              {missing ? <PantryLine missing={missing.get(item.id) ?? []} /> : null}
+            </RecipeCard>
           ) : (
             <View style={styles.filler} />
           )
         }
         ListHeaderComponent={filters}
         ListEmptyComponent={
-          recipes.length === 0 ? (
+          pantryEmpty ? null : recipes.length === 0 ? (
             <View style={styles.empty}>
               <Text style={[styles.emptyTitle, { color: c.text }]}>No recipes yet</Text>
               <Text style={[styles.emptyText, { color: c.textSecondary }]}>
@@ -192,7 +232,9 @@ export function RecipeBrowser({ pick }: { pick?: RecipePick }) {
           ) : (
             <View style={styles.empty}>
               <Text style={[styles.emptyText, { color: c.textSecondary }]}>
-                No recipes match these filters.
+                {matchPantry
+                  ? 'Nothing you can make yet with your pantry. Try adding a few more things to it.'
+                  : 'No recipes match these filters.'}
               </Text>
             </View>
           )
@@ -236,6 +278,18 @@ export function RecipeBrowser({ pick }: { pick?: RecipePick }) {
   );
 }
 
+/** Under a card in Match my pantry: "✓ Ready to cook" or "Missing: bread, eggs". */
+function PantryLine({ missing }: { missing: string[] }) {
+  const c = useTheme();
+  return (
+    <Text
+      style={[styles.pantryLine, { color: missing.length ? c.danger : c.accent }]}
+      numberOfLines={2}>
+      {missing.length ? `Missing: ${missing.join(', ')}` : '✓ Ready to cook'}
+    </Text>
+  );
+}
+
 const ADD_BUTTON_SIZE = 60;
 
 const styles = StyleSheet.create({
@@ -263,6 +317,25 @@ const styles = StyleSheet.create({
   },
   pickList: { paddingBottom: Spacing.six },
   filters: { gap: Spacing.three, marginBottom: Spacing.two },
+  pantryRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: Spacing.three,
+  },
+  matchButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    borderRadius: 999,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+  },
+  matchText: { fontSize: 15, fontWeight: '600' },
+  pantryLink: { fontSize: 15, fontWeight: '600' },
+  pantryNote: { borderRadius: 14, padding: Spacing.four, gap: Spacing.three },
+  matchHint: { fontSize: 13 },
+  pantryLine: { fontSize: 13, fontWeight: '600', marginTop: -Spacing.one },
   banner: { borderRadius: 12, paddingHorizontal: Spacing.three, paddingVertical: 10 },
   bannerText: { fontSize: 15, lineHeight: 21 },
   gridRow: { gap: GRID_GAP },

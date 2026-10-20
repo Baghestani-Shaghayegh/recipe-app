@@ -22,6 +22,8 @@ export const Features = {
   discover: false,
   /** Sign in, sync between devices, households, share as link (needs Supabase + account deletion). */
   accounts: false,
+  /** Separate Cook tab ("What can I make" and the pantry); the Recipes page has Match my pantry. */
+  cookTab: false,
   /** Separate "Make next" tab (its list is shown on the Shopping tab instead). */
   makeNextTab: false,
   /** Vegetarian / vegan / ... filter chips. */

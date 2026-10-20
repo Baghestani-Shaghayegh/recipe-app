@@ -10,7 +10,7 @@
   pantry → what can I make
 - Buy: shopping list from the recipes you pick, minus the pantry
 
-Tabs: Recipes · Plan · Cook (with pantry) · Shopping. Everything else is switched off in
+Tabs: Plan · Recipes (with Match my pantry) · Shopping. Everything else is switched off in
 `src/constants/features.ts` and comes back in updates after launch, one at a time, starting with
 what testers ask for.
 

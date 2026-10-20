@@ -6,21 +6,20 @@ See [FEATURES.md](FEATURES.md) for the full plan.
 ## Version 1 (what's switched on)
 
 The first release does one job: **save recipes from anywhere, decide what to cook, and buy
-what's missing.** Four tabs:
+what's missing.** Three tabs: Plan · Recipes · Shopping.
 
-- **Recipes:** your recipes, search, category (Breakfast, Lunch, Dinner, Snack, Baking) and time
-  filters. **Import** from an Instagram, TikTok or YouTube link, any recipe website, pasted
-  text, or **a photo of a cookbook page or handwritten card** (read on the phone). A recipe page
-  has two buttons, *Start cooking* and *+ Shopping list*; sharing, "I cooked this" and delete are
-  in the ⋯ menu. Calories, protein, carbs and fat per serving are estimated.
 - **Plan:** breakfast, lunch and dinner for each day, and a *Review* to shop for them (see
   *Meal plan* below).
-- **Cook:** *What can I make* (ready to cook, or missing just 1–2 things, with category and time
-  filters) and *My pantry* on the same screen.
+- **Recipes:** your recipes, search, category (Breakfast, Lunch, Dinner, Snack, Baking) and time
+  filters. **Match my pantry** shows what you can make now, then recipes missing only 1–2
+  things ("Missing: bread, eggs"); *My pantry* next to it is where you list what you have.
+  **Import** from an Instagram, TikTok or YouTube link, any recipe website, pasted text, or **a photo of a cookbook page or handwritten card** (read on the phone). A recipe page
+  has two buttons, *Start cooking* and *+ Shopping list*; sharing, "I cooked this" and delete are
+  in the ⋯ menu. Calories, protein, carbs and fat per serving are estimated.
 - **Shopping:** everything the recipes you're shopping for need, minus your pantry.
 
 Everything else described below is built and tested but **switched off** in
-`src/constants/features.ts` (Discover videos, accounts and sync, diet filters,
+`src/constants/features.ts` (Discover videos, accounts and sync, the separate Cook tab, diet filters,
 ratings, unit switch, substitutions, suggestions, best-before dates, extra nutrients, backup).
 Turn one back on by changing its line to `true`.
 

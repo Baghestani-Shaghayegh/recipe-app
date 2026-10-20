@@ -148,7 +148,7 @@ export default function ShoppingScreen() {
           <Button
             label="Find something to cook"
             variant="secondary"
-            onPress={() => router.navigate('/cook')}
+            onPress={() => router.navigate(Features.cookTab ? '/cook' : '/')}
           />
         </View>
       ) : null}

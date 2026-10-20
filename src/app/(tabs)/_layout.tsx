@@ -38,10 +38,6 @@ export default function TabLayout() {
         },
       }}>
       <Tabs.Screen
-        name="index"
-        options={{ title: 'My Recipes', tabBarLabel: 'Recipes', tabBarIcon: icon('book-outline') }}
-      />
-      <Tabs.Screen
         name="discover"
         options={{
           title: 'Discover',
@@ -60,11 +56,16 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="index"
+        options={{ title: 'My Recipes', tabBarLabel: 'Recipes', tabBarIcon: icon('book-outline') }}
+      />
+      <Tabs.Screen
         name="cook"
         options={{
           title: 'What can I make?',
           tabBarLabel: 'Cook',
           tabBarIcon: icon('flame-outline'),
+          href: Features.cookTab ? undefined : null,
         }}
       />
       <Tabs.Screen
@@ -74,16 +75,6 @@ export default function TabLayout() {
           tabBarLabel: 'Next',
           href: Features.makeNextTab ? undefined : null,
           tabBarIcon: icon('list-outline'),
-        }}
-      />
-      <Tabs.Screen
-        name="pantry"
-        options={{
-          title: 'My Pantry',
-          tabBarLabel: 'Pantry',
-          tabBarIcon: icon('basket-outline'),
-          // In version 1 the pantry is part of the Cook tab.
-          href: null,
         }}
       />
       <Tabs.Screen

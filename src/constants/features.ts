@@ -13,6 +13,8 @@ export const Features = {
   scaleServings: true,
   /** Calories, protein, carbs and fat per serving. */
   nutrition: true,
+  /** Plan tab: breakfast, lunch and dinner for each day, and shopping for them. */
+  mealPlan: true,
 
   // ---- Off for now (planned for later updates) ----
   /** Recipe video feed (needs Supabase, moderation, video hosting; turn the microphone permission
@@ -20,8 +22,6 @@ export const Features = {
   discover: false,
   /** Sign in, sync between devices, households, share as link (needs Supabase + account deletion). */
   accounts: false,
-  /** Weekly meal plan tab and its nutrition totals and goals. */
-  mealPlan: false,
   /** Separate "Make next" tab (its list is shown on the Shopping tab instead). */
   makeNextTab: false,
   /** Vegetarian / vegan / ... filter chips. */

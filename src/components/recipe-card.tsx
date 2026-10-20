@@ -33,17 +33,22 @@ export function RecipeCard({
   recipe,
   children,
   actions,
+  onPress,
 }: {
   recipe: Recipe;
   children?: React.ReactNode;
   actions?: React.ReactNode;
+  /** What tapping the tile does instead of opening the recipe. */
+  onPress?: () => void;
 }) {
   const c = useTheme();
   const facts = cardFacts(recipe);
   return (
     <View style={styles.card}>
       <Pressable
-        onPress={() => router.push({ pathname: '/recipe/[id]', params: { id: recipe.id } })}
+        onPress={
+          onPress ?? (() => router.push({ pathname: '/recipe/[id]', params: { id: recipe.id } }))
+        }
         accessibilityRole="button"
         accessibilityLabel={recipe.title}
         style={({ pressed }) => [styles.body, { opacity: pressed ? 0.8 : 1 }]}>

@@ -3,11 +3,14 @@ import { test } from 'node:test';
 
 import {
   addDays,
-  addToPlan,
   dateKey,
-  removeFromPlan,
+  fromDateKey,
+  mealKey,
+  normalizePlan,
+  plannedMeals,
+  setMeal,
+  shopRangeDays,
   startOfWeek,
-  upcomingRecipeIds,
   weekDays,
 } from '../src/lib/plan.ts';
 
@@ -36,23 +39,67 @@ test('addDays crosses month and year ends', () => {
   assert.equal(dateKey(addDays(new Date(2026, 2, 1), -1)), '2026-02-28');
 });
 
-test('add and remove keep the plan tidy', () => {
-  let plan = addToPlan({}, '2026-10-07', 'a');
-  plan = addToPlan(plan, '2026-10-07', 'b');
-  assert.deepEqual(plan, { '2026-10-07': ['a', 'b'] });
-  assert.equal(addToPlan(plan, '2026-10-07', 'a'), plan);
-  plan = removeFromPlan(plan, '2026-10-07', 'a');
-  assert.deepEqual(plan, { '2026-10-07': ['b'] });
-  assert.deepEqual(removeFromPlan(plan, '2026-10-07', 'b'), {});
-  assert.deepEqual(removeFromPlan(plan, '2026-10-08', 'x'), plan);
+test('fromDateKey reads a date key back', () => {
+  assert.equal(dateKey(fromDateKey('2026-03-29')), '2026-03-29');
+  assert.equal(fromDateKey('2026-10-07').getDay(), 3);
 });
 
-test('upcomingRecipeIds skips the past, sorts by date and dedupes', () => {
+test('setMeal plans, replaces and clears one meal', () => {
+  let plan = setMeal({}, '2026-10-07', 'lunch', 'a');
+  plan = setMeal(plan, '2026-10-07', 'dinner', 'b');
+  assert.deepEqual(plan, { '2026-10-07': { lunch: 'a', dinner: 'b' } });
+  plan = setMeal(plan, '2026-10-07', 'lunch', 'c');
+  assert.deepEqual(plan, { '2026-10-07': { lunch: 'c', dinner: 'b' } });
+  plan = setMeal(plan, '2026-10-07', 'lunch', undefined);
+  assert.deepEqual(plan, { '2026-10-07': { dinner: 'b' } });
+  assert.deepEqual(setMeal(plan, '2026-10-07', 'dinner', undefined), {});
+});
+
+test('plannedMeals lists meals in day and meal order, the same recipe as often as planned', () => {
   const plan = {
-    '2026-10-09': ['c', 'a'],
-    '2026-10-06': ['old'],
-    '2026-10-07': ['a', 'b'],
+    '2026-10-08': { dinner: 'soup', breakfast: 'eggs' },
+    '2026-10-07': { dinner: 'soup' },
+    '2026-10-01': { lunch: 'old' },
   };
-  assert.deepEqual(upcomingRecipeIds(plan, '2026-10-07'), ['a', 'b', 'c']);
-  assert.deepEqual(upcomingRecipeIds({}, '2026-10-07'), []);
+  assert.deepEqual(
+    plannedMeals(plan, ['2026-10-07', '2026-10-08']).map((m) => `${m.day} ${m.meal} ${m.recipeId}`),
+    ['2026-10-07 dinner soup', '2026-10-08 breakfast eggs', '2026-10-08 dinner soup'],
+  );
+  assert.equal(
+    mealKey({ day: '2026-10-07', meal: 'dinner', recipeId: 'soup' }),
+    '2026-10-07:dinner:soup',
+  );
+});
+
+test('normalizePlan turns old lists into meals and drops junk', () => {
+  assert.deepEqual(
+    normalizePlan({
+      '2026-10-07': ['a', 'b', 'c', 'd'],
+      '2026-10-08': ['x'],
+      '2026-10-09': { lunch: 'y', snack: 'z', dinner: 3 },
+      '2026-10-10': [],
+    }),
+    {
+      '2026-10-07': { breakfast: 'a', lunch: 'b', dinner: 'c' },
+      '2026-10-08': { breakfast: 'x' },
+      '2026-10-09': { lunch: 'y' },
+    },
+  );
+  assert.deepEqual(normalizePlan(null), {});
+});
+
+test('shopping ranges start today and stay inside the week', () => {
+  const week = weekDays(new Date(2026, 9, 7)).map(dateKey); // Mon 5 .. Sun 11
+  assert.deepEqual(shopRangeDays(week, '2026-10-07', 'today'), ['2026-10-07']);
+  assert.deepEqual(shopRangeDays(week, '2026-10-07', 'next3'), [
+    '2026-10-07',
+    '2026-10-08',
+    '2026-10-09',
+  ]);
+  assert.deepEqual(shopRangeDays(week, '2026-10-10', 'next3'), ['2026-10-10', '2026-10-11']);
+  assert.equal(shopRangeDays(week, '2026-10-07', 'week').length, 5);
+  // A week that hasn't started, and one that's over.
+  assert.equal(shopRangeDays(week, '2026-10-01', 'week').length, 7);
+  assert.deepEqual(shopRangeDays(week, '2026-10-01', 'today'), []);
+  assert.deepEqual(shopRangeDays(week, '2026-10-20', 'week'), []);
 });

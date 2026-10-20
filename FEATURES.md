@@ -10,7 +10,7 @@
   pantry → what can I make
 - Buy: shopping list from the recipes you pick, minus the pantry
 
-Tabs: Recipes · Cook (with pantry) · Shopping. Everything else is switched off in
+Tabs: Recipes · Plan · Cook (with pantry) · Shopping. Everything else is switched off in
 `src/constants/features.ts` and comes back in updates after launch, one at a time, starting with
 what testers ask for.
 
@@ -71,8 +71,8 @@ These are the core of the app. Build them first, in roughly this order.
 ## Nice-to-have features (add later)
 
 ### Planning and shopping
-- ✅ **Weekly meal planner**: put recipes on days of the week (tap to add; no drag yet)
-- ✅ **Shopping list**: made from the "make next" list and the meal plan, minus what's in My Pantry
+- ✅ **Weekly meal planner**: breakfast, lunch and dinner per day, picked from your recipes
+- ✅ **Shopping list**: made from the "make next" list and, after a review, the meal plan, minus what's in My Pantry
 - ✅ Group the shopping list by store section (produce, dairy, …)
 
 ### Better recipes

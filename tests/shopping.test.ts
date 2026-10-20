@@ -7,6 +7,7 @@ import type { Recipe } from '../src/lib/recipe.ts';
 import {
   buildShoppingList,
   formatAmount,
+  mealsShopping,
   shoppingListText,
   shoppingName,
 } from '../src/lib/shopping.ts';
@@ -110,4 +111,16 @@ test('text version is grouped by section in store order', () => {
     STORE_SECTIONS,
   );
   assert.equal(text, 'Produce\n- 3 onions\n\nDairy & eggs\n- 5 eggs\n\nOther\n- fresh herbs');
+});
+
+test('planned meals: a recipe planned twice counts twice, pantry items are listed apart', () => {
+  const omelette = recipe('Omelette', '3 eggs\n1 tbsp butter\n1 bunch fresh herbs\nsalt');
+  const soup = recipe('Soup', '1 cup red lentils\n2 tomatoes\n1 onion');
+  const { items, have } = mealsShopping([omelette, soup, omelette], ['butter', 'onions']);
+  const list = byName(items);
+  assert.equal(list['eggs'].quantity, '6');
+  assert.equal(list['herbs'].quantity, '2 bunches');
+  assert.deepEqual(list['eggs'].recipes, ['Omelette']);
+  assert.equal(list['butter'], undefined);
+  assert.deepEqual(have, ['butter', 'onion']);
 });

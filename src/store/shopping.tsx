@@ -1,9 +1,24 @@
 import { createContext, useCallback, useContext, useMemo } from 'react';
 
+import type { StoreSection } from '@/lib/foods';
+
 import { usePersistedState } from './persisted';
 
-/** Something added to the shopping list by hand, e.g. "paper towels". */
-export type ShoppingExtra = { id: string; name: string };
+/**
+ * Something added to the shopping list by hand ("paper towels"), or an ingredient added from the
+ * meal plan, which also has an amount, a store section and the recipes it's for.
+ */
+export type ShoppingExtra = {
+  id: string;
+  name: string;
+  quantity?: string;
+  section?: StoreSection;
+  recipes?: string[];
+};
+
+/** An ingredient to add from the meal plan. */
+export type FoodItem = Required<Pick<ShoppingExtra, 'name' | 'section' | 'recipes'>> &
+  Pick<ShoppingExtra, 'quantity'>;
 
 type ShoppingContextValue = {
   loaded: boolean;
@@ -15,6 +30,8 @@ type ShoppingContextValue = {
   /** Adds items from text like "paper towels, coffee". */
   addExtras: (text: string) => void;
   removeExtra: (id: string) => void;
+  /** Adds ingredients from the meal plan. */
+  addFoodItems: (items: FoodItem[]) => void;
   /** Forgets the ticks and removes ticked extras (after shopping). */
   clearChecked: () => void;
 };
@@ -60,6 +77,20 @@ export function ShoppingProvider({ children }: { children: React.ReactNode }) {
     [setExtras],
   );
 
+  const addFoodItems = useCallback(
+    (items: FoodItem[]) => {
+      const now = Date.now().toString(36);
+      setExtras((prev) => [
+        ...prev,
+        ...items.map((item, i) => ({
+          ...item,
+          id: `${now}-p${i}-${Math.random().toString(36).slice(2, 6)}`,
+        })),
+      ]);
+    },
+    [setExtras],
+  );
+
   const removeExtra = useCallback(
     (id: string) => {
       setExtras((prev) => prev.filter((e) => e.id !== id));
@@ -82,6 +113,7 @@ export function ShoppingProvider({ children }: { children: React.ReactNode }) {
       extras,
       addExtras,
       removeExtra,
+      addFoodItems,
       clearChecked,
     }),
     [
@@ -93,6 +125,7 @@ export function ShoppingProvider({ children }: { children: React.ReactNode }) {
       extras,
       addExtras,
       removeExtra,
+      addFoodItems,
       clearChecked,
     ],
   );

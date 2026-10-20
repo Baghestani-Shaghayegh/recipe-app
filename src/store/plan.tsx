@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useMemo } from 'react';
 
-import { addToPlan, removeFromPlan, type MealPlan } from '@/lib/plan';
+import { normalizePlan, setMeal as setPlanMeal, type Meal, type MealPlan } from '@/lib/plan';
 import type { Goals } from '@/lib/plan-nutrition';
 
 import { usePersistedState } from './persisted';
@@ -8,39 +8,50 @@ import { usePersistedState } from './persisted';
 type PlanContextValue = {
   loaded: boolean;
   plan: MealPlan;
-  addToDay: (day: string, recipeId: string) => void;
-  removeFromDay: (day: string, recipeId: string) => void;
+  /** Plans a recipe for one meal, replacing what was there; undefined clears it. */
+  setMeal: (day: string, meal: Meal, recipeId: string | undefined) => void;
+  /** mealKey()s of planned meals whose ingredients are already on the shopping list. */
+  shopped: string[];
+  markShopped: (keys: string[]) => void;
   goals: Goals;
   setGoals: (goals: Goals) => void;
 };
 
 const PlanContext = createContext<PlanContextValue | null>(null);
 
-/** The weekly meal plan: which recipes are planned on which day. */
+/** The meal plan: which recipe is planned for breakfast, lunch and dinner on each day. */
 export function PlanProvider({ children }: { children: React.ReactNode }) {
-  const [plan, setPlan, loaded] = usePersistedState<MealPlan>('plan.v1', () => ({}));
-
+  // Saved plans may be in the older shape (a list per day), so they're read through normalizePlan.
+  const [savedPlan, setSavedPlan, loaded] = usePersistedState<unknown>('plan.v1', () => ({}));
+  const plan = useMemo(() => normalizePlan(savedPlan), [savedPlan]);
+  const [shopped, setShopped, shoppedLoaded] = usePersistedState<string[]>(
+    'planShopped.v1',
+    () => [],
+  );
   const [goals, setGoals, goalsLoaded] = usePersistedState<Goals>('goals.v1', () => ({}));
 
-  const addToDay = useCallback(
-    (day: string, recipeId: string) => setPlan((prev) => addToPlan(prev, day, recipeId)),
-    [setPlan],
+  const setMeal = useCallback(
+    (day: string, meal: Meal, recipeId: string | undefined) =>
+      setSavedPlan((prev: unknown) => setPlanMeal(normalizePlan(prev), day, meal, recipeId)),
+    [setSavedPlan],
   );
-  const removeFromDay = useCallback(
-    (day: string, recipeId: string) => setPlan((prev) => removeFromPlan(prev, day, recipeId)),
-    [setPlan],
+
+  const markShopped = useCallback(
+    (keys: string[]) => setShopped((prev) => [...new Set([...prev, ...keys])]),
+    [setShopped],
   );
 
   const value = useMemo(
     () => ({
-      loaded: loaded && goalsLoaded,
+      loaded: loaded && shoppedLoaded && goalsLoaded,
       plan,
-      addToDay,
-      removeFromDay,
+      setMeal,
+      shopped,
+      markShopped,
       goals,
       setGoals,
     }),
-    [loaded, goalsLoaded, plan, addToDay, removeFromDay, goals, setGoals],
+    [loaded, shoppedLoaded, goalsLoaded, plan, setMeal, shopped, markShopped, goals, setGoals],
   );
   return <PlanContext.Provider value={value}>{children}</PlanContext.Provider>;
 }

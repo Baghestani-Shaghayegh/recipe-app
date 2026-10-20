@@ -51,6 +51,15 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="plan"
+        options={{
+          title: 'Meal plan',
+          tabBarLabel: 'Plan',
+          tabBarIcon: icon('calendar-outline'),
+          href: Features.mealPlan ? undefined : null,
+        }}
+      />
+      <Tabs.Screen
         name="cook"
         options={{
           title: 'What can I make?',
@@ -65,15 +74,6 @@ export default function TabLayout() {
           tabBarLabel: 'Next',
           href: Features.makeNextTab ? undefined : null,
           tabBarIcon: icon('list-outline'),
-        }}
-      />
-      <Tabs.Screen
-        name="plan"
-        options={{
-          title: 'Meal plan',
-          tabBarLabel: 'Plan',
-          tabBarIcon: icon('calendar-outline'),
-          href: Features.mealPlan ? undefined : null,
         }}
       />
       <Tabs.Screen

@@ -3,9 +3,19 @@ import * as Clipboard from 'expo-clipboard';
 import { Image } from 'expo-image';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { Linking, Share, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import {
+  Linking,
+  Platform,
+  Pressable,
+  ScrollView,
+  Share,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 
 import { ActionSheet, type SheetAction } from '@/components/action-sheet';
+import { AddToPlanSheet } from '@/components/add-to-plan-sheet';
 import { NutritionPanel } from '@/components/nutrition-panel';
 import { Button, Chip, confirm, SectionTitle } from '@/components/ui';
 import { Features } from '@/constants/features';
@@ -32,6 +42,7 @@ export default function RecipeDetailScreen() {
   const [units, setUnits] = useState<UnitSystem>('original');
   const [shareNote, setShareNote] = useState<string>();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [planning, setPlanning] = useState(false);
   const account = useAccount();
 
   if (!recipe) {
@@ -126,6 +137,17 @@ export default function RecipeDetailScreen() {
     action();
   };
   const menuActions: SheetAction[] = [
+    ...(Features.mealPlan
+      ? [
+          {
+            label: 'Add to meal plan',
+            // iOS can't open the next sheet until the menu has closed.
+            onPress: fromMenu(() =>
+              setTimeout(() => setPlanning(true), Platform.OS === 'ios' ? 350 : 0),
+            ),
+          },
+        ]
+      : []),
     { label: 'Share recipe', onPress: fromMenu(() => void onShare()) },
     {
       label: 'I cooked this',
@@ -169,6 +191,14 @@ export default function RecipeDetailScreen() {
     <ScrollView style={{ backgroundColor: c.background }} contentContainerStyle={styles.content}>
       <Stack.Screen options={{ title: recipe.title, headerRight: headerButtons }} />
       <ActionSheet visible={menuOpen} actions={menuActions} onClose={() => setMenuOpen(false)} />
+      {Features.mealPlan ? (
+        <AddToPlanSheet
+          recipe={recipe}
+          visible={planning}
+          onClose={() => setPlanning(false)}
+          onPlanned={setShareNote}
+        />
+      ) : null}
 
       {recipe.photoUri ? (
         <Image source={{ uri: recipe.photoUri }} style={styles.photo} contentFit="cover" />

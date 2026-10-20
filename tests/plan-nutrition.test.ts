@@ -24,9 +24,9 @@ test('adds up one serving of each planned recipe', () => {
     ['nodata', recipe('nodata')],
   ]);
   const plan = {
-    '2026-10-05': ['a', 'b'],
-    '2026-10-06': ['a', 'nodata', 'deleted'],
-    '2026-10-12': ['b'],
+    '2026-10-05': { breakfast: 'a', dinner: 'b' },
+    '2026-10-06': { breakfast: 'a', lunch: 'nodata', dinner: 'deleted' },
+    '2026-10-12': { lunch: 'b' },
   };
   const week = planNutrition(plan, ['2026-10-05', '2026-10-06'], recipes);
   assert.deepEqual(week.total, { kcal: 1300, protein: 70, carbs: 30, fat: 15 });

@@ -151,6 +151,26 @@ export function buildShoppingList(recipes: Recipe[], pantry: string[]): Shopping
   });
 }
 
+/**
+ * What some planned meals need: the shopping list (a recipe planned twice counts twice), and the
+ * names of things they use that are already in the pantry.
+ */
+export function mealsShopping(
+  recipes: Recipe[],
+  pantry: string[],
+): { items: ShoppingItem[]; have: string[] } {
+  const have = new Map<string, string>();
+  for (const r of recipes) {
+    for (const ing of r.ingredients) {
+      if (isStaple(ing.name) || !pantryHas(pantry, ing.name)) continue;
+      const name = shoppingName(ing.name);
+      const key = normalizeWords(name).join(' ') || name;
+      if (!have.has(key)) have.set(key, name);
+    }
+  }
+  return { items: buildShoppingList(recipes, pantry), have: [...have.values()] };
+}
+
 /** Plain text for sharing or copying, grouped by section. */
 export function shoppingListText(
   items: { name: string; quantity?: string; section: StoreSection }[],

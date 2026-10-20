@@ -6,19 +6,21 @@ See [FEATURES.md](FEATURES.md) for the full plan.
 ## Version 1 (what's switched on)
 
 The first release does one job: **save recipes from anywhere, decide what to cook, and buy
-what's missing.** Three tabs:
+what's missing.** Four tabs:
 
 - **Recipes:** your recipes, search, category (Breakfast, Lunch, Dinner, Snack, Baking) and time
   filters. **Import** from an Instagram, TikTok or YouTube link, any recipe website, pasted
   text, or **a photo of a cookbook page or handwritten card** (read on the phone). A recipe page
   has two buttons, *Start cooking* and *+ Shopping list*; sharing, "I cooked this" and delete are
   in the ⋯ menu. Calories, protein, carbs and fat per serving are estimated.
+- **Plan:** breakfast, lunch and dinner for each day, and a *Review* to shop for them (see
+  *Meal plan* below).
 - **Cook:** *What can I make* (ready to cook, or missing just 1–2 things, with category and time
   filters) and *My pantry* on the same screen.
 - **Shopping:** everything the recipes you're shopping for need, minus your pantry.
 
 Everything else described below is built and tested but **switched off** in
-`src/constants/features.ts` (Discover videos, accounts and sync, meal plan, diet filters,
+`src/constants/features.ts` (Discover videos, accounts and sync, diet filters,
 ratings, unit switch, substitutions, suggestions, best-before dates, extra nutrients, backup).
 Turn one back on by changing its line to `true`.
 
@@ -167,11 +169,20 @@ Code: `src/lib/supabase.ts` (small client over Supabase's REST API, no extra pac
 
 ## Meal plan
 
-- **Plan tab:** a Monday–Sunday week with ‹ › to move between weeks. Tap *+ Add* on a day, search
-  your recipes and tap one to plan it; *Remove* takes it off again. Today is highlighted.
-- Recipes planned for today or later are added to the **Shopping list** together with Make next
-  (a recipe in both is counted once). Past days no longer add anything.
-- Saved on the device (`plan.v1`); logic in `src/lib/plan.ts`.
+- **Plan tab:** the week's dates across the top (‹ › for other weeks, dots show how many meals
+  a day has). Tap a day to see its **Breakfast**, **Lunch** and **Dinner**.
+- *Add meal* opens your recipes (the same grid, search and filters as the Recipes tab), starting
+  on that meal's category; tap one to plan it. Tap a planned meal to open the recipe; hold it to
+  choose another recipe or remove it.
+- From a recipe page: ⋯ → *Add to meal plan*, pick a day in the next two weeks and a meal.
+- **Shopping for it:** the bar at the bottom says how many meals are planned and how much there
+  is to buy. *Review* lists what they need (for *Today*, the *Next 3 days* or the *Rest of week*),
+  grouped by store section, minus your pantry and the basics. A recipe planned twice counts
+  twice. Untick what you don't need and add the rest to the Shopping list; those meals are then
+  marked as shopped so they aren't added again. Planned meals don't go onto the list on their own.
+- Saved on the device (`plan.v1`, older plans are converted; `planShopped.v1`); logic in
+  `src/lib/plan.ts` and `mealsShopping` in `src/lib/shopping.ts`. The weekly nutrition totals and
+  daily goals from earlier versions are not on the new screen (the day shows its calories).
 
 ## Favorites and ratings
 

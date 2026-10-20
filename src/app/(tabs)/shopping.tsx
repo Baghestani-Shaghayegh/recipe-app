@@ -10,10 +10,8 @@ import { Features } from '@/constants/features';
 import { MaxContentWidth, Spacing, useTheme } from '@/constants/theme';
 import { STORE_SECTIONS } from '@/lib/foods';
 import type { Recipe } from '@/lib/recipe';
-import { dateKey, upcomingRecipeIds } from '@/lib/plan';
 import { buildShoppingList, shoppingListText } from '@/lib/shopping';
 import { useKitchen } from '@/store/kitchen';
-import { usePlan } from '@/store/plan';
 import { useRecipes } from '@/store/recipes';
 import { extraKey, useShopping } from '@/store/shopping';
 
@@ -21,24 +19,28 @@ export default function ShoppingScreen() {
   const c = useTheme();
   const { recipes } = useRecipes();
   const { makeNext, pantry, addToPantry, toggleMakeNext } = useKitchen();
-  const { plan } = usePlan();
   const { isChecked, toggleChecked, extras, addExtras, removeExtra, clearChecked } = useShopping();
   const [text, setText] = useState('');
   const [note, setNote] = useState<string>();
 
   const queue = useMemo(() => {
     const byId = new Map(recipes.map((r) => [r.id, r]));
-    // Make next first, then recipes planned for today or later; each recipe once.
-    const ids = new Set([
-      ...makeNext.map((m) => m.recipeId),
-      ...(Features.mealPlan ? upcomingRecipeIds(plan, dateKey(new Date())) : []),
-    ]);
-    return [...ids].map((id) => byId.get(id)).filter((r): r is Recipe => !!r);
-  }, [recipes, makeNext, plan]);
+    // Meals from the plan arrive as items of their own (see the Plan tab's Review).
+    return makeNext.map((m) => byId.get(m.recipeId)).filter((r): r is Recipe => !!r);
+  }, [recipes, makeNext]);
   const items = useMemo(() => buildShoppingList(queue, pantry), [queue, pantry]);
 
-  const tickedItems = items.filter((i) => isChecked(i.key));
-  const tickedCount = tickedItems.length + extras.filter((e) => isChecked(extraKey(e.id))).length;
+  // Ingredients added from the meal plan sit in their store section; the rest are "Added by you".
+  const foodExtras = extras.filter((e) => e.section);
+  const ownExtras = extras.filter((e) => !e.section);
+  // Food that's ticked goes into the pantry when you're done shopping.
+  const tickedFood = [
+    ...items.filter((i) => isChecked(i.key)).map((i) => i.name),
+    ...foodExtras.filter((e) => isChecked(extraKey(e.id))).map((e) => e.name),
+  ];
+  const tickedCount =
+    items.filter((i) => isChecked(i.key)).length +
+    extras.filter((e) => isChecked(extraKey(e.id))).length;
 
   useEffect(() => {
     if (!note) return;
@@ -57,7 +59,7 @@ export default function ShoppingScreen() {
       ...items.filter((i) => !isChecked(i.key)),
       ...extras
         .filter((e) => !isChecked(extraKey(e.id)))
-        .map((e) => ({ name: e.name, section: 'Other' as const })),
+        .map((e) => ({ name: e.name, quantity: e.quantity, section: e.section ?? 'Other' })),
     ];
     if (!left.length) return setNote('Nothing left to buy.');
     try {
@@ -69,7 +71,7 @@ export default function ShoppingScreen() {
   };
 
   const finishShopping = () => {
-    const added = tickedItems.length ? addToPantry(tickedItems.map((i) => i.name).join('\n')) : 0;
+    const added = tickedFood.length ? addToPantry(tickedFood.join('\n')) : 0;
     clearChecked();
     setNote(
       added
@@ -128,8 +130,8 @@ export default function ShoppingScreen() {
       ) : queue.length ? (
         <Pressable onPress={() => router.navigate('/next')} accessibilityRole="link">
           <Text style={[styles.note, { color: c.textSecondary }]}>
-            For {queue.length} recipe{queue.length === 1 ? '' : 's'} from Make next and your meal
-            plan: <Text style={{ color: c.accent }}>{queue.map((r) => r.title).join(', ')}</Text>
+            For {queue.length} recipe{queue.length === 1 ? '' : 's'} from Make next:{' '}
+            <Text style={{ color: c.accent }}>{queue.map((r) => r.title).join(', ')}</Text>
             {pantry.length ? '. Things in your pantry are left out.' : '.'}
           </Text>
         </Pressable>
@@ -139,9 +141,9 @@ export default function ShoppingScreen() {
         <View style={styles.empty}>
           <Text style={[styles.emptyTitle, { color: c.text }]}>Your list is empty</Text>
           <Text style={[styles.emptyText, { color: c.textSecondary }]}>
-            {Features.makeNextTab
-              ? 'Add recipes to Make next or your meal plan and everything you need shows up here, minus what’s already in your pantry.'
-              : 'Tap “Add to shopping list” on a recipe and everything it needs shows up here, minus what’s already in your pantry.'}
+            {Features.mealPlan
+              ? 'Plan your meals and tap Review on the Plan tab, or tap “+ Shopping list” on a recipe. Everything it needs shows up here, minus what’s already in your pantry.'
+              : 'Tap “+ Shopping list” on a recipe and everything it needs shows up here, minus what’s already in your pantry.'}
           </Text>
           <Button
             label="Find something to cook"
@@ -159,7 +161,8 @@ export default function ShoppingScreen() {
 
       {STORE_SECTIONS.map((section) => {
         const sectionItems = items.filter((i) => i.section === section);
-        if (!sectionItems.length) return null;
+        const sectionExtras = foodExtras.filter((e) => e.section === section);
+        if (!sectionItems.length && !sectionExtras.length) return null;
         return (
           <View key={section} style={styles.section}>
             <SectionTitle>{section}</SectionTitle>
@@ -172,14 +175,24 @@ export default function ShoppingScreen() {
                 onToggle={() => toggleChecked(item.key)}
               />
             ))}
+            {sectionExtras.map((e) => (
+              <ItemRow
+                key={e.id}
+                label={e.quantity ? `${e.quantity} ${e.name}` : e.name}
+                detail={e.recipes?.length ? `for ${e.recipes.join(', ')}` : undefined}
+                checked={isChecked(extraKey(e.id))}
+                onToggle={() => toggleChecked(extraKey(e.id))}
+                onRemove={() => removeExtra(e.id)}
+              />
+            ))}
           </View>
         );
       })}
 
-      {extras.length ? (
+      {ownExtras.length ? (
         <View style={styles.section}>
           <SectionTitle>Added by you</SectionTitle>
-          {extras.map((e) => (
+          {ownExtras.map((e) => (
             <ItemRow
               key={e.id}
               label={e.name}
@@ -195,13 +208,13 @@ export default function ShoppingScreen() {
         <View style={styles.section}>
           <Button
             label={
-              tickedItems.length
-                ? `Done: put ${tickedItems.length} ticked in pantry`
+              tickedFood.length
+                ? `Done: put ${tickedFood.length} ticked in pantry`
                 : `Clear ${tickedCount} ticked`
             }
             onPress={finishShopping}
           />
-          {tickedItems.length && tickedCount > tickedItems.length ? (
+          {tickedFood.length && tickedCount > tickedFood.length ? (
             <Text style={[styles.note, { color: c.textSecondary }]}>
               Ticked items you added yourself are just removed.
             </Text>

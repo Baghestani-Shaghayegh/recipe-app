@@ -17,13 +17,17 @@ import { MaxContentWidth, Spacing, useTheme } from '@/constants/theme';
 import { scaleFactor, scaleIngredientText } from '@/lib/scale';
 import { findTimers, formatClock } from '@/lib/timers';
 import { convertTemperatures, type UnitSystem } from '@/lib/units';
+import { useKitchen } from '@/store/kitchen';
 import { useRecipes } from '@/store/recipes';
 
 type RunningTimer = { id: number; label: string; endsAt: number; done: boolean };
 
 let nextTimerId = 1;
 
-/** One step at a time, big text, screen stays on, timers for times mentioned in the steps. */
+/**
+ * One step at a time, big text, screen stays on, timers for times mentioned in the steps.
+ * Done offers to mark the recipe as cooked.
+ */
 export default function CookScreen() {
   const c = useTheme();
   useKeepAwake();
@@ -34,6 +38,7 @@ export default function CookScreen() {
   }>();
   const system: UnitSystem = units === 'metric' || units === 'us' ? units : 'original';
   const { recipes } = useRecipes();
+  const { markCooked } = useKitchen();
   const recipe = recipes.find((r) => r.id === id);
   const [step, setStep] = useState(0);
   const [showIngredients, setShowIngredients] = useState(false);
@@ -79,18 +84,25 @@ export default function CookScreen() {
   };
   const stopTimer = (timerId: number) => setTimers((prev) => prev.filter((t) => t.id !== timerId));
 
-  // Timers only run on this screen, so leaving with one still going asks first.
+  const leave = (cooked: boolean) => {
+    if (cooked) markCooked(recipe.id);
+    router.back();
+  };
+
+  // Done asks whether to mark the recipe as cooked. Timers only run on this screen, so it also
+  // says when leaving would stop one.
   const finish = () => {
-    if (!running) return router.back();
-    const title = 'Leave cooking mode?';
-    const message = 'Your timers will stop.';
+    const title = 'Finished cooking?';
+    const stops = running ? 'Your timers will stop. ' : '';
     if (Platform.OS === 'web') {
-      if (window.confirm(`${title}\n\n${message}`)) router.back();
+      if (running && !window.confirm(`Leave cooking mode?\n\n${stops}`)) return;
+      leave(window.confirm(`${title}\n\nMark “${recipe.title}” as cooked today?`));
       return;
     }
-    Alert.alert(title, message, [
+    Alert.alert(title, `${stops}Mark it as cooked today?`, [
+      { text: 'Mark as cooked', onPress: () => leave(true) },
+      { text: 'Not now', onPress: () => leave(false) },
       { text: 'Keep cooking', style: 'cancel' },
-      { text: 'Leave', style: 'destructive', onPress: () => router.back() },
     ]);
   };
 

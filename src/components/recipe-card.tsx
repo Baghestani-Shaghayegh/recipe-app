@@ -2,12 +2,29 @@ import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { Features } from '@/constants/features';
 import { Spacing, useTheme } from '@/constants/theme';
-import { type Recipe } from '@/lib/recipe';
+import { servingNutrition } from '@/lib/nutrition';
+import { formatMinutes, totalMinutes, type Recipe } from '@/lib/recipe';
+
+/** "25 min · ~350 kcal": total time and calories per serving (`~` means estimated). */
+function cardFacts(recipe: Recipe): string {
+  const minutes = totalMinutes(recipe);
+  const nutrition = Features.nutrition ? servingNutrition(recipe) : undefined;
+  return [
+    minutes ? formatMinutes(minutes) : undefined,
+    nutrition
+      ? `${nutrition.source === 'estimate' ? '~' : ''}${Math.round(nutrition.values.kcal)} kcal`
+      : undefined,
+  ]
+    .filter(Boolean)
+    .join(' · ');
+}
 
 /**
- * A recipe tile: a square photo with the name under it. Tapping it opens the recipe.
- * The name is cut to two lines so long names never push the tile out of shape.
+ * A recipe tile: a square photo with the name under it, then the time and calories when known.
+ * Tapping it opens the recipe. The name is cut to two lines so long names never push the tile
+ * out of shape.
  * `children` adds extra lines under the name (e.g. "Missing: bread");
  * `actions` sits underneath, for buttons.
  * Tiles fill their parent's width; put them in a `RecipeGrid` (or a 2-column list).
@@ -22,6 +39,7 @@ export function RecipeCard({
   actions?: React.ReactNode;
 }) {
   const c = useTheme();
+  const facts = cardFacts(recipe);
   return (
     <View style={styles.card}>
       <Pressable
@@ -43,6 +61,11 @@ export function RecipeCard({
         <Text style={[styles.title, { color: c.text }]} numberOfLines={2} ellipsizeMode="tail">
           {recipe.title}
         </Text>
+        {facts ? (
+          <Text style={[styles.facts, { color: c.textSecondary }]} numberOfLines={1}>
+            {facts}
+          </Text>
+        ) : null}
         {children}
       </Pressable>
       {actions ? <View style={styles.actions}>{actions}</View> : null}
@@ -105,6 +128,7 @@ const styles = StyleSheet.create({
   placeholder: { alignItems: 'center', justifyContent: 'center' },
   placeholderEmoji: { fontSize: 40 },
   title: { fontSize: 15, lineHeight: 20, fontWeight: '600' },
+  facts: { fontSize: 13, marginTop: -Spacing.one },
   actions: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', marginTop: Spacing.one },
   action: { paddingVertical: 8, paddingRight: Spacing.three, maxWidth: '100%' },
   actionText: { fontSize: 14, fontWeight: '600' },

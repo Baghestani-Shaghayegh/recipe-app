@@ -52,7 +52,7 @@ paste the text instead. The cleanup of recognised text is in `src/lib/ocr.ts`.
 - Converts cups / tbsp / tsp / g / oz / lb / pieces / cans to grams per food
 - Shows which ingredients weren't counted and a per-ingredient breakdown
 - You can type in your own numbers for any recipe; they replace the estimate
-- Recipe cards show calories per serving (`~` means estimated)
+- Recipe cards show the total time and calories per serving (`~` means estimated)
 - Recipe pages also show estimated **fiber, sugar and sodium** per serving (`src/lib/foods-micro.ts`,
   rounded typical values per 100 g). Not yet: vitamins and minerals other than sodium
 
@@ -213,7 +213,8 @@ Code: `src/lib/supabase.ts` (small client over Supabase's REST API, no extra pac
 ## Cooking mode and timers
 
 - *Start cooking* on a recipe page: one step at a time in big text, *Back* / *Next step*, and the
-  screen stays on. *Show ingredients* lists them at the serving size you picked.
+  screen stays on. *Done* on the last step asks whether to mark the recipe as cooked today (which
+  also takes it off the shopping list). *Show ingredients* lists them at the serving size you picked.
 - Times in a step ("simmer 30 minutes", "fry 5-7 min", "bake 1½ hours", "1 hour 30 minutes",
   "half an hour") get a *Start timer* button (a range uses the shorter time). Several timers can run at once; they vibrate when time is up. Timers only run
   while the cooking screen is open, so *Done* asks first while one is running (swiping back

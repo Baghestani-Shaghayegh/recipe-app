@@ -175,8 +175,8 @@ Code: `src/lib/supabase.ts` (small client over Supabase's REST API, no extra pac
   on that meal's category; tap one to plan it. Tap a planned meal to open the recipe; hold it to
   choose another recipe or remove it.
 - From a recipe page: ⋯ → *Add to meal plan*, pick a day in the next two weeks and a meal.
-- **Shopping for it:** the bar at the bottom says how many meals are planned and how much there
-  is to buy. *Review* lists what they need (for *Today*, the *Next 3 days* or the *Rest of week*),
+- **Shopping for it:** the bar at the bottom says how many meals are planned and how many
+  ingredients are missing ("Missing 9 ingredients"). *Review* lists what they need (for *Today*, the *Next 3 days* or the *Rest of week*),
   grouped by store section, minus your pantry and the basics. A recipe planned twice counts
   twice. Untick what you don't need and add the rest to the Shopping list; those meals are then
   marked as shopped so they aren't added again. Planned meals don't go onto the list on their own.

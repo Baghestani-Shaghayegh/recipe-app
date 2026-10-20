@@ -38,7 +38,7 @@ function usePending(days: string[]) {
 }
 
 /**
- * The bar at the bottom of the Plan tab ("5 meals planned · 14 things to buy"), and the Review
+ * The bar at the bottom of the Plan tab ("5 meals planned · Missing 14 ingredients"), and the Review
  * sheet that adds what the meals need to the shopping list.
  */
 export function PlanShoppingBar({ week, today }: { week: string[]; today: string }) {
@@ -69,8 +69,8 @@ export function PlanShoppingBar({ week, today }: { week: string[]; today: string
             {allAdded
               ? 'Everything is on your shopping list'
               : pending.items.length
-                ? `${pending.items.length} thing${pending.items.length === 1 ? '' : 's'} to buy`
-                : 'You have everything in your pantry'}
+                ? `Missing ${pending.items.length} ingredient${pending.items.length === 1 ? '' : 's'}`
+                : 'Nothing missing, you have it all'}
           </Text>
         </View>
         <Pressable

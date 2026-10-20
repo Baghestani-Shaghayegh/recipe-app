@@ -8,6 +8,8 @@ import {
   buildShoppingList,
   formatAmount,
   mealsShopping,
+  shoppingKey,
+  shoppingRecipes,
   shoppingListText,
   shoppingName,
 } from '../src/lib/shopping.ts';
@@ -123,4 +125,40 @@ test('planned meals: a recipe planned twice counts twice, pantry items are liste
   assert.deepEqual(list['eggs'].recipes, ['Omelette']);
   assert.equal(list['butter'], undefined);
   assert.deepEqual(have, ['butter', 'onion']);
+});
+
+test('the list has each ingredient once, amounts added up, and nothing from the pantry', () => {
+  const omelette = recipe('Omelette', '3 eggs\n1 tbsp butter\n2 ripe tomatoes, chopped');
+  const soup = recipe('Soup', '2 tomatoes\n1 onion\n1 egg');
+  const byId = new Map([omelette, soup].map((r) => [r.id, r]));
+  const planned = [
+    { day: '2026-10-21', recipeId: 'Soup', skip: [] },
+    { day: '2026-10-19', recipeId: 'Omelette', skip: [] }, // yesterday: left out
+  ];
+  const list = byName(
+    buildShoppingList(shoppingRecipes(['Omelette', 'Soup'], planned, byId, '2026-10-20'), [
+      'onion',
+    ]),
+  );
+  assert.equal(list['eggs'].quantity, '4');
+  assert.equal(list['tomatoes'].quantity, '4');
+  assert.equal(list['onion'], undefined);
+  assert.deepEqual(Object.keys(list).sort(), ['butter', 'eggs', 'tomatoes']);
+});
+
+test('shoppingRecipes: planned twice counts twice, unticked ingredients stay off', () => {
+  const soup = recipe('Soup', '1 cup red lentils\n1 tbsp cumin');
+  const byId = new Map([[soup.id, soup]]);
+  const planned = [
+    { day: '2026-10-21', recipeId: 'Soup', skip: [shoppingKey('cumin')] },
+    { day: '2026-10-22', recipeId: 'Soup', skip: [] },
+    { day: '2026-10-22', recipeId: 'deleted', skip: [] },
+  ];
+  // Soup is on Make next too, but it's already there from the plan.
+  const list = byName(
+    buildShoppingList(shoppingRecipes(['Soup'], planned, byId, '2026-10-20'), []),
+  );
+  assert.equal(list['red lentils'].quantity, '2 cups');
+  assert.equal(list['cumin'].quantity, '1 tbsp');
+  assert.equal(shoppingKey('2 Ripe Tomatoes, chopped'), shoppingKey('tomato'));
 });

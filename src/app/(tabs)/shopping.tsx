@@ -9,9 +9,11 @@ import { Button, Chip, SectionTitle } from '@/components/ui';
 import { Features } from '@/constants/features';
 import { MaxContentWidth, Spacing, useTheme } from '@/constants/theme';
 import { STORE_SECTIONS } from '@/lib/foods';
-import type { Recipe } from '@/lib/recipe';
-import { buildShoppingList, shoppingListText } from '@/lib/shopping';
+import { pantryHas } from '@/lib/pantry';
+import { dateKey } from '@/lib/plan';
+import { buildShoppingList, shoppingKey, shoppingListText, shoppingRecipes } from '@/lib/shopping';
 import { useKitchen } from '@/store/kitchen';
+import { usePlan } from '@/store/plan';
 import { useRecipes } from '@/store/recipes';
 import { extraKey, useShopping } from '@/store/shopping';
 
@@ -19,19 +21,49 @@ export default function ShoppingScreen() {
   const c = useTheme();
   const { recipes } = useRecipes();
   const { makeNext, pantry, addToPantry, toggleMakeNext } = useKitchen();
-  const { isChecked, toggleChecked, extras, addExtras, removeExtra, clearChecked } = useShopping();
+  const {
+    isChecked,
+    toggleChecked,
+    extras,
+    addExtras,
+    removeExtra,
+    clearChecked,
+    planned,
+    removePlanned,
+  } = useShopping();
+  const { unmarkShopped } = usePlan();
   const [text, setText] = useState('');
   const [note, setNote] = useState<string>();
 
-  const queue = useMemo(() => {
-    const byId = new Map(recipes.map((r) => [r.id, r]));
-    // Meals from the plan arrive as items of their own (see the Plan tab's Review).
-    return makeNext.map((m) => byId.get(m.recipeId)).filter((r): r is Recipe => !!r);
-  }, [recipes, makeNext]);
-  const items = useMemo(() => buildShoppingList(queue, pantry), [queue, pantry]);
+  // Meals added from the plan and Make next recipes make one list: each ingredient once, with
+  // the amounts added up, and nothing that's in the pantry.
+  const sources = useMemo(
+    () =>
+      shoppingRecipes(
+        makeNext.map((m) => m.recipeId),
+        planned,
+        new Map(recipes.map((r) => [r.id, r])),
+        dateKey(new Date()),
+      ),
+    [recipes, makeNext, planned],
+  );
+  const items = useMemo(() => buildShoppingList(sources, pantry), [sources, pantry]);
+  // Each recipe once, for the "Shopping for" chips.
+  const queue = [...new Map(sources.map((r) => [r.id, r])).values()];
+  const stopShopping = (recipeId: string) => {
+    if (planned.some((p) => p.recipeId === recipeId)) {
+      removePlanned(recipeId);
+      unmarkShopped(recipeId);
+    }
+    if (makeNext.some((m) => m.recipeId === recipeId)) toggleMakeNext(recipeId);
+  };
 
-  // Ingredients added from the meal plan sit in their store section; the rest are "Added by you".
-  const foodExtras = extras.filter((e) => e.section);
+  // Lists from an earlier version may hold plan ingredients as separate rows; they're shown in
+  // their store section unless the pantry has them or the list already does.
+  const itemKeys = new Set(items.map((i) => i.key));
+  const foodExtras = extras.filter(
+    (e) => e.section && !pantryHas(pantry, e.name) && !itemKeys.has(shoppingKey(e.name)),
+  );
   const ownExtras = extras.filter((e) => !e.section);
   // Food that's ticked goes into the pantry when you're done shopping.
   const tickedFood = [
@@ -48,18 +80,28 @@ export default function ShoppingScreen() {
     return () => clearTimeout(t);
   }, [note]);
 
+  // Something already on the list isn't added a second time.
   const add = () => {
     if (!text.trim()) return;
-    addExtras(text);
+    const onList = new Set([...itemKeys, ...extras.map((e) => shoppingKey(e.name))]);
+    const names = text
+      .split(/[,\n]/)
+      .map((t) => t.trim())
+      .filter(Boolean);
+    const fresh = names.filter((n) => !onList.has(shoppingKey(n)));
+    const already = names.filter((n) => onList.has(shoppingKey(n)));
+    if (fresh.length) addExtras(fresh.join('\n'));
+    if (already.length) setNote(`Already on your list: ${already.join(', ')}`);
     setText('');
   };
 
   const copyList = async () => {
+    // Just what to buy, without amounts.
     const left = [
-      ...items.filter((i) => !isChecked(i.key)),
-      ...extras
+      ...items.filter((i) => !isChecked(i.key)).map((i) => ({ name: i.name, section: i.section })),
+      ...[...foodExtras, ...ownExtras]
         .filter((e) => !isChecked(extraKey(e.id)))
-        .map((e) => ({ name: e.name, quantity: e.quantity, section: e.section ?? 'Other' })),
+        .map((e) => ({ name: e.name, section: e.section ?? 'Other' })),
     ];
     if (!left.length) return setNote('Nothing left to buy.');
     try {
@@ -86,7 +128,7 @@ export default function ShoppingScreen() {
     </Pressable>
   );
 
-  const nothingPlanned = !queue.length && !extras.length;
+  const nothingPlanned = !queue.length && !foodExtras.length && !ownExtras.length;
 
   return (
     <ScrollView
@@ -121,7 +163,7 @@ export default function ShoppingScreen() {
               <Chip
                 key={r.id}
                 label={`${r.title}  ✕`}
-                onPress={() => toggleMakeNext(r.id)}
+                onPress={() => stopShopping(r.id)}
                 accessibilityLabel={`Stop shopping for ${r.title}`}
               />
             ))}
@@ -169,7 +211,7 @@ export default function ShoppingScreen() {
             {sectionItems.map((item) => (
               <ItemRow
                 key={item.key}
-                label={item.quantity ? `${item.quantity} ${item.name}` : item.name}
+                label={item.name}
                 detail={`for ${item.recipes.join(', ')}`}
                 checked={isChecked(item.key)}
                 onToggle={() => toggleChecked(item.key)}
@@ -178,7 +220,7 @@ export default function ShoppingScreen() {
             {sectionExtras.map((e) => (
               <ItemRow
                 key={e.id}
-                label={e.quantity ? `${e.quantity} ${e.name}` : e.name}
+                label={e.name}
                 detail={e.recipes?.length ? `for ${e.recipes.join(', ')}` : undefined}
                 checked={isChecked(extraKey(e.id))}
                 onToggle={() => toggleChecked(extraKey(e.id))}

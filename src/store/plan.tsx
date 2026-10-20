@@ -13,6 +13,8 @@ type PlanContextValue = {
   /** mealKey()s of planned meals whose ingredients are already on the shopping list. */
   shopped: string[];
   markShopped: (keys: string[]) => void;
+  /** Forgets that a recipe's meals are on the shopping list, so Review offers them again. */
+  unmarkShopped: (recipeId: string) => void;
   goals: Goals;
   setGoals: (goals: Goals) => void;
 };
@@ -41,6 +43,11 @@ export function PlanProvider({ children }: { children: React.ReactNode }) {
     [setShopped],
   );
 
+  const unmarkShopped = useCallback(
+    (recipeId: string) => setShopped((prev) => prev.filter((k) => !k.endsWith(`:${recipeId}`))),
+    [setShopped],
+  );
+
   const value = useMemo(
     () => ({
       loaded: loaded && shoppedLoaded && goalsLoaded,
@@ -48,10 +55,22 @@ export function PlanProvider({ children }: { children: React.ReactNode }) {
       setMeal,
       shopped,
       markShopped,
+      unmarkShopped,
       goals,
       setGoals,
     }),
-    [loaded, shoppedLoaded, goalsLoaded, plan, setMeal, shopped, markShopped, goals, setGoals],
+    [
+      loaded,
+      shoppedLoaded,
+      goalsLoaded,
+      plan,
+      setMeal,
+      shopped,
+      markShopped,
+      unmarkShopped,
+      goals,
+      setGoals,
+    ],
   );
   return <PlanContext.Provider value={value}>{children}</PlanContext.Provider>;
 }

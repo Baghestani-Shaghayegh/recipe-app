@@ -70,10 +70,12 @@ paste the text instead. The cleanup of recognised text is in `src/lib/ocr.ts`.
 
 ## Shopping list
 
-- **Shopping tab:** everything your Make next recipes need, minus what's in your pantry
-  (salt, pepper, oil and water are skipped), grouped by store section
-- The same ingredient from several recipes is added up (2 eggs + 3 eggs → 5 eggs; 1 cup + 2 tbsp
-  milk → 266 ml) and shows which recipes need it
+- **Shopping tab:** what your recipes need (from *+ Shopping list* on a recipe, and meals added
+  from the Plan's *Review*), grouped by store section. Just the things to buy, without amounts.
+- Anything in your pantry is left out, and drops off as soon as you add it to the pantry; salt,
+  pepper, oil and water are skipped too
+- Each ingredient is on the list once, however many recipes need it, with the recipes under it;
+  typing something that's already there isn't added again
 - Tick items as you shop; *Done* puts ticked items in your pantry, so they drop off the list
 - Add your own items (e.g. paper towels); *Copy* puts the list on the clipboard to send or paste
 
@@ -176,9 +178,9 @@ Code: `src/lib/supabase.ts` (small client over Supabase's REST API, no extra pac
 - From a recipe page: ⋯ → *Add to meal plan*, pick a day in the next two weeks and a meal.
 - **Shopping for it:** the bar at the bottom says how many meals are planned and how many
   ingredients are missing ("Missing 9 ingredients"). *Review* lists what they need (for *Today*,
-  the *Next 3 days* or the *Rest of week*), grouped by store section, minus your pantry and the basics. A recipe planned twice counts
-  twice. Untick what you don't need and add the rest to the Shopping list; those meals are then
-  marked as shopped so they aren't added again. Planned meals don't go onto the list on their own.
+  the *Next 3 days* or the *Rest of week*), grouped by store section, minus your pantry and the basics. Untick what you don't need and
+  add the rest to the Shopping list; those meals are then marked as shopped so they aren't
+  added again (✕ on a recipe on the Shopping tab takes it off and lets you review it again). Planned meals don't go onto the list on their own.
 - Saved on the device (`plan.v1`, older plans are converted; `planShopped.v1`); logic in
   `src/lib/plan.ts` and `mealsShopping` in `src/lib/shopping.ts`. The weekly nutrition totals and
   daily goals from earlier versions are not on the new screen (the day shows its calories).

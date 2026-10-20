@@ -113,7 +113,7 @@ function ReviewSheet({
 }) {
   const c = useTheme();
   const { plan, markShopped } = usePlan();
-  const { addFoodItems } = useShopping();
+  const { addPlanned } = useShopping();
   // A week that hasn't started can only be shopped for as a whole.
   const ranges: ShopRange[] = week.includes(today) ? ['today', 'next3', 'week'] : ['week'];
   const [range, setRange] = useState<ShopRange>('week');
@@ -135,14 +135,8 @@ function ReviewSheet({
       .join(', ');
 
   const add = (close: (after?: () => void) => void) => {
-    addFoodItems(
-      chosen.map((i) => ({
-        name: i.name,
-        quantity: i.quantity,
-        section: i.section,
-        recipes: i.recipes,
-      })),
-    );
+    // The list is made from these meals' recipes, so it stays merged and checks the pantry.
+    addPlanned(meals.map((m) => ({ day: m.day, recipeId: m.recipeId, skip: skipped })));
     markShopped(meals.map(mealKey));
     close(() => onAdded(chosen.length));
   };
@@ -239,11 +233,6 @@ function ReviewSheet({
                             {forLine(item.recipes)}
                           </Text>
                         </View>
-                        {item.quantity ? (
-                          <Text style={[styles.qty, { color: c.textSecondary }]}>
-                            {item.quantity}
-                          </Text>
-                        ) : null}
                       </Pressable>
                     );
                   })}
@@ -354,7 +343,6 @@ const styles = StyleSheet.create({
   },
   itemName: { fontSize: 15, fontWeight: '500' },
   itemFor: { fontSize: 12, lineHeight: 17, marginTop: 1 },
-  qty: { fontSize: 14, fontWeight: '600' },
   have: { borderRadius: 12, padding: Spacing.three, marginTop: Spacing.three, gap: Spacing.one },
   haveRow: { flexDirection: 'row', justifyContent: 'space-between', gap: Spacing.two },
   haveText: { fontSize: 14, fontWeight: '600' },

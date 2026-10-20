@@ -13,6 +13,7 @@ export const SYNC_KEYS = [
   'goals.v1',
   'shoppingChecked.v1',
   'shoppingExtras.v1',
+  'shoppingPlanned.v1',
 ] as const;
 
 /** When each key was last changed here (or last matched the server), and whether the server lacks that change. */

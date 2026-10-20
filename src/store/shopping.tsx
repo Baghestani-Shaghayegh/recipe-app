@@ -1,12 +1,13 @@
 import { createContext, useCallback, useContext, useMemo } from 'react';
 
 import type { StoreSection } from '@/lib/foods';
+import type { PlannedShop } from '@/lib/shopping';
 
 import { usePersistedState } from './persisted';
 
 /**
- * Something added to the shopping list by hand ("paper towels"), or an ingredient added from the
- * meal plan, which also has an amount, a store section and the recipes it's for.
+ * Something added to the shopping list by hand ("paper towels"). Lists from an earlier version
+ * may also hold ingredients from the meal plan, with an amount, store section and recipes.
  */
 export type ShoppingExtra = {
   id: string;
@@ -15,10 +16,6 @@ export type ShoppingExtra = {
   section?: StoreSection;
   recipes?: string[];
 };
-
-/** An ingredient to add from the meal plan. */
-export type FoodItem = Required<Pick<ShoppingExtra, 'name' | 'section' | 'recipes'>> &
-  Pick<ShoppingExtra, 'quantity'>;
 
 type ShoppingContextValue = {
   loaded: boolean;
@@ -30,8 +27,11 @@ type ShoppingContextValue = {
   /** Adds items from text like "paper towels, coffee". */
   addExtras: (text: string) => void;
   removeExtra: (id: string) => void;
-  /** Adds ingredients from the meal plan. */
-  addFoodItems: (items: FoodItem[]) => void;
+  /** Meals from the plan whose ingredients are on the list. */
+  planned: PlannedShop[];
+  addPlanned: (meals: PlannedShop[]) => void;
+  /** Takes a recipe from the plan off the list. */
+  removePlanned: (recipeId: string) => void;
   /** Forgets the ticks and removes ticked extras (after shopping). */
   clearChecked: () => void;
 };
@@ -47,6 +47,11 @@ export function ShoppingProvider({ children }: { children: React.ReactNode }) {
   );
   const [extras, setExtras, extrasLoaded] = usePersistedState<ShoppingExtra[]>(
     'shoppingExtras.v1',
+    () => [],
+  );
+
+  const [planned, setPlanned, plannedLoaded] = usePersistedState<PlannedShop[]>(
+    'shoppingPlanned.v1',
     () => [],
   );
 
@@ -77,18 +82,13 @@ export function ShoppingProvider({ children }: { children: React.ReactNode }) {
     [setExtras],
   );
 
-  const addFoodItems = useCallback(
-    (items: FoodItem[]) => {
-      const now = Date.now().toString(36);
-      setExtras((prev) => [
-        ...prev,
-        ...items.map((item, i) => ({
-          ...item,
-          id: `${now}-p${i}-${Math.random().toString(36).slice(2, 6)}`,
-        })),
-      ]);
-    },
-    [setExtras],
+  const addPlanned = useCallback(
+    (meals: PlannedShop[]) => setPlanned((prev) => [...prev, ...meals]),
+    [setPlanned],
+  );
+  const removePlanned = useCallback(
+    (recipeId: string) => setPlanned((prev) => prev.filter((p) => p.recipeId !== recipeId)),
+    [setPlanned],
   );
 
   const removeExtra = useCallback(
@@ -106,26 +106,31 @@ export function ShoppingProvider({ children }: { children: React.ReactNode }) {
 
   const value = useMemo(
     () => ({
-      loaded: checkedLoaded && extrasLoaded,
+      loaded: checkedLoaded && extrasLoaded && plannedLoaded,
       checked,
       isChecked,
       toggleChecked,
       extras,
       addExtras,
       removeExtra,
-      addFoodItems,
+      planned,
+      addPlanned,
+      removePlanned,
       clearChecked,
     }),
     [
       checkedLoaded,
       extrasLoaded,
+      plannedLoaded,
       checked,
       isChecked,
       toggleChecked,
       extras,
       addExtras,
       removeExtra,
-      addFoodItems,
+      planned,
+      addPlanned,
+      removePlanned,
       clearChecked,
     ],
   );

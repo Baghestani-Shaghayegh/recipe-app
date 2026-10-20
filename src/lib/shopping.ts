@@ -63,6 +63,42 @@ export function shoppingName(name: string): string {
   return words.join(' ').toLowerCase();
 }
 
+/** One key per ingredient on the list: "2 Ripe Tomatoes, chopped" and "tomato" share "tomato". */
+export function shoppingKey(name: string): string {
+  const short = shoppingName(name);
+  return normalizeWords(short).join(' ') || short;
+}
+
+/** A meal from the plan whose ingredients are on the shopping list, minus the ones unticked. */
+export type PlannedShop = { day: string; recipeId: string; skip: string[] };
+
+/**
+ * The recipes the shopping list is made from: every meal added from the plan that's today or
+ * later (a recipe planned twice counts twice, without the ingredients unticked in the review),
+ * then the Make next recipes that aren't already there from the plan.
+ */
+export function shoppingRecipes(
+  makeNext: string[],
+  planned: PlannedShop[],
+  recipes: Map<string, Recipe>,
+  today: string,
+): Recipe[] {
+  const fromPlan = planned
+    .filter((p) => p.day >= today && recipes.has(p.recipeId))
+    .map((p) => {
+      const r = recipes.get(p.recipeId)!;
+      return p.skip.length
+        ? { ...r, ingredients: r.ingredients.filter((i) => !p.skip.includes(shoppingKey(i.name))) }
+        : r;
+    });
+  const planIds = new Set(fromPlan.map((r) => r.id));
+  const fromNext = [...new Set(makeNext)]
+    .filter((id) => !planIds.has(id))
+    .map((id) => recipes.get(id))
+    .filter((r): r is Recipe => !!r);
+  return [...fromPlan, ...fromNext];
+}
+
 type Unit = 'mass' | 'volume' | 'count' | string;
 
 function unitClass(unit: string | undefined): Unit {
@@ -107,7 +143,7 @@ export function buildShoppingList(recipes: Recipe[], pantry: string[]): Shopping
   const add = (ing: Ingredient, recipeTitle: string) => {
     if (isStaple(ing.name) || pantryHas(pantry, ing.name)) return;
     const name = shoppingName(ing.name);
-    const key = normalizeWords(name).join(' ') || name;
+    const key = shoppingKey(ing.name);
     let g = groups.get(key);
     if (!g) {
       g = {
@@ -163,9 +199,8 @@ export function mealsShopping(
   for (const r of recipes) {
     for (const ing of r.ingredients) {
       if (isStaple(ing.name) || !pantryHas(pantry, ing.name)) continue;
-      const name = shoppingName(ing.name);
-      const key = normalizeWords(name).join(' ') || name;
-      if (!have.has(key)) have.set(key, name);
+      const key = shoppingKey(ing.name);
+      if (!have.has(key)) have.set(key, shoppingName(ing.name));
     }
   }
   return { items: buildShoppingList(recipes, pantry), have: [...have.values()] };

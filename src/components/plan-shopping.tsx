@@ -277,7 +277,7 @@ const styles = StyleSheet.create({
   barTitle: { fontSize: 15, fontWeight: '700' },
   barButton: { borderRadius: 12, paddingVertical: 10, paddingHorizontal: 14 },
   barButtonText: { fontSize: 14, fontWeight: '700' },
-  sheet: { gap: Spacing.three, flexShrink: 1 },
+  sheet: { gap: Spacing.three, flexShrink: 1, paddingTop: Spacing.three },
   list: { flexShrink: 1 },
   listContent: { paddingBottom: Spacing.two },
   empty: { fontSize: 15, lineHeight: 21, paddingVertical: Spacing.four, textAlign: 'center' },

@@ -207,7 +207,7 @@ export default function PlanScreen() {
               recipe={recipe}
               prep={
                 cook
-                  ? { kind: 'cook', servings: cook.servings }
+                  ? { kind: 'cook', servings: cook.servings, left: batchUse(cook).left }
                   : leftover
                     ? {
                         kind: 'leftover',
@@ -286,113 +286,110 @@ function MealCard({
   meal: Meal;
   recipe?: Recipe;
   /** Meal prep: the meal the batch is cooked for, or leftovers from it. */
-  prep?: { kind: 'cook'; servings: number } | { kind: 'leftover'; from: string };
+  prep?: { kind: 'cook'; servings: number; left: number } | { kind: 'leftover'; from: string };
   onPress: () => void;
   /** The ⋯ button (and holding the card): change or remove. */
   onMenu?: () => void;
-  /** The "+ Meal prep" tag (or "Meal prep" on a batch's cooking meal): set up meal prep. */
+  /** The meal prep strip along the bottom of the card: set up (or change) meal prep. */
   onPrep?: () => void;
 }) {
   const c = useTheme();
   const minutes = recipe ? totalMinutes(recipe) : undefined;
   const facts =
-    prep?.kind === 'leftover'
-      ? `From ${prep.from}`
-      : [
-          prep?.kind === 'cook' ? `Cook ${prep.servings} servings` : undefined,
-          minutes ? formatMinutes(minutes) : undefined,
-        ]
-          .filter(Boolean)
-          .join(' · ');
+    prep?.kind === 'leftover' ? `From ${prep.from}` : minutes ? formatMinutes(minutes) : '';
+  const cooking = prep?.kind === 'cook';
   return (
-    <Pressable
-      onPress={onPress}
-      onLongPress={onMenu}
-      accessibilityRole="button"
-      accessibilityLabel={
-        recipe ? `${MEAL_LABELS[meal]}: ${recipe.title}` : `Add ${MEAL_LABELS[meal].toLowerCase()}`
-      }
-      style={({ pressed }) => [
+    <View
+      style={[
         styles.card,
         {
           backgroundColor: c.card,
-          borderColor: prep?.kind === 'cook' ? c.prep : c.border,
-          borderWidth: prep?.kind === 'cook' ? 1.5 : 1,
-          opacity: pressed ? 0.85 : 1,
+          borderColor: cooking ? c.prep : c.border,
+          borderWidth: cooking ? 1.5 : 1,
         },
       ]}>
-      {recipe ? (
-        recipe.photoUri ? (
-          <Image source={{ uri: recipe.photoUri }} style={styles.thumb} contentFit="cover" />
-        ) : (
-          <View style={[styles.thumb, styles.center, { backgroundColor: c.chip }]}>
-            <Text style={styles.emoji}>🍽️</Text>
-          </View>
-        )
-      ) : (
-        <View style={[styles.thumb, styles.center, styles.addThumb, { borderColor: c.border }]}>
-          <Ionicons name="add" size={28} color={c.accent} />
-        </View>
-      )}
-      <View style={styles.cardText}>
-        <View style={styles.mealRow}>
-          <Text style={[styles.meal, { color: c.accent }]}>{MEAL_LABELS[meal]}</Text>
-          {prep?.kind === 'leftover' ? (
-            <View style={[styles.tag, { backgroundColor: c.prepSoft }]}>
-              <Text style={[styles.tagText, { color: c.prep }]}>Leftovers</Text>
+      <Pressable
+        onPress={onPress}
+        onLongPress={onMenu}
+        accessibilityRole="button"
+        accessibilityLabel={
+          recipe
+            ? `${MEAL_LABELS[meal]}: ${recipe.title}`
+            : `Add ${MEAL_LABELS[meal].toLowerCase()}`
+        }
+        style={({ pressed }) => [styles.cardMain, { opacity: pressed ? 0.85 : 1 }]}>
+        {recipe ? (
+          recipe.photoUri ? (
+            <Image source={{ uri: recipe.photoUri }} style={styles.thumb} contentFit="cover" />
+          ) : (
+            <View style={[styles.thumb, styles.center, { backgroundColor: c.chip }]}>
+              <Text style={styles.emoji}>🍽️</Text>
             </View>
-          ) : onPrep ? (
-            <Pressable
-              onPress={onPrep}
-              hitSlop={8}
-              accessibilityRole="button"
-              accessibilityLabel={prep ? 'Edit meal prep' : 'Meal prep'}
-              style={({ pressed }) => [
-                styles.tag,
-                prep
-                  ? { backgroundColor: c.prep }
-                  : { borderWidth: 1, borderColor: c.prep, paddingVertical: 1 },
-                { opacity: pressed ? 0.7 : 1 },
-              ]}>
-              <Text style={[styles.tagText, { color: prep ? c.background : c.prep }]}>
-                {prep ? 'Meal prep' : '+ Meal prep'}
-              </Text>
-            </Pressable>
-          ) : null}
-        </View>
-        <Text
-          style={[
-            styles.title,
-            { color: recipe ? c.text : c.textSecondary },
-            !recipe && styles.add,
-          ]}
-          numberOfLines={2}>
-          {recipe ? recipe.title : 'Add meal'}
-        </Text>
-        {facts ? (
+          )
+        ) : (
+          <View style={[styles.thumb, styles.center, styles.addThumb, { borderColor: c.border }]}>
+            <Ionicons name="add" size={28} color={c.accent} />
+          </View>
+        )}
+        <View style={styles.cardText}>
+          <View style={styles.mealRow}>
+            <Text style={[styles.meal, { color: c.accent }]}>{MEAL_LABELS[meal]}</Text>
+            {prep?.kind === 'leftover' ? (
+              <View style={[styles.tag, { backgroundColor: c.prepSoft }]}>
+                <Text style={[styles.tagText, { color: c.prep }]}>Leftovers</Text>
+              </View>
+            ) : null}
+          </View>
           <Text
             style={[
-              styles.facts,
-              { color: c.textSecondary },
-              prep?.kind === 'cook' && { color: c.prep, fontWeight: '600' },
+              styles.title,
+              { color: recipe ? c.text : c.textSecondary },
+              !recipe && styles.add,
             ]}
-            numberOfLines={1}>
-            {facts}
+            numberOfLines={2}>
+            {recipe ? recipe.title : 'Add meal'}
           </Text>
-        ) : null}
-      </View>
-      {onMenu ? (
+          {facts ? (
+            <Text style={[styles.facts, { color: c.textSecondary }]} numberOfLines={1}>
+              {facts}
+            </Text>
+          ) : null}
+        </View>
+        {onMenu ? (
+          <Pressable
+            onPress={onMenu}
+            hitSlop={10}
+            accessibilityRole="button"
+            accessibilityLabel={`More for ${MEAL_LABELS[meal].toLowerCase()}`}>
+            <Ionicons name="ellipsis-horizontal" size={22} color={c.textSecondary} />
+          </Pressable>
+        ) : (
+          <Ionicons name="chevron-forward" size={20} color={c.textSecondary} />
+        )}
+      </Pressable>
+      {onPrep ? (
         <Pressable
-          onPress={onMenu}
-          hitSlop={10}
+          onPress={onPrep}
           accessibilityRole="button"
-          accessibilityLabel={`More for ${MEAL_LABELS[meal].toLowerCase()}`}>
-          <Ionicons name="ellipsis-horizontal" size={22} color={c.textSecondary} />
+          accessibilityLabel={cooking ? 'Edit meal prep' : 'Meal prep'}
+          style={({ pressed }) => [
+            styles.prepStrip,
+            { borderTopColor: cooking ? c.prep : c.border, opacity: pressed ? 0.7 : 1 },
+            cooking && { backgroundColor: c.prepSoft },
+          ]}>
+          <Text style={[styles.prepMain, { color: c.prep }]}>
+            🥡 {cooking ? `Cook ${prep.servings} servings` : 'Meal prep'}
+          </Text>
+          <Text style={[styles.prepSide, { color: c.textSecondary }]}>
+            {cooking
+              ? prep.left < 0
+                ? `${-prep.left} short ›`
+                : `${prep.left} left ›`
+              : 'Cook once, eat again ›'}
+          </Text>
         </Pressable>
-      ) : (
-        <Ionicons name="chevron-forward" size={20} color={c.textSecondary} />
-      )}
-    </Pressable>
+      ) : null}
+    </View>
   );
 }
 
@@ -426,14 +423,24 @@ const styles = StyleSheet.create({
   dots: { flexDirection: 'row', gap: 3, height: 8, alignItems: 'center', marginTop: 3 },
   dot: { width: 5, height: 5, borderRadius: 3 },
   dayTitle: { fontSize: 24, fontWeight: '700', marginTop: Spacing.two },
-  card: {
+  card: { borderWidth: 1, borderRadius: 18, overflow: 'hidden' },
+  cardMain: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.three,
-    borderWidth: 1,
-    borderRadius: 18,
     padding: Spacing.three,
   },
+  prepStrip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: Spacing.two,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    paddingVertical: 10,
+    paddingHorizontal: Spacing.four,
+  },
+  prepMain: { fontSize: 14, fontWeight: '700' },
+  prepSide: { fontSize: 13, fontWeight: '600' },
   thumb: { width: THUMB, height: THUMB, borderRadius: 14 },
   center: { alignItems: 'center', justifyContent: 'center' },
   addThumb: { borderWidth: 1.5, borderStyle: 'dashed' },

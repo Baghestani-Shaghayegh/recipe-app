@@ -140,7 +140,7 @@ function ReviewSheet({
   };
 
   return (
-    <BottomSheet visible title="Shop for your meals" onClose={onClose}>
+    <BottomSheet visible title="Add to shopping list" onClose={onClose}>
       {(close) => (
         <View style={styles.sheet}>
           {ranges.length > 1 ? (

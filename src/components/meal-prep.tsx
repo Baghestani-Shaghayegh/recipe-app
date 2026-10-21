@@ -89,15 +89,17 @@ function Stepper({
   label,
   value,
   min,
+  max = MAX_SERVINGS,
   onChange,
 }: {
   label: string;
   value: number;
   min: number;
+  max?: number;
   onChange: (n: number) => void;
 }) {
   const c = useTheme();
-  const step = (d: number) => onChange(Math.min(MAX_SERVINGS, Math.max(min, value + d)));
+  const step = (d: number) => onChange(Math.min(max, Math.max(min, value + d)));
   return (
     <View style={[styles.stepper, { borderBottomColor: c.border }]}>
       <Text style={[styles.stepLabel, { color: c.text }]}>{label}</Text>
@@ -113,10 +115,10 @@ function Stepper({
         <Text style={[styles.stepValue, { color: c.text }]}>{value}</Text>
         <Pressable
           onPress={() => step(1)}
-          disabled={value >= MAX_SERVINGS}
+          disabled={value >= max}
           accessibilityRole="button"
           accessibilityLabel={`More: ${label.toLowerCase()}`}
-          style={[styles.stepButton, { backgroundColor: c.chip }]}>
+          style={[styles.stepButton, { backgroundColor: c.chip, opacity: value >= max ? 0.4 : 1 }]}>
           <Ionicons name="add" size={20} color={c.accent} />
         </Pressable>
       </View>
@@ -147,12 +149,18 @@ export function MealPrepSheet({
   const { recipes } = useRecipes();
   const lastPeople = batches[batches.length - 1]?.people;
   const [servings, setServings] = useState(batch?.servings ?? recipe.servings ?? 4);
-  const [people, setPeople] = useState(batch?.people ?? lastPeople ?? 1);
+  const [people, setPeople] = useState(() =>
+    Math.min(batch?.people ?? lastPeople ?? 1, batch?.servings ?? recipe.servings ?? 4),
+  );
   const [eats, setEats] = useState<string[]>(() =>
     (batch?.eats ?? []).map((e) => slotKey(e.day, e.meal)),
   );
   const days = Array.from({ length: DAYS_SHOWN }, (_, i) => dateKey(addDays(fromDateKey(day), i)));
-  const { used } = batchUse({ servings, people, eats });
+  const { used, left } = batchUse({ servings, people, eats });
+  // Only as many meals as the servings cover: no more ticks once another meal wouldn't fit,
+  // no fewer servings than the ticked meals need, and no more people than the servings feed.
+  const full = left < people;
+  const meals = 1 + eats.length;
 
   // Meals that already hold another recipe can't be picked.
   const takenBy = (d: string, m: Meal) => {
@@ -185,8 +193,19 @@ export function MealPrepSheet({
       {(close) => (
         <View style={styles.sheet}>
           <View>
-            <Stepper label="Servings to cook" value={servings} min={1} onChange={setServings} />
-            <Stepper label="People eating" value={people} min={1} onChange={setPeople} />
+            <Stepper
+              label="Servings to cook"
+              value={servings}
+              min={Math.max(1, used)}
+              onChange={setServings}
+            />
+            <Stepper
+              label="People eating"
+              value={people}
+              min={1}
+              max={Math.max(1, Math.floor(servings / meals))}
+              onChange={setPeople}
+            />
           </View>
 
           <Text style={[styles.gridTitle, { color: c.textSecondary }]}>EAT IT ON</Text>
@@ -237,14 +256,15 @@ export function MealPrepSheet({
                     <Pressable
                       key={key}
                       onPress={() => toggle(key)}
+                      disabled={!on && full}
                       accessibilityRole="checkbox"
-                      accessibilityState={{ checked: on }}
+                      accessibilityState={{ checked: on, disabled: !on && full }}
                       accessibilityLabel={`${weekday(d)} ${MEAL_LABELS[m]}`}
                       style={[
                         styles.cell,
                         on
                           ? { backgroundColor: c.prep, borderColor: c.prep }
-                          : { borderColor: c.border },
+                          : { borderColor: c.border, opacity: full ? 0.35 : 1 },
                       ]}>
                       {on ? <Ionicons name="checkmark" size={18} color="#fff" /> : null}
                     </Pressable>

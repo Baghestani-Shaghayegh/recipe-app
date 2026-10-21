@@ -90,16 +90,8 @@ export default function PlanScreen() {
       setMenu(undefined);
       run();
     };
+    // Opening the recipe is a tap on the card, and meal prep is the tag on it.
     return [
-      { label: 'Open recipe', onPress: close(() => openRecipe(recipe, meal)) },
-      ...(leftover
-        ? []
-        : [
-            {
-              label: cook ? 'Edit meal prep' : 'Meal prep',
-              onPress: close(() => afterMenu(() => setPrep({ meal, recipe, batch: cook }))),
-            },
-          ]),
       ...(cook || leftover
         ? [
             {
@@ -235,6 +227,7 @@ export default function PlanScreen() {
               }
               onPress={() => openRecipe(recipe, meal)}
               onMenu={() => setMenu({ meal, recipe })}
+              onPrep={leftover ? undefined : () => setPrep({ meal, recipe, batch: cook })}
             />
           ) : (
             <MealCard key={meal} meal={meal} onPress={() => pick(meal)} />
@@ -297,14 +290,17 @@ function MealCard({
   prep,
   onPress,
   onMenu,
+  onPrep,
 }: {
   meal: Meal;
   recipe?: Recipe;
   /** Meal prep: the meal the batch is cooked for, or leftovers from it. */
   prep?: { kind: 'cook'; servings: number } | { kind: 'leftover'; from: string };
   onPress: () => void;
-  /** The ⋯ button (and holding the card): open, change or remove. */
+  /** The ⋯ button (and holding the card): change or remove. */
   onMenu?: () => void;
+  /** The "+ Meal prep" tag (or "Meal prep" on a batch's cooking meal): set up meal prep. */
+  onPrep?: () => void;
 }) {
   const c = useTheme();
   const minutes = recipe ? totalMinutes(recipe) : undefined;
@@ -354,14 +350,27 @@ function MealCard({
       <View style={styles.cardText}>
         <View style={styles.mealRow}>
           <Text style={[styles.meal, { color: c.accent }]}>{MEAL_LABELS[meal]}</Text>
-          {prep ? (
-            <View
-              style={[styles.tag, { backgroundColor: prep.kind === 'cook' ? c.prep : c.prepSoft }]}>
-              <Text
-                style={[styles.tagText, { color: prep.kind === 'cook' ? c.background : c.prep }]}>
-                {prep.kind === 'cook' ? 'Meal prep' : 'Leftovers'}
-              </Text>
+          {prep?.kind === 'leftover' ? (
+            <View style={[styles.tag, { backgroundColor: c.prepSoft }]}>
+              <Text style={[styles.tagText, { color: c.prep }]}>Leftovers</Text>
             </View>
+          ) : onPrep ? (
+            <Pressable
+              onPress={onPrep}
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel={prep ? 'Edit meal prep' : 'Meal prep'}
+              style={({ pressed }) => [
+                styles.tag,
+                prep
+                  ? { backgroundColor: c.prep }
+                  : { borderWidth: 1, borderColor: c.prep, paddingVertical: 1 },
+                { opacity: pressed ? 0.7 : 1 },
+              ]}>
+              <Text style={[styles.tagText, { color: prep ? c.background : c.prep }]}>
+                {prep ? 'Meal prep' : '+ Meal prep'}
+              </Text>
+            </Pressable>
           ) : null}
         </View>
         <Text

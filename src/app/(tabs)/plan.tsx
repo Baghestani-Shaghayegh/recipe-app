@@ -2,20 +2,26 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
-import { ActionSheet } from '@/components/action-sheet';
+import { ActionSheet, type SheetAction } from '@/components/action-sheet';
+import { Bowls, FinishedSheet, MealPrepSheet } from '@/components/meal-prep';
 import { PlanShoppingBar } from '@/components/plan-shopping';
 import { Features } from '@/constants/features';
 import { MaxContentWidth, Spacing, useTheme } from '@/constants/theme';
 import { servingNutrition } from '@/lib/nutrition';
 import {
   addDays,
+  batchUse,
+  cookingBatch,
   dateKey,
+  fromDateKey,
+  leftoverBatch,
   MEAL_LABELS,
   MEALS,
   plannedMeals,
   weekDays,
+  type Batch,
   type Meal,
 } from '@/lib/plan';
 import { planNutrition } from '@/lib/plan-nutrition';
@@ -25,16 +31,21 @@ import { useRecipes } from '@/store/recipes';
 
 const BAR_SPACE = 96;
 
+// iOS can't open the next sheet until the menu has closed.
+const afterMenu = (run: () => void) => setTimeout(run, Platform.OS === 'ios' ? 350 : 0);
+
 const short = (d: Date) => d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 
 /** Pick a day at the top, then plan its breakfast, lunch and dinner. */
 export default function PlanScreen() {
   const c = useTheme();
   const { recipes } = useRecipes();
-  const { plan, setMeal } = usePlan();
+  const { plan, setMeal, batches } = usePlan();
   const [weekOffset, setWeekOffset] = useState(0);
   const [selected, setSelected] = useState(() => dateKey(new Date()));
   const [menu, setMenu] = useState<{ meal: Meal; recipe: Recipe }>();
+  const [prep, setPrep] = useState<{ meal: Meal; recipe: Recipe; batch?: Batch }>();
+  const [finishing, setFinishing] = useState<Batch>();
 
   const today = new Date();
   const todayKey = dateKey(today);
@@ -62,6 +73,49 @@ export default function PlanScreen() {
     .join(' · ');
 
   const pick = (meal: Meal) => router.push({ pathname: '/plan/pick', params: { day, meal } });
+  // A meal-prep recipe opens at the batch's size, so cooking mode has the right amounts.
+  const openRecipe = (recipe: Recipe, meal: Meal) => {
+    const batch = cookingBatch(batches, plan, day, meal);
+    router.push({
+      pathname: '/recipe/[id]',
+      params: batch ? { id: recipe.id, servings: String(batch.servings) } : { id: recipe.id },
+    });
+  };
+  const cookedToday = batches.filter((b) => b.cookDay === day && byId.has(b.recipeId));
+
+  const menuActions = (meal: Meal, recipe: Recipe): SheetAction[] => {
+    const cook = cookingBatch(batches, plan, day, meal);
+    const leftover = leftoverBatch(batches, plan, day, meal);
+    const close = (run: () => void) => () => {
+      setMenu(undefined);
+      run();
+    };
+    return [
+      { label: 'Open recipe', onPress: close(() => openRecipe(recipe, meal)) },
+      ...(leftover
+        ? []
+        : [
+            {
+              label: cook ? 'Edit meal prep' : 'Meal prep',
+              onPress: close(() => afterMenu(() => setPrep({ meal, recipe, batch: cook }))),
+            },
+          ]),
+      ...(cook || leftover
+        ? [
+            {
+              label: 'Finished it',
+              onPress: close(() => afterMenu(() => setFinishing(cook ?? leftover))),
+            },
+          ]
+        : []),
+      ...(leftover ? [] : [{ label: 'Choose another recipe', onPress: close(() => pick(meal)) }]),
+      {
+        label: `Remove from ${MEAL_LABELS[meal].toLowerCase()}`,
+        danger: true,
+        onPress: close(() => setMeal(day, meal, undefined)),
+      },
+    ];
+  };
 
   return (
     <View style={[styles.screen, { backgroundColor: c.background }]}>
@@ -101,7 +155,8 @@ export default function PlanScreen() {
           {days.map((d, i) => {
             const key = week[i];
             const on = key === day;
-            const count = plannedMeals(plan, [key]).filter((m) => byId.has(m.recipeId)).length;
+            const dayMeals = plannedMeals(plan, [key]).filter((m) => byId.has(m.recipeId));
+            const count = dayMeals.length;
             return (
               <Pressable
                 key={key}
@@ -123,10 +178,19 @@ export default function PlanScreen() {
                   {d.getDate()}
                 </Text>
                 <View style={styles.dots}>
-                  {Array.from({ length: count }, (_, n) => (
+                  {dayMeals.map((m) => (
                     <View
-                      key={n}
-                      style={[styles.dot, { backgroundColor: on ? c.accentText : c.accent }]}
+                      key={m.meal}
+                      style={[
+                        styles.dot,
+                        {
+                          backgroundColor: on
+                            ? c.accentText
+                            : leftoverBatch(batches, plan, key, m.meal)
+                              ? c.prep
+                              : c.accent,
+                        },
+                      ]}
                     />
                   ))}
                 </View>
@@ -148,18 +212,51 @@ export default function PlanScreen() {
 
         {MEALS.map((meal) => {
           const recipe = byId.get(plan[day]?.[meal] ?? '');
+          const cook = cookingBatch(batches, plan, day, meal);
+          const leftover = leftoverBatch(batches, plan, day, meal);
           return recipe ? (
             <MealCard
               key={meal}
               meal={meal}
               recipe={recipe}
-              onPress={() => router.push({ pathname: '/recipe/[id]', params: { id: recipe.id } })}
+              prep={
+                cook
+                  ? { kind: 'cook', servings: cook.servings }
+                  : leftover
+                    ? {
+                        kind: 'leftover',
+                        from: fromDateKey(leftover.cookDay).toLocaleDateString(undefined, {
+                          weekday: 'long',
+                        }),
+                      }
+                    : undefined
+              }
+              onPress={() => openRecipe(recipe, meal)}
               onMenu={() => setMenu({ meal, recipe })}
             />
           ) : (
             <MealCard key={meal} meal={meal} onPress={() => pick(meal)} />
           );
         })}
+
+        {cookedToday.map((b) => (
+          <View key={b.id} style={styles.batch}>
+            <Bowls
+              title={byId.get(b.recipeId)!.title}
+              servings={b.servings}
+              used={batchUse(b).used}
+            />
+            <Pressable
+              onPress={() => setFinishing(b)}
+              accessibilityRole="button"
+              style={({ pressed }) => [
+                styles.finished,
+                { borderColor: c.border, backgroundColor: c.card, opacity: pressed ? 0.7 : 1 },
+              ]}>
+              <Text style={[styles.finishedText, { color: c.text }]}>Finished it</Text>
+            </Pressable>
+          </View>
+        ))}
       </ScrollView>
 
       <PlanShoppingBar week={week} today={todayKey} />
@@ -168,35 +265,25 @@ export default function PlanScreen() {
         visible={!!menu}
         title={menu ? `${MEAL_LABELS[menu.meal]}: ${menu.recipe.title}` : undefined}
         onClose={() => setMenu(undefined)}
-        actions={
-          menu
-            ? [
-                {
-                  label: 'Open recipe',
-                  onPress: () => {
-                    setMenu(undefined);
-                    router.push({ pathname: '/recipe/[id]', params: { id: menu.recipe.id } });
-                  },
-                },
-                {
-                  label: 'Choose another recipe',
-                  onPress: () => {
-                    setMenu(undefined);
-                    pick(menu.meal);
-                  },
-                },
-                {
-                  label: `Remove from ${MEAL_LABELS[menu.meal].toLowerCase()}`,
-                  danger: true,
-                  onPress: () => {
-                    setMeal(day, menu.meal, undefined);
-                    setMenu(undefined);
-                  },
-                },
-              ]
-            : []
-        }
+        actions={menu ? menuActions(menu.meal, menu.recipe) : []}
       />
+      {prep ? (
+        <MealPrepSheet
+          recipe={prep.recipe}
+          day={day}
+          meal={prep.meal}
+          batch={prep.batch}
+          onClose={() => setPrep(undefined)}
+        />
+      ) : null}
+      {finishing && byId.has(finishing.recipeId) ? (
+        <FinishedSheet
+          batch={finishing}
+          recipe={byId.get(finishing.recipeId)!}
+          today={todayKey}
+          onClose={() => setFinishing(undefined)}
+        />
+      ) : null}
     </View>
   );
 }
@@ -205,11 +292,14 @@ export default function PlanScreen() {
 function MealCard({
   meal,
   recipe,
+  prep,
   onPress,
   onMenu,
 }: {
   meal: Meal;
   recipe?: Recipe;
+  /** Meal prep: the meal the batch is cooked for, or leftovers from it. */
+  prep?: { kind: 'cook'; servings: number } | { kind: 'leftover'; from: string };
   onPress: () => void;
   /** The ⋯ button (and holding the card): open, change or remove. */
   onMenu?: () => void;
@@ -217,14 +307,18 @@ function MealCard({
   const c = useTheme();
   const minutes = recipe ? totalMinutes(recipe) : undefined;
   const nutrition = recipe && Features.nutrition ? servingNutrition(recipe) : undefined;
-  const facts = [
-    minutes ? formatMinutes(minutes) : undefined,
-    nutrition
-      ? `${nutrition.source === 'estimate' ? '~' : ''}${Math.round(nutrition.values.kcal)} kcal`
-      : undefined,
-  ]
-    .filter(Boolean)
-    .join(' · ');
+  const facts =
+    prep?.kind === 'leftover'
+      ? `From ${prep.from}`
+      : [
+          prep?.kind === 'cook' ? `Cook ${prep.servings} servings` : undefined,
+          minutes ? formatMinutes(minutes) : undefined,
+          !prep && nutrition
+            ? `${nutrition.source === 'estimate' ? '~' : ''}${Math.round(nutrition.values.kcal)} kcal`
+            : undefined,
+        ]
+          .filter(Boolean)
+          .join(' · ');
   return (
     <Pressable
       onPress={onPress}
@@ -235,7 +329,12 @@ function MealCard({
       }
       style={({ pressed }) => [
         styles.card,
-        { backgroundColor: c.card, borderColor: c.border, opacity: pressed ? 0.85 : 1 },
+        {
+          backgroundColor: c.card,
+          borderColor: prep?.kind === 'cook' ? c.prep : c.border,
+          borderWidth: prep?.kind === 'cook' ? 1.5 : 1,
+          opacity: pressed ? 0.85 : 1,
+        },
       ]}>
       {recipe ? (
         recipe.photoUri ? (
@@ -251,7 +350,18 @@ function MealCard({
         </View>
       )}
       <View style={styles.cardText}>
-        <Text style={[styles.meal, { color: c.accent }]}>{MEAL_LABELS[meal]}</Text>
+        <View style={styles.mealRow}>
+          <Text style={[styles.meal, { color: c.accent }]}>{MEAL_LABELS[meal]}</Text>
+          {prep ? (
+            <View
+              style={[styles.tag, { backgroundColor: prep.kind === 'cook' ? c.prep : c.prepSoft }]}>
+              <Text
+                style={[styles.tagText, { color: prep.kind === 'cook' ? c.background : c.prep }]}>
+                {prep.kind === 'cook' ? 'Meal prep' : 'Leftovers'}
+              </Text>
+            </View>
+          ) : null}
+        </View>
         <Text
           style={[
             styles.title,
@@ -262,7 +372,13 @@ function MealCard({
           {recipe ? recipe.title : 'Add meal'}
         </Text>
         {facts ? (
-          <Text style={[styles.facts, { color: c.textSecondary }]} numberOfLines={1}>
+          <Text
+            style={[
+              styles.facts,
+              { color: c.textSecondary },
+              prep?.kind === 'cook' && { color: c.prep, fontWeight: '600' },
+            ]}
+            numberOfLines={1}>
             {facts}
           </Text>
         ) : null}
@@ -327,6 +443,12 @@ const styles = StyleSheet.create({
   emoji: { fontSize: 28 },
   cardText: { flex: 1, minWidth: 0, gap: 2 },
   meal: { fontSize: 12, fontWeight: '700', letterSpacing: 0.5, textTransform: 'uppercase' },
+  mealRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  tag: { borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2 },
+  tagText: { fontSize: 11, fontWeight: '700' },
+  batch: { gap: Spacing.two },
+  finished: { borderWidth: 1.5, borderRadius: 12, paddingVertical: 11, alignItems: 'center' },
+  finishedText: { fontSize: 15, fontWeight: '700' },
   title: { fontSize: 16, fontWeight: '600' },
   add: { fontWeight: '500' },
   facts: { fontSize: 13 },

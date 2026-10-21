@@ -175,6 +175,14 @@ Code: `src/lib/supabase.ts` (small client over Supabase's REST API, no extra pac
 - *Add meal* opens your recipes (the same grid, search and filters as the Recipes tab), starting
   on that meal's category; tap one to plan it. Tap a planned meal to open the recipe; its ⋯
   button (or holding the card) lets you choose another recipe or remove it.
+- **Meal prep:** ⋯ on a planned meal → *Meal prep*. Choose how many servings to cook, how many
+  people eat, and which breakfasts, lunches and dinners of the next 7 days eat the leftovers.
+  Bowls show the servings: full ones are planned, empty ones are left (red when you've planned
+  more than you cook). The cooking meal gets a *Meal prep* label and opens at the batch size, so
+  cooking mode has the right amounts; leftover meals say *Leftovers · From Sunday* and add
+  nothing to the shopping list. *Finished it* (under the bowls, or ⋯ on a leftover meal) is for a
+  batch that ran out early: its leftover meals from today on are freed up. Saved as
+  `batches.v1`; logic in `src/lib/plan.ts`, screens in `src/components/meal-prep.tsx`.
 - From a recipe page: ⋯ → *Add to meal plan*, pick a day in the next two weeks and a meal.
 - **Shopping for it:** the bar at the bottom says how many meals are planned and how many
   ingredients are missing ("Missing 9 ingredients"). *Review* lists what they need (for *Today*,

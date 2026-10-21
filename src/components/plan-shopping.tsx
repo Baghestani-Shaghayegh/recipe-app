@@ -8,7 +8,7 @@ import { BottomSheet } from '@/components/bottom-sheet';
 import { Segmented } from '@/components/ui';
 import { Spacing, useTheme } from '@/constants/theme';
 import { STORE_SECTIONS } from '@/lib/foods';
-import { mealKey, plannedMeals, shopRangeDays, type ShopRange } from '@/lib/plan';
+import { leftoverBatch, mealKey, plannedMeals, shopRangeDays, type ShopRange } from '@/lib/plan';
 import type { Recipe } from '@/lib/recipe';
 import { mealsShopping } from '@/lib/shopping';
 import { useKitchen } from '@/store/kitchen';
@@ -24,17 +24,21 @@ const RANGE_LABELS: Record<ShopRange, string> = {
 
 /** The planned meals on `days` that aren't on the shopping list yet, with their recipes. */
 function usePending(days: string[]) {
-  const { plan, shopped } = usePlan();
+  const { plan, shopped, batches } = usePlan();
   const { recipes } = useRecipes();
   const { pantry } = useKitchen();
   return useMemo(() => {
     const byId = new Map(recipes.map((r) => [r.id, r]));
+    // Leftovers from a meal prep batch need no shopping: the batch is bought for once.
     const meals = plannedMeals(plan, days).filter(
-      (m) => byId.has(m.recipeId) && !shopped.includes(mealKey(m)),
+      (m) =>
+        byId.has(m.recipeId) &&
+        !shopped.includes(mealKey(m)) &&
+        !leftoverBatch(batches, plan, m.day, m.meal),
     );
     const mealRecipes = meals.map((m) => byId.get(m.recipeId)!);
     return { meals, recipes: mealRecipes, ...mealsShopping(mealRecipes, pantry) };
-  }, [plan, shopped, recipes, pantry, days]);
+  }, [plan, shopped, batches, recipes, pantry, days]);
 }
 
 /**

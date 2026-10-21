@@ -9,6 +9,7 @@ export const SYNC_KEYS = [
   'makeNext.v1',
   'cooked.v1',
   'plan.v1',
+  'batches.v1',
   'planShopped.v1',
   'goals.v1',
   'shoppingChecked.v1',

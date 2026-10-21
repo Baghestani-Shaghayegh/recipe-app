@@ -33,12 +33,16 @@ import { useRecipes } from '@/store/recipes';
 
 export default function RecipeDetailScreen() {
   const c = useTheme();
-  const { id } = useLocalSearchParams<{ id: string }>();
+  // `servings` comes from a meal prep batch on the Plan, so the amounts match what's cooked.
+  const { id, servings: servingsParam } = useLocalSearchParams<{ id: string; servings?: string }>();
   const { recipes, loaded, deleteRecipe, patchRecipe } = useRecipes();
   const { pantry, isInMakeNext, toggleMakeNext, markCooked, cooked } = useKitchen();
   const recipe = recipes.find((r) => r.id === id);
   // Serving size picked on this screen only; the saved recipe is never changed.
-  const [chosenServings, setChosenServings] = useState<number>();
+  const [chosenServings, setChosenServings] = useState<number | undefined>(() => {
+    const n = Number(servingsParam);
+    return Number.isFinite(n) && n > 0 ? n : undefined;
+  });
   const [units, setUnits] = useState<UnitSystem>('original');
   const [shareNote, setShareNote] = useState<string>();
   const [menuOpen, setMenuOpen] = useState(false);

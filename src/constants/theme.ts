@@ -12,6 +12,10 @@ export const Colors = {
     chip: '#F1EBE5',
     danger: '#B91C1C',
     dangerSoft: '#FDECEC',
+    // Meal prep batches.
+    prep: '#0F766E',
+    prepSoft: '#E6F4F1',
+    prepLine: '#9CC9C1',
   },
   dark: {
     text: '#F5F0EB',
@@ -24,6 +28,9 @@ export const Colors = {
     chip: '#2C2622',
     danger: '#F87171',
     dangerSoft: '#3A1F1D',
+    prep: '#2DD4BF',
+    prepSoft: '#123B37',
+    prepLine: '#2F6B63',
   },
 } as const;
 

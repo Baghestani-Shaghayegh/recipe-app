@@ -108,3 +108,129 @@ export function shopRangeDays(week: string[], today: string, range: ShopRange): 
   if (range === 'next3') return left.slice(0, 3);
   return left;
 }
+
+/** One meal of one day, e.g. "2026-10-22:lunch". */
+export const slotKey = (day: string, meal: Meal) => `${day}:${meal}`;
+
+/**
+ * Meal prep: a recipe cooked once (on `cookDay`'s `cookMeal`) in a big batch and eaten again on
+ * the `eats` meals. Each meal, the cooking one included, uses one serving per person.
+ */
+export type Batch = {
+  id: string;
+  recipeId: string;
+  cookDay: string;
+  cookMeal: Meal;
+  servings: number;
+  people: number;
+  /** The leftover meals. */
+  eats: { day: string; meal: Meal }[];
+};
+
+/** Servings the planned meals use, and what's left (below zero when there isn't enough). */
+export function batchUse(
+  batch: Pick<Batch, 'servings' | 'people'> & { eats: readonly unknown[] },
+): {
+  used: number;
+  left: number;
+} {
+  const used = batch.people * (1 + batch.eats.length);
+  return { used, left: batch.servings - used };
+}
+
+/** The batch cooked for this meal, if it's a meal-prep cooking meal. */
+export function cookingBatch(
+  batches: Batch[],
+  plan: MealPlan,
+  day: string,
+  meal: Meal,
+): Batch | undefined {
+  return batches.find(
+    (b) => b.cookDay === day && b.cookMeal === meal && plan[day]?.[meal] === b.recipeId,
+  );
+}
+
+/** The batch this meal is leftovers from, if any. */
+export function leftoverBatch(
+  batches: Batch[],
+  plan: MealPlan,
+  day: string,
+  meal: Meal,
+): Batch | undefined {
+  return batches.find(
+    (b) => plan[day]?.[meal] === b.recipeId && b.eats.some((e) => e.day === day && e.meal === meal),
+  );
+}
+
+/**
+ * Saves a batch (new or changed): its leftover meals are planned, and meals it no longer covers
+ * are cleared. Meals that already hold another recipe are left alone.
+ */
+export function saveBatch(
+  plan: MealPlan,
+  batches: Batch[],
+  batch: Batch,
+): { plan: MealPlan; batches: Batch[] } {
+  const before = batches.find((b) => b.id === batch.id);
+  const keep = new Set(batch.eats.map((e) => slotKey(e.day, e.meal)));
+  let next = setMeal(plan, batch.cookDay, batch.cookMeal, batch.recipeId);
+  for (const e of before?.eats ?? []) {
+    if (!keep.has(slotKey(e.day, e.meal)) && next[e.day]?.[e.meal] === before!.recipeId) {
+      next = setMeal(next, e.day, e.meal, undefined);
+    }
+  }
+  const eats = batch.eats.filter((e) => {
+    const there = next[e.day]?.[e.meal];
+    return !there || there === batch.recipeId;
+  });
+  for (const e of eats) next = setMeal(next, e.day, e.meal, batch.recipeId);
+  return {
+    plan: next,
+    batches: [...batches.filter((b) => b.id !== batch.id), { ...batch, eats }],
+  };
+}
+
+/**
+ * The batch ran out (eaten sooner, or it went off): its leftover meals from `today` on are
+ * cleared so something else can be planned, and the batch is forgotten.
+ */
+export function finishBatch(
+  plan: MealPlan,
+  batches: Batch[],
+  id: string,
+  today: string,
+): { plan: MealPlan; batches: Batch[] } {
+  const batch = batches.find((b) => b.id === id);
+  if (!batch) return { plan, batches };
+  let next = plan;
+  for (const e of batch.eats) {
+    if (e.day >= today && next[e.day]?.[e.meal] === batch.recipeId) {
+      next = setMeal(next, e.day, e.meal, undefined);
+    }
+  }
+  return { plan: next, batches: batches.filter((b) => b.id !== id) };
+}
+
+/**
+ * After one meal is changed by hand: it's no longer a batch's leftovers, and a batch whose
+ * cooking meal changed to another recipe (or was cleared) goes, along with its leftover meals.
+ */
+export function afterMealChange(
+  plan: MealPlan,
+  batches: Batch[],
+  day: string,
+  meal: Meal,
+): { plan: MealPlan; batches: Batch[] } {
+  let next = plan;
+  const kept: Batch[] = [];
+  for (const b of batches) {
+    if (b.cookDay === day && b.cookMeal === meal && plan[day]?.[meal] !== b.recipeId) {
+      for (const e of b.eats) {
+        if (next[e.day]?.[e.meal] === b.recipeId) next = setMeal(next, e.day, e.meal, undefined);
+      }
+      continue;
+    }
+    kept.push({ ...b, eats: b.eats.filter((e) => !(e.day === day && e.meal === meal)) });
+  }
+  return { plan: next, batches: kept };
+}

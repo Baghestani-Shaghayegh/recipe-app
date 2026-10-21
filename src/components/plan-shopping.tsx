@@ -1,5 +1,4 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -9,7 +8,6 @@ import { Segmented } from '@/components/ui';
 import { Spacing, useTheme } from '@/constants/theme';
 import { STORE_SECTIONS } from '@/lib/foods';
 import { leftoverBatch, mealKey, plannedMeals, shopRangeDays, type ShopRange } from '@/lib/plan';
-import type { Recipe } from '@/lib/recipe';
 import { mealsShopping } from '@/lib/shopping';
 import { useKitchen } from '@/store/kitchen';
 import { usePlan } from '@/store/plan';
@@ -126,8 +124,6 @@ function ReviewSheet({
   const [showHave, setShowHave] = useState(false);
   const chosen = items.filter((i) => !skipped.includes(i.key));
 
-  const counts = new Map<Recipe, number>();
-  for (const r of recipes) counts.set(r, (counts.get(r) ?? 0) + 1);
   const forLine = (titles: string[]) =>
     titles
       .map((t) => {
@@ -156,32 +152,6 @@ function ReviewSheet({
                 setSkipped([]);
               }}
             />
-          ) : null}
-
-          {recipes.length ? (
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.recipeChips}>
-              {[...counts.entries()].map(([r, n]) => (
-                <View
-                  key={r.id}
-                  style={[
-                    styles.recipeChip,
-                    { backgroundColor: c.background, borderColor: c.border },
-                  ]}>
-                  {r.photoUri ? (
-                    <Image source={{ uri: r.photoUri }} style={styles.recipeChipPhoto} />
-                  ) : (
-                    <View style={[styles.recipeChipPhoto, { backgroundColor: c.chip }]} />
-                  )}
-                  <Text style={[styles.recipeChipText, { color: c.text }]} numberOfLines={1}>
-                    {r.title}
-                    {n > 1 ? <Text style={{ color: c.textSecondary }}> ×{n}</Text> : null}
-                  </Text>
-                </View>
-              ))}
-            </ScrollView>
           ) : null}
 
           <ScrollView style={styles.list} contentContainerStyle={styles.listContent}>
@@ -306,20 +276,6 @@ const styles = StyleSheet.create({
   barButton: { borderRadius: 12, paddingVertical: 10, paddingHorizontal: 14 },
   barButtonText: { fontSize: 14, fontWeight: '700' },
   sheet: { gap: Spacing.three, flexShrink: 1 },
-  recipeChips: { gap: Spacing.two },
-  recipeChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    borderWidth: 1,
-    borderRadius: 999,
-    paddingVertical: 4,
-    paddingLeft: 4,
-    paddingRight: 10,
-    maxWidth: 220,
-  },
-  recipeChipPhoto: { width: 24, height: 24, borderRadius: 12 },
-  recipeChipText: { fontSize: 13, fontWeight: '600', flexShrink: 1 },
   list: { flexShrink: 1 },
   listContent: { paddingBottom: Spacing.two },
   empty: { fontSize: 15, lineHeight: 21, paddingVertical: Spacing.four, textAlign: 'center' },

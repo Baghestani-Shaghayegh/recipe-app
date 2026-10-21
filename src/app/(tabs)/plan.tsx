@@ -64,9 +64,9 @@ export default function PlanScreen() {
 
   const meals = plannedMeals(plan, [day]).filter((m) => byId.has(m.recipeId));
   const kcal = planNutrition(plan, [day], byId).total.kcal;
+  // The date is already in the strip above, and empty meals show for themselves.
   const summary = [
-    dayDate.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' }),
-    meals.length ? `${meals.length} meal${meals.length === 1 ? '' : 's'}` : 'Nothing planned',
+    meals.length ? `${meals.length} meal${meals.length === 1 ? '' : 's'}` : undefined,
     Features.nutrition && kcal > 0 ? `~${Math.round(kcal)} kcal` : undefined,
   ]
     .filter(Boolean)
@@ -207,7 +207,9 @@ export default function PlanScreen() {
                 ? 'Tomorrow'
                 : dayDate.toLocaleDateString(undefined, { weekday: 'long' })}
           </Text>
-          <Text style={[styles.summary, { color: c.textSecondary }]}>{summary}</Text>
+          {summary ? (
+            <Text style={[styles.summary, { color: c.textSecondary }]}>{summary}</Text>
+          ) : null}
         </View>
 
         {MEALS.map((meal) => {

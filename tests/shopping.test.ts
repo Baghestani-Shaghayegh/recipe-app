@@ -210,3 +210,17 @@ test('foods the table does not know still land in a sensible section', () => {
     ],
   );
 });
+
+test('shopping names leave out how it is cooked and how much each person gets', () => {
+  const cases: [string, string][] = [
+    ['steamed jasmine rice, to serve', 'jasmine rice'],
+    ['chicken broth per serving', 'chicken broth'],
+    ['broth (chicken), per serving', 'chicken broth'],
+    ['broth per serving (chicken or vegetable)', 'chicken broth'],
+    ['low-sodium chicken broth', 'chicken broth'],
+    ['Chicken broth – 2 cups', 'chicken broth'],
+    ['toasted sesame seeds', 'sesame seeds'],
+    ['boiled eggs, 2 per person', 'eggs'],
+  ];
+  for (const [line, name] of cases) assert.equal(shoppingName(line), name, line);
+});

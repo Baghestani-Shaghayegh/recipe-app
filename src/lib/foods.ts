@@ -27,7 +27,7 @@ export const SECTION_LABELS: Record<StoreSection, string> = {
   Produce: 'Fruit & veg',
   Bakery: 'Bread & bakery',
   'Dairy & eggs': 'Dairy & eggs',
-  'Meat & fish': 'Meat, chicken & fish',
+  'Meat & fish': 'Meat & seafood',
   Pantry: 'Cupboard',
   Spices: 'Herbs & spices',
   Other: 'Other',

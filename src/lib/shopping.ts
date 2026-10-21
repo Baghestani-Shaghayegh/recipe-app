@@ -53,20 +53,36 @@ export function withUnit(amount: number, unit: string | undefined): string {
 
 /** "chopped parsley, washed (1 bunch) to garnish" -> "parsley". */
 export function shoppingName(name: string): string {
-  const words = name
+  // "broth (chicken)" or "stock (chicken or vegetable)": the kind goes in front.
+  const base = name.match(/\b(broth|stock|bouillon)\b/i);
+  const kind = base && name.match(/\(\s*([a-z]+)[^)]*\)/i);
+  const named =
+    base && kind && !name.toLowerCase().includes(`${kind[1]} ${base[1]}`.toLowerCase())
+      ? name.replace(kind[0], ' ').replace(base[0], `${kind[1]} ${base[1]}`)
+      : name;
+  const words = named
     .split(',')[0]
     .replace(/\([^)]*\)/g, ' ')
     .replace(/\b(to taste|to garnish|for garnish|for serving|to serve|optional)\b.*$/i, '')
-    // Amounts written after the name: "spring onions x 3", "eggs: 2", "carrots - 2".
-    .replace(/\s*(?:[x×:–-]\s*)?\d[\d\s.,/½¼¾⅓⅔-]*$/i, '')
+    // "chicken broth per serving", "eggs, 2 per person": how much, not what.
+    .replace(/\s*\b(?:per (?:serving|servings|person|portion)|each)\b.*$/i, '')
+    // Amounts written after the name: "spring onions x 3", "eggs: 2", "chicken broth – 2 cups".
+    .replace(/\s*(?:[x×:–-]\s*)?\d[\d\s.,/½¼¾⅓⅔-]*(?:[a-z]+)?$/i, '')
     .trim()
     .split(/\s+/);
-  // Amounts and measures in front: "2-3", "three", "3 x", "3 stalks", "a handful of".
-  while (words.length > 1 && (DESCRIPTORS.has(words[0].toLowerCase()) || LEADING.test(words[0]))) {
+  // Amounts, measures and how it's cooked in front: "2-3", "three", "3 stalks", "steamed".
+  while (
+    words.length > 1 &&
+    (DESCRIPTORS.has(words[0].toLowerCase()) || LEADING.test(words[0]) || PREPARED.test(words[0]))
+  ) {
     words.shift();
   }
   return words.join(' ').toLowerCase();
 }
+
+// How a food is cooked or a label on the pack, which isn't what you look for in the shop.
+const PREPARED =
+  /^(?:steamed|cooked|boiled|roasted|toasted|grilled|fried|baked|mashed|poached|saut[eé]ed|blanched|leftover|low-sodium|reduced-sodium|low-fat|homemade|store-bought|warm|cold|hot)$/i;
 
 // Words in front of an ingredient that are an amount or a measure, not the food.
 const LEADING = new RegExp(

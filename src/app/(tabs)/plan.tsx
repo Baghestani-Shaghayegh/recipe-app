@@ -5,11 +5,11 @@ import { useMemo, useState } from 'react';
 import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { ActionSheet, type SheetAction } from '@/components/action-sheet';
+import { DayNutrition } from '@/components/day-nutrition';
 import { Bowls, FinishedSheet, MealPrepSheet } from '@/components/meal-prep';
 import { PlanShoppingBar } from '@/components/plan-shopping';
 import { Features } from '@/constants/features';
 import { MaxContentWidth, Spacing, useTheme } from '@/constants/theme';
-import { servingNutrition } from '@/lib/nutrition';
 import {
   addDays,
   batchUse,
@@ -63,14 +63,9 @@ export default function PlanScreen() {
   };
 
   const meals = plannedMeals(plan, [day]).filter((m) => byId.has(m.recipeId));
-  const kcal = planNutrition(plan, [day], byId).total.kcal;
-  // The date is already in the strip above, and empty meals show for themselves.
-  const summary = [
-    meals.length ? `${meals.length} meal${meals.length === 1 ? '' : 's'}` : undefined,
-    Features.nutrition && kcal > 0 ? `~${Math.round(kcal)} kcal` : undefined,
-  ]
-    .filter(Boolean)
-    .join(' · ');
+  // The day's calories, protein and fat, from one serving of each planned meal.
+  const dayTotal = planNutrition(plan, [day], byId).total;
+  const showNutrition = Features.nutrition && meals.length > 0 && dayTotal.kcal > 0;
 
   const pick = (meal: Meal) => router.push({ pathname: '/plan/pick', params: { day, meal } });
   // A meal-prep recipe opens at the batch's size, so cooking mode has the right amounts.
@@ -191,18 +186,15 @@ export default function PlanScreen() {
           })}
         </View>
 
-        <View>
-          <Text style={[styles.dayTitle, { color: c.text }]}>
-            {day === todayKey
-              ? 'Today'
-              : day === dateKey(addDays(today, 1))
-                ? 'Tomorrow'
-                : dayDate.toLocaleDateString(undefined, { weekday: 'long' })}
-          </Text>
-          {summary ? (
-            <Text style={[styles.summary, { color: c.textSecondary }]}>{summary}</Text>
-          ) : null}
-        </View>
+        <Text style={[styles.dayTitle, { color: c.text }]}>
+          {day === todayKey
+            ? 'Today'
+            : day === dateKey(addDays(today, 1))
+              ? 'Tomorrow'
+              : dayDate.toLocaleDateString(undefined, { weekday: 'long' })}
+        </Text>
+
+        {showNutrition ? <DayNutrition total={dayTotal} /> : null}
 
         {MEALS.map((meal) => {
           const recipe = byId.get(plan[day]?.[meal] ?? '');
@@ -258,7 +250,6 @@ export default function PlanScreen() {
 
       <ActionSheet
         visible={!!menu}
-        title={menu ? `${MEAL_LABELS[menu.meal]}: ${menu.recipe.title}` : undefined}
         onClose={() => setMenu(undefined)}
         actions={menu ? menuActions(menu.meal, menu.recipe) : []}
       />
@@ -304,16 +295,12 @@ function MealCard({
 }) {
   const c = useTheme();
   const minutes = recipe ? totalMinutes(recipe) : undefined;
-  const nutrition = recipe && Features.nutrition ? servingNutrition(recipe) : undefined;
   const facts =
     prep?.kind === 'leftover'
       ? `From ${prep.from}`
       : [
           prep?.kind === 'cook' ? `Cook ${prep.servings} servings` : undefined,
           minutes ? formatMinutes(minutes) : undefined,
-          !prep && nutrition
-            ? `${nutrition.source === 'estimate' ? '~' : ''}${Math.round(nutrition.values.kcal)} kcal`
-            : undefined,
         ]
           .filter(Boolean)
           .join(' · ');
@@ -439,7 +426,6 @@ const styles = StyleSheet.create({
   dots: { flexDirection: 'row', gap: 3, height: 8, alignItems: 'center', marginTop: 3 },
   dot: { width: 5, height: 5, borderRadius: 3 },
   dayTitle: { fontSize: 24, fontWeight: '700', marginTop: Spacing.two },
-  summary: { fontSize: 14, marginTop: 2 },
   card: {
     flexDirection: 'row',
     alignItems: 'center',

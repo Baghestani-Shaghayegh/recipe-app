@@ -1,7 +1,13 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { goalProgress, parseGoal, planNutrition } from '../src/lib/plan-nutrition.ts';
+import {
+  dailyGoals,
+  goalProgress,
+  parseGoal,
+  planNutrition,
+  TYPICAL_GOALS,
+} from '../src/lib/plan-nutrition.ts';
 import type { Recipe } from '../src/lib/recipe.ts';
 
 const recipe = (id: string, over: Partial<Recipe> = {}): Recipe => ({
@@ -43,4 +49,9 @@ test('parseGoal and goalProgress', () => {
   assert.equal(parseGoal('abc'), undefined);
   assert.equal(goalProgress(900, 1800), 0.5);
   assert.equal(goalProgress(900, undefined), undefined);
+});
+
+test('goals not set use typical daily amounts', () => {
+  assert.deepEqual(dailyGoals({}), TYPICAL_GOALS);
+  assert.deepEqual(dailyGoals({ kcal: 1600, fat: 50 }), { kcal: 1600, protein: 100, fat: 50 });
 });

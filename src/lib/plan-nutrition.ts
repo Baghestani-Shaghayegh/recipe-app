@@ -2,8 +2,20 @@ import { servingNutrition, ZERO, type Nutrients } from './nutrition';
 import { plannedMeals, type MealPlan } from './plan';
 import type { Recipe } from './recipe';
 
-/** Daily targets. Either can be left out. */
-export type Goals = { kcal?: number; protein?: number };
+/** Daily targets. Any can be left out. */
+export type Goals = { kcal?: number; protein?: number; fat?: number };
+
+/** Typical daily amounts, used for any goal that isn't set (fat is the usual daily value). */
+export const TYPICAL_GOALS: Required<Goals> = { kcal: 2000, protein: 100, fat: 78 };
+
+/** The goals with typical amounts filled in where none is set. */
+export function dailyGoals(goals: Goals): Required<Goals> {
+  return {
+    kcal: goals.kcal || TYPICAL_GOALS.kcal,
+    protein: goals.protein || TYPICAL_GOALS.protein,
+    fat: goals.fat || TYPICAL_GOALS.fat,
+  };
+}
 
 export type DayNutrition = {
   /** Adds up one serving of each planned recipe. */

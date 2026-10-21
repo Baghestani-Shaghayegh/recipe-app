@@ -16,6 +16,13 @@ export const Colors = {
     prep: '#0F766E',
     prepSoft: '#E6F4F1',
     prepLine: '#9CC9C1',
+    // A day's calories, protein and fat on the Plan.
+    kcal: '#E8590C',
+    kcalTrack: '#FCE7DA',
+    protein: '#5E8C31',
+    proteinTrack: '#E6F0DA',
+    fat: '#D99A1E',
+    fatTrack: '#FAEFD6',
   },
   dark: {
     text: '#F5F0EB',
@@ -31,6 +38,12 @@ export const Colors = {
     prep: '#2DD4BF',
     prepSoft: '#123B37',
     prepLine: '#2F6B63',
+    kcal: '#FB923C',
+    kcalTrack: '#3A2A1F',
+    protein: '#A3C46A',
+    proteinTrack: '#2A3320',
+    fat: '#F2B84B',
+    fatTrack: '#3A3020',
   },
 } as const;
 

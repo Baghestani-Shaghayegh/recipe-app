@@ -42,7 +42,7 @@ function usePending(days: string[]) {
 }
 
 /**
- * The bar at the bottom of the Plan tab ("5 meals planned · Missing 14 ingredients"), and the Review
+ * The bar at the bottom of the Plan tab ("Missing 14 ingredients"), and the Review
  * sheet that adds what the meals need to the shopping list.
  */
 export function PlanShoppingBar({ week, today }: { week: string[]; today: string }) {
@@ -67,14 +67,12 @@ export function PlanShoppingBar({ week, today }: { week: string[]; today: string
         />
         <View style={styles.flex}>
           <Text style={[styles.barTitle, { color: c.background }]} numberOfLines={1}>
-            {note ?? `${planned} meal${planned === 1 ? '' : 's'} planned`}
-          </Text>
-          <Text style={[styles.barSub, { color: c.background }]} numberOfLines={1}>
-            {allAdded
-              ? 'Everything is on your shopping list'
-              : pending.items.length
-                ? `Missing ${pending.items.length} ingredient${pending.items.length === 1 ? '' : 's'}`
-                : 'Nothing missing, you have it all'}
+            {note ??
+              (allAdded
+                ? 'All on your shopping list'
+                : pending.items.length
+                  ? `Missing ${pending.items.length} ingredient${pending.items.length === 1 ? '' : 's'}`
+                  : 'Nothing missing')}
           </Text>
         </View>
         <Pressable
@@ -305,7 +303,6 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
   },
   barTitle: { fontSize: 15, fontWeight: '700' },
-  barSub: { fontSize: 13, opacity: 0.75, marginTop: 1 },
   barButton: { borderRadius: 12, paddingVertical: 10, paddingHorizontal: 14 },
   barButtonText: { fontSize: 14, fontWeight: '700' },
   sheet: { gap: Spacing.three, flexShrink: 1 },

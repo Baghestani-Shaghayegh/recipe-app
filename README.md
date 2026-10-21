@@ -184,14 +184,17 @@ Code: `src/lib/supabase.ts` (small client over Supabase's REST API, no extra pac
   batch that ran out early: its leftover meals from today on are freed up. Saved as
   `batches.v1`; logic in `src/lib/plan.ts`, screens in `src/components/meal-prep.tsx`.
 - From a recipe page: ⋯ → *Add to meal plan*, pick a day in the next two weeks and a meal.
-- **Shopping for it:** the bar at the bottom says how many meals are planned and how many
-  ingredients are missing ("Missing 9 ingredients"). *Review* lists what they need (for *Today*,
+- **Shopping for it:** the bar at the bottom says how many ingredients are missing
+  ("Missing 9 ingredients"). *Review* lists what they need (for *Today*,
   the *Next 3 days* or the *Rest of week*), grouped by store section, minus your pantry and the basics. Untick what you don't need and
   add the rest to the Shopping list; those meals are then marked as shopped so they aren't
   added again (✕ on a recipe on the Shopping tab takes it off and lets you review it again). Planned meals don't go onto the list on their own.
 - Saved on the device (`plan.v1`, older plans are converted; `planShopped.v1`); logic in
-  `src/lib/plan.ts` and `mealsShopping` in `src/lib/shopping.ts`. The weekly nutrition totals and
-  daily goals from earlier versions are not on the new screen (the day shows its calories).
+  `src/lib/plan.ts` and `mealsShopping` in `src/lib/shopping.ts`.
+- **The day's nutrition:** under the day, a ring shows its calories and two bars its protein and
+  fat (one serving of each planned meal), filling up towards your daily goals. Tap it to set
+  them; goals you leave empty use typical amounts (2,000 kcal, 100 g protein, 78 g fat). Meal
+  cards themselves don't show calories. Code: `src/components/day-nutrition.tsx`.
 
 ## Favorites and ratings
 

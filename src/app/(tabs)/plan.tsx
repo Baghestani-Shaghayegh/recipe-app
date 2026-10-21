@@ -154,16 +154,12 @@ export default function PlanScreen() {
               meal={meal}
               recipe={recipe}
               onPress={() => router.push({ pathname: '/recipe/[id]', params: { id: recipe.id } })}
-              onLongPress={() => setMenu({ meal, recipe })}
+              onMenu={() => setMenu({ meal, recipe })}
             />
           ) : (
             <MealCard key={meal} meal={meal} onPress={() => pick(meal)} />
           );
         })}
-
-        <Text style={[styles.hint, { color: c.textSecondary }]}>
-          Tap a meal to open it. Hold it to change or remove it.
-        </Text>
       </ScrollView>
 
       <PlanShoppingBar week={week} today={todayKey} />
@@ -210,12 +206,13 @@ function MealCard({
   meal,
   recipe,
   onPress,
-  onLongPress,
+  onMenu,
 }: {
   meal: Meal;
   recipe?: Recipe;
   onPress: () => void;
-  onLongPress?: () => void;
+  /** The ⋯ button (and holding the card): open, change or remove. */
+  onMenu?: () => void;
 }) {
   const c = useTheme();
   const minutes = recipe ? totalMinutes(recipe) : undefined;
@@ -231,12 +228,11 @@ function MealCard({
   return (
     <Pressable
       onPress={onPress}
-      onLongPress={onLongPress}
+      onLongPress={onMenu}
       accessibilityRole="button"
       accessibilityLabel={
         recipe ? `${MEAL_LABELS[meal]}: ${recipe.title}` : `Add ${MEAL_LABELS[meal].toLowerCase()}`
       }
-      accessibilityHint={recipe ? 'Hold to change or remove' : undefined}
       style={({ pressed }) => [
         styles.card,
         { backgroundColor: c.card, borderColor: c.border, opacity: pressed ? 0.85 : 1 },
@@ -271,7 +267,17 @@ function MealCard({
           </Text>
         ) : null}
       </View>
-      <Ionicons name="chevron-forward" size={20} color={c.textSecondary} />
+      {onMenu ? (
+        <Pressable
+          onPress={onMenu}
+          hitSlop={10}
+          accessibilityRole="button"
+          accessibilityLabel={`More for ${MEAL_LABELS[meal].toLowerCase()}`}>
+          <Ionicons name="ellipsis-horizontal" size={22} color={c.textSecondary} />
+        </Pressable>
+      ) : (
+        <Ionicons name="chevron-forward" size={20} color={c.textSecondary} />
+      )}
     </Pressable>
   );
 }
@@ -324,5 +330,4 @@ const styles = StyleSheet.create({
   title: { fontSize: 16, fontWeight: '600' },
   add: { fontWeight: '500' },
   facts: { fontSize: 13 },
-  hint: { fontSize: 13, textAlign: 'center' },
 });

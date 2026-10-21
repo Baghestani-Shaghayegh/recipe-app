@@ -178,15 +178,9 @@ export function RecipeBrowser({ pick }: { pick?: RecipePick }) {
       </View>
       {pantryEmpty ? (
         <View style={[styles.pantryNote, { backgroundColor: c.chip }]}>
-          <Text style={[styles.emptyText, { color: c.text }]}>
-            Your pantry is empty. Add what you have at home to see what you can make.
-          </Text>
+          <Text style={[styles.emptyText, { color: c.text }]}>Your pantry is empty.</Text>
           <Button label="Fill my pantry" onPress={() => router.push('/pantry')} />
         </View>
-      ) : matchPantry ? (
-        <Text style={[styles.matchHint, { color: c.textSecondary }]}>
-          Ready to cook first, then recipes missing only 1–2 things.
-        </Text>
       ) : null}
       {hasFilters ? (
         <Pressable onPress={clearFilters} accessibilityRole="button">
@@ -334,7 +328,6 @@ const styles = StyleSheet.create({
   matchText: { fontSize: 15, fontWeight: '600' },
   pantryLink: { fontSize: 15, fontWeight: '600' },
   pantryNote: { borderRadius: 14, padding: Spacing.four, gap: Spacing.three },
-  matchHint: { fontSize: 13 },
   pantryLine: { fontSize: 13, fontWeight: '600', marginTop: -Spacing.one },
   banner: { borderRadius: 12, paddingHorizontal: Spacing.three, paddingVertical: 10 },
   bannerText: { fontSize: 15, lineHeight: 21 },

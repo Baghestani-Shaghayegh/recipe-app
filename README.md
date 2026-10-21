@@ -173,8 +173,8 @@ Code: `src/lib/supabase.ts` (small client over Supabase's REST API, no extra pac
 - **Plan tab:** the week's dates across the top (‹ › for other weeks, dots show how many meals
   a day has). Tap a day to see its **Breakfast**, **Lunch** and **Dinner**.
 - *Add meal* opens your recipes (the same grid, search and filters as the Recipes tab), starting
-  on that meal's category; tap one to plan it. Tap a planned meal to open the recipe; hold it to
-  choose another recipe or remove it.
+  on that meal's category; tap one to plan it. Tap a planned meal to open the recipe; its ⋯
+  button (or holding the card) lets you choose another recipe or remove it.
 - From a recipe page: ⋯ → *Add to meal plan*, pick a day in the next two weeks and a meal.
 - **Shopping for it:** the bar at the bottom says how many meals are planned and how many
   ingredients are missing ("Missing 9 ingredients"). *Review* lists what they need (for *Today*,

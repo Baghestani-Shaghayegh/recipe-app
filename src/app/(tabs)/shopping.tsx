@@ -155,9 +155,7 @@ export default function ShoppingScreen() {
 
       {queue.length && !Features.makeNextTab ? (
         <View style={styles.forRecipes}>
-          <Text style={[styles.note, { color: c.textSecondary }]}>
-            Shopping for{pantry.length ? ' (things in your pantry are left out)' : ''}:
-          </Text>
+          <Text style={[styles.note, { color: c.textSecondary }]}>Shopping for:</Text>
           <View style={styles.chips}>
             {queue.map((r) => (
               <Chip

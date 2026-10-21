@@ -145,9 +145,6 @@ function ReviewSheet({
     <BottomSheet visible title="Shop for your meals" onClose={onClose}>
       {(close) => (
         <View style={styles.sheet}>
-          <Text style={[styles.lead, { color: c.textSecondary }]}>
-            Everything the recipes need, minus your pantry.
-          </Text>
           {ranges.length > 1 ? (
             <Segmented
               value={range}
@@ -256,7 +253,7 @@ function ReviewSheet({
                 </View>
                 {showHave ? (
                   <Text style={[styles.itemFor, { color: c.textSecondary }]}>
-                    {have.join(', ')}. Change this in your pantry on the Cook tab.
+                    {have.join(', ')}
                   </Text>
                 ) : null}
               </Pressable>
@@ -308,7 +305,6 @@ const styles = StyleSheet.create({
   barButton: { borderRadius: 12, paddingVertical: 10, paddingHorizontal: 14 },
   barButtonText: { fontSize: 14, fontWeight: '700' },
   sheet: { gap: Spacing.three, flexShrink: 1 },
-  lead: { fontSize: 14, lineHeight: 20 },
   recipeChips: { gap: Spacing.two },
   recipeChip: {
     flexDirection: 'row',

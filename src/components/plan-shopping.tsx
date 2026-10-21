@@ -6,7 +6,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { BottomSheet } from '@/components/bottom-sheet';
 import { Segmented } from '@/components/ui';
 import { Spacing, useTheme } from '@/constants/theme';
-import { STORE_SECTIONS } from '@/lib/foods';
+import { SECTION_LABELS, STORE_SECTIONS } from '@/lib/foods';
 import { leftoverBatch, mealKey, plannedMeals, shopRangeDays, type ShopRange } from '@/lib/plan';
 import { mealsShopping } from '@/lib/shopping';
 import { useKitchen } from '@/store/kitchen';
@@ -172,7 +172,9 @@ function ReviewSheet({
               if (!sectionItems.length) return null;
               return (
                 <View key={section}>
-                  <Text style={[styles.section, { color: c.textSecondary }]}>{section}</Text>
+                  <Text style={[styles.section, { color: c.textSecondary }]}>
+                    {SECTION_LABELS[section]}
+                  </Text>
                   {sectionItems.map((item) => {
                     const on = !skipped.includes(item.key);
                     return (

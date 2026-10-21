@@ -8,7 +8,7 @@ import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-
 import { Button, Chip, SectionTitle } from '@/components/ui';
 import { Features } from '@/constants/features';
 import { MaxContentWidth, Spacing, useTheme } from '@/constants/theme';
-import { STORE_SECTIONS } from '@/lib/foods';
+import { SECTION_LABELS, STORE_SECTIONS } from '@/lib/foods';
 import { pantryHas } from '@/lib/pantry';
 import { dateKey } from '@/lib/plan';
 import { buildShoppingList, shoppingKey, shoppingListText, shoppingRecipes } from '@/lib/shopping';
@@ -205,7 +205,7 @@ export default function ShoppingScreen() {
         if (!sectionItems.length && !sectionExtras.length) return null;
         return (
           <View key={section} style={styles.section}>
-            <SectionTitle>{section}</SectionTitle>
+            <SectionTitle>{SECTION_LABELS[section]}</SectionTitle>
             {sectionItems.map((item) => (
               <ItemRow
                 key={item.key}

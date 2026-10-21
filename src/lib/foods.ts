@@ -22,6 +22,48 @@ export const STORE_SECTIONS = [
 ] as const;
 export type StoreSection = (typeof STORE_SECTIONS)[number];
 
+/** What each section is called on screen (the saved names stay the same). */
+export const SECTION_LABELS: Record<StoreSection, string> = {
+  Produce: 'Fruit & veg',
+  Bakery: 'Bread & bakery',
+  'Dairy & eggs': 'Dairy & eggs',
+  'Meat & fish': 'Meat, chicken & fish',
+  Pantry: 'Cupboard',
+  Spices: 'Herbs & spices',
+  Other: 'Other',
+};
+
+// Words that place a food the table doesn't know, checked in this order.
+const SECTION_WORDS: [StoreSection, RegExp][] = [
+  [
+    'Spices',
+    /\b(spice|seasoning|powder|cumin|paprika|turmeric|cinnamon|saffron|cardamom|nutmeg|clove|oregano|thyme|rosemary|bay lea|chili flakes|chilli flakes|sumac|za'atar|curry)\b/,
+  ],
+  [
+    'Meat & fish',
+    /\b(chicken|beef|lamb|pork|turkey|veal|duck|mince|minced|steak|sausage|bacon|ham|chorizo|salami|meatball|fish|salmon|tuna|cod|haddock|trout|shrimp|prawn|crab|mussel|squid|anchov|sardine|thigh|breast|drumstick|fillet)/,
+  ],
+  [
+    'Dairy & eggs',
+    /\b(milk|cheese|cheddar|feta|mozzarella|parmesan|halloumi|ricotta|yogh?urt|cream|butter|ghee|kefir|egg)/,
+  ],
+  ['Bakery', /\b(bread|bun|roll|baguette|tortilla|wrap|pita|pitta|naan|lavash|bagel|croissant)/],
+  [
+    'Produce',
+    /\b(lettuce|spinach|kale|rocket|arugula|cabbage|cucumber|zucchini|courgette|eggplant|aubergine|mushroom|avocado|lemon|lime|orange|apple|pear|banana|berr|grape|mango|pineapple|melon|peach|plum|cherr|pomegranate|carrot|celery|leek|onion|shallot|garlic|ginger|potato|squash|pumpkin|beetroot|radish|pepper|chili|chilli|tomato|corn|pea|bean sprout|broccoli|cauliflower|asparagus|herb|parsley|coriander|cilantro|mint|basil|dill|chive|fenugreek|tarragon)/,
+  ],
+  [
+    'Pantry',
+    /\b(stock|broth|bouillon|rice|pasta|spaghetti|noodle|flour|sugar|oil|vinegar|sauce|ketchup|mustard|mayo|bean|lentil|chickpea|split pea|oat|honey|syrup|jam|nut|almond|walnut|pistachio|seed|raisin|date|tahini|paste|tin|can|canned|stock cube|cornflour|cornstarch|yeast|baking|cocoa|chocolate|coffee|tea|bulgur|quinoa|couscous|barley|pickle|olive)/,
+  ],
+];
+
+/** The store section for a food the table doesn't know, from words in its name. */
+export function guessSection(name: string): StoreSection {
+  const n = name.toLowerCase();
+  return SECTION_WORDS.find(([, re]) => re.test(n))?.[0] ?? 'Other';
+}
+
 export type Food = {
   names: string[];
   section: StoreSection;

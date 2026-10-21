@@ -1,4 +1,4 @@
-import type { StoreSection } from './foods';
+import { guessSection, SECTION_LABELS, type StoreSection } from './foods';
 import type { Ingredient } from './ingredients';
 import { findFood } from './nutrition';
 import { DESCRIPTORS, isStaple, normalizeWords, pantryHas } from './pantry';
@@ -57,10 +57,52 @@ export function shoppingName(name: string): string {
     .split(',')[0]
     .replace(/\([^)]*\)/g, ' ')
     .replace(/\b(to taste|to garnish|for garnish|for serving|to serve|optional)\b.*$/i, '')
+    // Amounts written after the name: "spring onions x 3", "eggs: 2", "carrots - 2".
+    .replace(/\s*(?:[x×:–-]\s*)?\d[\d\s.,/½¼¾⅓⅔-]*$/i, '')
     .trim()
     .split(/\s+/);
-  while (words.length > 1 && DESCRIPTORS.has(words[0].toLowerCase())) words.shift();
+  // Amounts and measures in front: "2-3", "three", "3 x", "3 stalks", "a handful of".
+  while (words.length > 1 && (DESCRIPTORS.has(words[0].toLowerCase()) || LEADING.test(words[0]))) {
+    words.shift();
+  }
   return words.join(' ').toLowerCase();
+}
+
+// Words in front of an ingredient that are an amount or a measure, not the food.
+const LEADING = new RegExp(
+  '^(?:[\\d½¼¾⅓⅔⅛.,/–-]+|x|×|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|' +
+    'dozen|half|couple|several|' +
+    'stalks?|sprigs?|bunch(?:es)?|heads?|cloves?|pieces?|slices?|cans?|tins?|jars?|packs?|' +
+    'packets?|bags?|pinch(?:es)?|dash(?:es)?|cups?|tbsps?|tsps?|tablespoons?|teaspoons?|g|kg|' +
+    'grams?|ml|l|litres?|liters?|oz|lbs?|pounds?|handfuls?)$',
+  'i',
+);
+
+// Ingredients that say "and" but are one thing.
+const ONE_THING = /\b(?:sweet and sour|mac(?:aroni)? and cheese|half and half|salt and vinegar)\b/i;
+
+/**
+ * The things to buy in one ingredient line: "parsley and chives" is two, "sweet and sour sauce"
+ * is one.
+ */
+export function shoppingParts(name: string): string[] {
+  const whole = shoppingName(name);
+  if (ONE_THING.test(whole)) return [whole];
+  const parts = whole
+    .split(/\s+(?:and|&)\s+|\s*&\s*/)
+    .map((p) => shoppingName(p))
+    .filter(Boolean);
+  return parts.length > 1 ? parts : [whole];
+}
+
+/** An ingredient line per thing to buy ("parsley and chives" becomes parsley, chives). */
+function perThing(ingredients: Ingredient[]): Ingredient[] {
+  return ingredients.flatMap((ing) => {
+    const parts = shoppingParts(ing.name);
+    return parts.length > 1
+      ? parts.map((name) => ({ ...ing, name, amount: undefined, unit: undefined }))
+      : [ing];
+  });
 }
 
 /** One key per ingredient on the list: "2 Ripe Tomatoes, chopped" and "tomato" share "tomato". */
@@ -88,7 +130,12 @@ export function shoppingRecipes(
     .map((p) => {
       const r = recipes.get(p.recipeId)!;
       return p.skip.length
-        ? { ...r, ingredients: r.ingredients.filter((i) => !p.skip.includes(shoppingKey(i.name))) }
+        ? {
+            ...r,
+            ingredients: perThing(r.ingredients).filter(
+              (i) => !p.skip.includes(shoppingKey(i.name)),
+            ),
+          }
         : r;
     });
   const planIds = new Set(fromPlan.map((r) => r.id));
@@ -151,7 +198,7 @@ export function buildShoppingList(recipes: Recipe[], pantry: string[]): Shopping
         names: [],
         parts: new Map(),
         recipes: [],
-        section: findFood(name)?.section ?? 'Other',
+        section: findFood(name)?.section ?? guessSection(name),
         count: 0,
       };
       groups.set(key, g);
@@ -170,7 +217,7 @@ export function buildShoppingList(recipes: Recipe[], pantry: string[]): Shopping
     g.parts.set(cls, part);
   };
 
-  for (const r of recipes) for (const ing of r.ingredients) add(ing, r.title);
+  for (const r of recipes) for (const ing of perThing(r.ingredients)) add(ing, r.title);
 
   return [...groups.values()].map((g) => {
     // "1 onion" + "2 onions": prefer the plural spelling when buying more than one.
@@ -197,7 +244,7 @@ export function mealsShopping(
 ): { items: ShoppingItem[]; have: string[] } {
   const have = new Map<string, string>();
   for (const r of recipes) {
-    for (const ing of r.ingredients) {
+    for (const ing of perThing(r.ingredients)) {
       if (isStaple(ing.name) || !pantryHas(pantry, ing.name)) continue;
       const key = shoppingKey(ing.name);
       if (!have.has(key)) have.set(key, shoppingName(ing.name));
@@ -216,7 +263,7 @@ export function shoppingListText(
       const lines = items
         .filter((i) => i.section === section)
         .map((i) => `- ${i.quantity ? `${i.quantity} ` : ''}${i.name}`);
-      return lines.length ? `${section}\n${lines.join('\n')}` : '';
+      return lines.length ? `${SECTION_LABELS[section]}\n${lines.join('\n')}` : '';
     })
     .filter(Boolean)
     .join('\n\n');

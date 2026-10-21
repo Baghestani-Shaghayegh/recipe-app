@@ -9,6 +9,7 @@ import {
   formatAmount,
   mealsShopping,
   shoppingKey,
+  shoppingParts,
   shoppingRecipes,
   shoppingListText,
   shoppingName,
@@ -79,7 +80,7 @@ test('adds up the same ingredient across recipes and skips pantry and staples', 
   assert.equal(m.lamb.quantity, '654 g'); // 200 g + 1 lb, mixed units -> grams
   assert.equal(m.milk.quantity, '266 ml'); // 1 cup + 2 tbsp
   assert.equal(m.herbs.quantity, undefined);
-  assert.equal(m.herbs.section, 'Other');
+  assert.equal(m.herbs.section, 'Produce');
 });
 
 test('same unit stays in that unit; different kinds of amount are listed together', () => {
@@ -112,7 +113,7 @@ test('text version is grouped by section in store order', () => {
     ],
     STORE_SECTIONS,
   );
-  assert.equal(text, 'Produce\n- 3 onions\n\nDairy & eggs\n- 5 eggs\n\nOther\n- fresh herbs');
+  assert.equal(text, 'Fruit & veg\n- 3 onions\n\nDairy & eggs\n- 5 eggs\n\nOther\n- fresh herbs');
 });
 
 test('planned meals: a recipe planned twice counts twice, pantry items are listed apart', () => {
@@ -161,4 +162,51 @@ test('shoppingRecipes: planned twice counts twice, unticked ingredients stay off
   assert.equal(list['red lentils'].quantity, '2 cups');
   assert.equal(list['cumin'].quantity, '1 tbsp');
   assert.equal(shoppingKey('2 Ripe Tomatoes, chopped'), shoppingKey('tomato'));
+});
+
+test('shopping names say what to buy, without amounts written any way', () => {
+  for (const line of [
+    'spring onions x 3',
+    '3 x spring onions',
+    '2-3 spring onions',
+    'Spring onions: 3',
+    'three spring onions',
+    '3 stalks spring onions',
+    'a handful of spring onions',
+  ]) {
+    assert.equal(shoppingName(line), 'spring onions', line);
+  }
+  assert.equal(shoppingName('2 cloves garlic'), 'garlic');
+});
+
+test('an ingredient with "and" is two things to buy, unless it is one dish', () => {
+  assert.deepEqual(shoppingParts('chopped parsley and chives'), ['parsley', 'chives']);
+  assert.deepEqual(shoppingParts('salt & pepper'), ['salt', 'pepper']);
+  assert.deepEqual(shoppingParts('sweet and sour sauce'), ['sweet and sour sauce']);
+  assert.deepEqual(shoppingParts('red lentils'), ['red lentils']);
+  const herbs = recipe('Omelette', '2 tbsp chopped parsley and chives\nsalt and pepper');
+  assert.deepEqual(
+    buildShoppingList([herbs], ['chives']).map((i) => i.name),
+    ['parsley'],
+  );
+});
+
+test('foods the table does not know still land in a sensible section', () => {
+  const r = recipe(
+    'Mix',
+    '1 l vegetable stock\n500 g lamb mince\n2 salmon fillets\n4 tortillas\n100 g halloumi\n1 bag rocket\n1 tsp sumac\n1 jar mystery thing',
+  );
+  assert.deepEqual(
+    buildShoppingList([r], []).map((i) => [i.name, i.section]),
+    [
+      ['vegetable stock', 'Pantry'],
+      ['lamb mince', 'Meat & fish'],
+      ['salmon fillets', 'Meat & fish'],
+      ['tortillas', 'Bakery'],
+      ['halloumi', 'Dairy & eggs'],
+      ['rocket', 'Produce'],
+      ['sumac', 'Spices'],
+      ['mystery thing', 'Other'],
+    ],
+  );
 });

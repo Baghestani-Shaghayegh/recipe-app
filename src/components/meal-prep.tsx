@@ -234,8 +234,9 @@ export function MealPrepSheet({
                     return (
                       <View
                         key={key}
+                        accessibilityLabel={`${weekday(d)} ${MEAL_LABELS[m]}: cooking`}
                         style={[styles.cell, { borderColor: c.prep, backgroundColor: c.prepSoft }]}>
-                        <Text style={[styles.cookText, { color: c.prep }]}>Cook</Text>
+                        <Text style={styles.cookIcon}>🥡</Text>
                       </View>
                     );
                   }
@@ -243,13 +244,11 @@ export function MealPrepSheet({
                     return (
                       <View
                         key={key}
-                        style={[styles.cell, { borderColor: c.border, backgroundColor: c.chip }]}>
-                        <Text
-                          style={[styles.takenText, { color: c.textSecondary }]}
-                          numberOfLines={1}>
-                          {taken ? taken.title : ''}
-                        </Text>
-                      </View>
+                        accessibilityLabel={
+                          taken ? `${weekday(d)} ${MEAL_LABELS[m]}: ${taken.title}` : undefined
+                        }
+                        style={[styles.cell, { borderColor: c.border, backgroundColor: c.chip }]}
+                      />
                     );
                   }
                   return (
@@ -381,8 +380,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  cookText: { fontSize: 11, fontWeight: '800' },
-  takenText: { fontSize: 9, paddingHorizontal: 2 },
+  cookIcon: { fontSize: 15 },
   freed: { fontSize: 14, textAlign: 'center' },
   cta: { borderRadius: 16, paddingVertical: 16, alignItems: 'center' },
   ctaText: { fontSize: 16, fontWeight: '700' },

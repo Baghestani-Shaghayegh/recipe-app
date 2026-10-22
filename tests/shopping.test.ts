@@ -224,3 +224,14 @@ test('shopping names leave out how it is cooked and how much each person gets', 
   ];
   for (const [line, name] of cases) assert.equal(shoppingName(line), name, line);
 });
+
+test('notes about how much, and choices, are left out of shopping names', () => {
+  const r = recipe(
+    'Soup',
+    '3 to 4 cups broth (depending on desired consistency)\nextra broth as needed\n2 cups water or chicken stock\n1 tbsp butter or oil',
+  );
+  assert.deepEqual(
+    buildShoppingList([r], []).map((i) => i.name),
+    ['broth', 'chicken stock', 'butter'],
+  );
+});

@@ -4,8 +4,10 @@ import { test } from 'node:test';
 import {
   addDays,
   afterMealChange,
+  batchesFor,
   batchUse,
   cookingBatch,
+  eatFromBatch,
   finishBatch,
   leftoverBatch,
   saveBatch,
@@ -176,4 +178,20 @@ test('changing a meal by hand updates the batches', () => {
   const b = afterMealChange(cleared, saved.batches, '2026-10-19', 'dinner');
   assert.deepEqual(b.plan, {});
   assert.deepEqual(b.batches, []);
+});
+
+test('a later meal can be eaten from a batch that still has servings left', () => {
+  const { plan, batches } = saveBatch({}, [], soupBatch); // 8 servings, 2 people, 3 meals: 2 left
+  assert.deepEqual(
+    batchesFor(batches, plan, '2026-10-23', 'dinner').map((b) => b.id),
+    ['b1'],
+  );
+  // Not before it's cooked, not on a meal it's already planned for, not a week later.
+  assert.deepEqual(batchesFor(batches, plan, '2026-10-19', 'lunch'), []);
+  assert.deepEqual(batchesFor(batches, plan, '2026-10-20', 'lunch'), []);
+  assert.deepEqual(batchesFor(batches, plan, '2026-10-26', 'lunch'), []);
+  // Once it's all planned, it's not offered.
+  const more = saveBatch(plan, batches, eatFromBatch(batches[0], '2026-10-23', 'dinner'));
+  assert.deepEqual(batchesFor(more.batches, more.plan, '2026-10-24', 'dinner'), []);
+  assert.equal(more.plan['2026-10-23'].dinner, 'soup');
 });

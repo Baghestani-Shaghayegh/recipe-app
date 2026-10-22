@@ -55,7 +55,9 @@ export function withUnit(amount: number, unit: string | undefined): string {
 export function shoppingName(name: string): string {
   // "broth (chicken)" or "stock (chicken or vegetable)": the kind goes in front.
   const base = name.match(/\b(broth|stock|bouillon)\b/i);
-  const kind = base && name.match(/\(\s*([a-z]+)[^)]*\)/i);
+  const kind =
+    base &&
+    name.match(/\(\s*(chicken|beef|vegetable|veggie|fish|bone|mushroom|turkey|lamb)\b[^)]*\)/i);
   const named =
     base && kind && !name.toLowerCase().includes(`${kind[1]} ${base[1]}`.toLowerCase())
       ? name.replace(kind[0], ' ').replace(base[0], `${kind[1]} ${base[1]}`)
@@ -64,8 +66,11 @@ export function shoppingName(name: string): string {
     .split(',')[0]
     .replace(/\([^)]*\)/g, ' ')
     .replace(/\b(to taste|to garnish|for garnish|for serving|to serve|optional)\b.*$/i, '')
-    // "chicken broth per serving", "eggs, 2 per person": how much, not what.
-    .replace(/\s*\b(?:per (?:serving|servings|person|portion)|each)\b.*$/i, '')
+    // "chicken broth per serving", "broth depending on thickness": how much, not what.
+    .replace(
+      /\s*\b(?:per (?:serving|servings|person|portion)|each|depending|as needed|if needed|as required|or more|for thinning)\b.*$/i,
+      '',
+    )
     // Amounts written after the name: "spring onions x 3", "eggs: 2", "chicken broth – 2 cups".
     .replace(/\s*(?:[x×:–-]\s*)?\d[\d\s.,/½¼¾⅓⅔-]*(?:[a-z]+)?$/i, '')
     .trim()
@@ -90,7 +95,8 @@ const LEADING = new RegExp(
     'dozen|half|couple|several|' +
     'stalks?|sprigs?|bunch(?:es)?|heads?|cloves?|pieces?|slices?|cans?|tins?|jars?|packs?|' +
     'packets?|bags?|pinch(?:es)?|dash(?:es)?|cups?|tbsps?|tsps?|tablespoons?|teaspoons?|g|kg|' +
-    'grams?|ml|l|litres?|liters?|oz|lbs?|pounds?|handfuls?)$',
+    'grams?|ml|l|litres?|liters?|oz|lbs?|pounds?|handfuls?|' +
+    'more|extra|additional|up|to|splash|drizzle|squeeze|knob|sprinkle|of)$',
   'i',
 );
 
@@ -102,7 +108,12 @@ const ONE_THING = /\b(?:sweet and sour|mac(?:aroni)? and cheese|half and half|sa
  * is one.
  */
 export function shoppingParts(name: string): string[] {
-  const whole = shoppingName(name);
+  // "water or broth", "butter or oil": one of them is needed; the first you'd have to buy.
+  const choices = shoppingName(name).split(/\s+or\s+/);
+  const whole =
+    choices.length > 1
+      ? shoppingName(choices.find((c) => !isStaple(c)) ?? choices[0])
+      : shoppingName(name);
   if (ONE_THING.test(whole)) return [whole];
   const parts = whole
     .split(/\s+(?:and|&)\s+|\s*&\s*/)
@@ -115,9 +126,11 @@ export function shoppingParts(name: string): string[] {
 function perThing(ingredients: Ingredient[]): Ingredient[] {
   return ingredients.flatMap((ing) => {
     const parts = shoppingParts(ing.name);
-    return parts.length > 1
-      ? parts.map((name) => ({ ...ing, name, amount: undefined, unit: undefined }))
-      : [ing];
+    if (parts.length > 1) {
+      return parts.map((name) => ({ ...ing, name, amount: undefined, unit: undefined }));
+    }
+    // One of a choice ("water or broth" → broth).
+    return parts[0] === shoppingName(ing.name) ? [ing] : [{ ...ing, name: parts[0] }];
   });
 }
 

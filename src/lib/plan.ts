@@ -234,3 +234,26 @@ export function afterMealChange(
   }
   return { plan: next, batches: kept };
 }
+
+/** How many days after cooking a batch can still be eaten from it (the meal prep grid's span). */
+export const BATCH_DAYS = 7;
+
+/**
+ * Batches a meal can be eaten from: cooked before it (same day counts if it's a later meal),
+ * no more than a week earlier, with enough left for another meal.
+ */
+export function batchesFor(batches: Batch[], plan: MealPlan, day: string, meal: Meal): Batch[] {
+  return batches.filter((b) => {
+    if (plan[b.cookDay]?.[b.cookMeal] !== b.recipeId) return false;
+    const after =
+      b.cookDay < day || (b.cookDay === day && MEALS.indexOf(b.cookMeal) < MEALS.indexOf(meal));
+    const soon = day <= dateKey(addDays(fromDateKey(b.cookDay), BATCH_DAYS - 1));
+    const already = b.eats.some((e) => e.day === day && e.meal === meal);
+    return after && soon && !already && batchUse(b).left >= b.people;
+  });
+}
+
+/** Eats one more meal from a batch. */
+export function eatFromBatch(batch: Batch, day: string, meal: Meal): Batch {
+  return { ...batch, eats: [...batch.eats, { day, meal }] };
+}

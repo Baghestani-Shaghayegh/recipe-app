@@ -6,6 +6,7 @@ import { BottomSheet } from '@/components/bottom-sheet';
 import { Spacing, useTheme } from '@/constants/theme';
 import {
   addDays,
+  BATCH_DAYS,
   batchUse,
   dateKey,
   fromDateKey,
@@ -20,7 +21,6 @@ import { usePlan } from '@/store/plan';
 import { useRecipes } from '@/store/recipes';
 
 const MAX_SERVINGS = 24;
-const DAYS_SHOWN = 7;
 
 const newBatchId = () => `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
 
@@ -155,7 +155,7 @@ export function MealPrepSheet({
   const [eats, setEats] = useState<string[]>(() =>
     (batch?.eats ?? []).map((e) => slotKey(e.day, e.meal)),
   );
-  const days = Array.from({ length: DAYS_SHOWN }, (_, i) => dateKey(addDays(fromDateKey(day), i)));
+  const days = Array.from({ length: BATCH_DAYS }, (_, i) => dateKey(addDays(fromDateKey(day), i)));
   const { used, left } = batchUse({ servings, people, eats });
   // Only as many meals as the servings cover: no more ticks once another meal wouldn't fit,
   // no fewer servings than the ticked meals need, and no more people than the servings feed.

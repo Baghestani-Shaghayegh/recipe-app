@@ -31,6 +31,8 @@ export type RecipePick = {
   banner: React.ReactNode;
   /** The category filter to start with. */
   category?: Category;
+  /** Shown above the search box too, e.g. leftovers from a meal prep batch. */
+  header?: React.ReactNode;
   onPick: (recipe: Recipe) => void;
 };
 
@@ -140,6 +142,7 @@ export function RecipeBrowser({ pick }: { pick?: RecipePick }) {
           <Text style={[styles.bannerText, { color: c.text }]}>{pick.banner}</Text>
         </View>
       ) : null}
+      {pick?.header}
       <TextInput
         value={query}
         onChangeText={setQuery}

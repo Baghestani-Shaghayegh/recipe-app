@@ -203,6 +203,7 @@ export default function PlanScreen() {
 
         <FridgeCard
           batches={inFridge}
+          day={day}
           today={todayKey}
           onEdit={(batch, recipe) =>
             setPrep({ day: batch.cookDay, meal: batch.cookMeal, recipe, batch })

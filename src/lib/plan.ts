@@ -125,6 +125,8 @@ export type Batch = {
   people: number;
   /** The leftover meals. */
   eats: { day: string; meal: Meal }[];
+  /** Days after the cooking day it keeps in the fridge (see keepDaysFor); 3 when missing. */
+  keepDays?: number;
 };
 
 /** Servings the planned meals use, and what's left (below zero when there isn't enough). */
@@ -235,36 +237,62 @@ export function afterMealChange(
   return { plan: next, batches: kept };
 }
 
+/** How many days after cooking the meal prep grid and leftovers reach. */
+export const BATCH_DAYS = 7;
+
 /**
- * How many days a batch keeps in the fridge, the cooking day included (cooked food keeps about
- * 3–4 days). It's also the meal prep grid's span.
+ * How long cooked food keeps in the fridge (at 4 °C or below, cooled and covered within two
+ * hours), in days after the cooking day. Most leftovers: 3–4 days (USDA/FSIS), so 3. Cooked
+ * rice: within a day (UK NHS/FSA), so 1. People can change it for each batch.
  */
-export const BATCH_DAYS = 4;
+export function keepDaysFor(recipe: { title: string; ingredients: { name: string }[] }): number {
+  const words = [recipe.title, ...recipe.ingredients.map((i) => i.name)].join(' ').toLowerCase();
+  return /\brice\b|\bbiryani\b|\bpilaf\b|\bpilau\b|\bpolo\b|\brisotto\b|\bpaella\b|\bsushi\b/.test(
+    words,
+  )
+    ? 1
+    : 3;
+}
 
 /** The last day a batch is good for. */
-export const goodUntil = (batch: Pick<Batch, 'cookDay'>) =>
-  dateKey(addDays(fromDateKey(batch.cookDay), BATCH_DAYS - 1));
+export const goodUntil = (batch: Pick<Batch, 'cookDay' | 'keepDays'>) =>
+  dateKey(addDays(fromDateKey(batch.cookDay), batch.keepDays ?? 3));
 
-/** Batches in the fridge on `day`: cooked that day or before, and still good. */
+/** True when eating from the batch on `day` would be after it's good. */
+export const pastGood = (batch: Pick<Batch, 'cookDay' | 'keepDays'>, day: string) =>
+  day > goodUntil(batch);
+
+/**
+ * Batches in the fridge on `day`: cooked that day or before, and still good (or still planned
+ * to be eaten, so it shows until then).
+ */
 export function fridgeBatches(batches: Batch[], plan: MealPlan, day: string): Batch[] {
-  return batches.filter(
-    (b) => plan[b.cookDay]?.[b.cookMeal] === b.recipeId && b.cookDay <= day && day <= goodUntil(b),
-  );
+  return batches
+    .filter(
+      (b) =>
+        plan[b.cookDay]?.[b.cookMeal] === b.recipeId &&
+        b.cookDay <= day &&
+        (day <= goodUntil(b) || b.eats.some((e) => e.day >= day)),
+    )
+    .sort((a, b) => goodUntil(a).localeCompare(goodUntil(b)));
 }
 
 /**
  * Batches a meal can be eaten from: cooked before it (same day counts if it's a later meal),
- * still good, with enough left for another meal.
+ * within the week after, with enough left for another meal; the one to eat first comes first.
+ * Ones past their good-until day are included (the screen asks first).
  */
 export function batchesFor(batches: Batch[], plan: MealPlan, day: string, meal: Meal): Batch[] {
-  return batches.filter((b) => {
-    if (plan[b.cookDay]?.[b.cookMeal] !== b.recipeId) return false;
-    const after =
-      b.cookDay < day || (b.cookDay === day && MEALS.indexOf(b.cookMeal) < MEALS.indexOf(meal));
-    const soon = day <= goodUntil(b);
-    const already = b.eats.some((e) => e.day === day && e.meal === meal);
-    return after && soon && !already && batchUse(b).left >= b.people;
-  });
+  return batches
+    .filter((b) => {
+      if (plan[b.cookDay]?.[b.cookMeal] !== b.recipeId) return false;
+      const after =
+        b.cookDay < day || (b.cookDay === day && MEALS.indexOf(b.cookMeal) < MEALS.indexOf(meal));
+      const soon = day <= dateKey(addDays(fromDateKey(b.cookDay), BATCH_DAYS - 1));
+      const already = b.eats.some((e) => e.day === day && e.meal === meal);
+      return after && soon && !already && batchUse(b).left >= b.people;
+    })
+    .sort((a, b) => goodUntil(a).localeCompare(goodUntil(b)));
 }
 
 /** Eats one more meal from a batch. */

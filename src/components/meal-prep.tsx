@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { BottomSheet } from '@/components/bottom-sheet';
+import { confirm } from '@/components/ui';
 import { Spacing, useTheme } from '@/constants/theme';
 import {
   addDays,
@@ -12,7 +13,9 @@ import {
   dateKey,
   fromDateKey,
   goodUntil,
+  keepDaysFor,
   MEAL_LABELS,
+  pastGood,
   MEALS,
   slotKey,
   type Batch,
@@ -154,6 +157,9 @@ export function MealPrepSheet({
   const [people, setPeople] = useState(() =>
     Math.min(batch?.people ?? lastPeople ?? 1, batch?.servings ?? recipe.servings ?? 4),
   );
+  // Days after cooking it keeps in the fridge: food-safety advice by default (see keepDaysFor).
+  const [keepDays, setKeepDays] = useState(batch?.keepDays ?? keepDaysFor(recipe));
+  const until = goodUntil({ cookDay: day, keepDays });
   const [eats, setEats] = useState<string[]>(() =>
     (batch?.eats ?? []).map((e) => slotKey(e.day, e.meal)),
   );
@@ -171,8 +177,19 @@ export function MealPrepSheet({
     return id && !(id === recipe.id && mine) ? recipes.find((r) => r.id === id) : undefined;
   };
 
-  const toggle = (key: string) =>
-    setEats((prev) => (prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]));
+  const toggle = async (key: string, d: string) => {
+    if (eats.includes(key)) return setEats((prev) => prev.filter((k) => k !== key));
+    // After its good-until day: ask first, so no one eats food that's gone off by accident.
+    if (d > until) {
+      const ok = await confirm(
+        'Past its good-until day',
+        `${recipe.title} keeps until ${weekday(until)}. Plan it for ${weekday(d)} anyway?`,
+        'Plan anyway',
+      );
+      if (!ok) return;
+    }
+    setEats((prev) => [...prev, key]);
+  };
 
   const save = (close: (after?: () => void) => void) => {
     saveBatch({
@@ -182,6 +199,7 @@ export function MealPrepSheet({
       cookMeal: meal,
       servings,
       people,
+      keepDays,
       eats: eats.map((k) => {
         const [d, m] = k.split(':');
         return { day: d, meal: m as Meal };
@@ -207,6 +225,13 @@ export function MealPrepSheet({
               min={1}
               max={Math.max(1, Math.floor(servings / meals))}
               onChange={setPeople}
+            />
+            <Stepper
+              label={`Keeps until ${weekday(until)}`}
+              value={keepDays}
+              min={0}
+              max={BATCH_DAYS - 1}
+              onChange={setKeepDays}
             />
           </View>
 
@@ -263,16 +288,23 @@ export function MealPrepSheet({
                   return (
                     <Pressable
                       key={key}
-                      onPress={() => toggle(key)}
+                      onPress={() => void toggle(key, d)}
                       disabled={!on && full}
                       accessibilityRole="checkbox"
                       accessibilityState={{ checked: on, disabled: !on && full }}
-                      accessibilityLabel={`${weekday(d)} ${MEAL_LABELS[m]}`}
+                      accessibilityLabel={`${weekday(d)} ${MEAL_LABELS[m]}${d > until ? ', past its good-until day' : ''}`}
                       style={[
                         styles.cell,
                         on
-                          ? { backgroundColor: c.prep, borderColor: c.prep }
-                          : { borderColor: c.border, opacity: full ? 0.35 : 1 },
+                          ? {
+                              backgroundColor: d > until ? c.danger : c.prep,
+                              borderColor: d > until ? c.danger : c.prep,
+                            }
+                          : {
+                              borderColor: d > until ? c.danger : c.border,
+                              borderStyle: d > until ? 'dashed' : 'solid',
+                              opacity: full ? 0.35 : 1,
+                            },
                       ]}>
                       {on ? <Ionicons name="checkmark" size={18} color="#fff" /> : null}
                     </Pressable>
@@ -403,11 +435,14 @@ const styles = StyleSheet.create({
  */
 export function FridgeCard({
   batches,
+  day,
   today,
   onEdit,
   onFinish,
 }: {
   batches: { batch: Batch; recipe: Recipe }[];
+  /** The day on screen. */
+  day: string;
   today: string;
   onEdit: (batch: Batch, recipe: Recipe) => void;
   onFinish: (batch: Batch) => void;
@@ -420,7 +455,9 @@ export function FridgeCard({
       {batches.map(({ batch, recipe }, i) => {
         const { used, left } = batchUse(batch);
         const until = goodUntil(batch);
-        const lastDay = until === today;
+        const status = keepStatus(batch, day, today);
+        // Two batches of the same dish are told apart by the day they were cooked.
+        const twin = batches.some((o) => o.batch.id !== batch.id && o.recipe.id === recipe.id);
         return (
           <View
             key={batch.id}
@@ -440,6 +477,12 @@ export function FridgeCard({
               <View style={fridge.text}>
                 <Text style={[fridge.name, { color: c.text }]} numberOfLines={1}>
                   {recipe.title}
+                  {twin ? (
+                    <Text style={[fridge.cooked, { color: c.textSecondary }]}>
+                      {' '}
+                      · cooked {weekday(batch.cookDay)}
+                    </Text>
+                  ) : null}
                 </Text>
                 <View style={fridge.mini}>
                   {Array.from({ length: Math.min(batch.servings, 16) }, (_, n) => (
@@ -457,10 +500,18 @@ export function FridgeCard({
                 <Text
                   style={[
                     fridge.meta,
-                    lastDay ? { color: c.danger, fontWeight: '700' } : { color: c.textSecondary },
+                    status === 'good'
+                      ? { color: c.textSecondary }
+                      : { color: c.danger, fontWeight: '700' },
                   ]}>
                   {Math.max(0, left)} left ·{' '}
-                  {lastDay ? 'eat by today' : `good until ${weekday(until)}`}
+                  {status === 'past'
+                    ? `past its good-until day (${weekday(until)})`
+                    : status === 'today'
+                      ? 'eat by today'
+                      : status === 'last'
+                        ? `last day ${weekday(until)}`
+                        : `good until ${weekday(until)}`}
                 </Text>
               </View>
             </Pressable>
@@ -481,6 +532,13 @@ export function FridgeCard({
   );
 }
 
+/** How a batch stands on `day`: fine, its last day (today, or another day), or gone off. */
+function keepStatus(batch: Batch, day: string, today: string) {
+  if (pastGood(batch, day)) return 'past';
+  if (goodUntil(batch) === day) return day === today ? 'today' : 'last';
+  return 'good';
+}
+
 const fridge = StyleSheet.create({
   card: { borderWidth: 1, borderRadius: 20, paddingHorizontal: Spacing.four, paddingVertical: 12 },
   title: { fontSize: 15, fontWeight: '700', marginBottom: Spacing.one },
@@ -491,6 +549,7 @@ const fridge = StyleSheet.create({
   emoji: { fontSize: 20 },
   text: { flex: 1, minWidth: 0 },
   name: { fontSize: 15, fontWeight: '700' },
+  cooked: { fontSize: 13, fontWeight: '600' },
   mini: { flexDirection: 'row', flexWrap: 'wrap', gap: 3, marginTop: 5 },
   serving: { width: 12, height: 12, borderRadius: 4 },
   meta: { fontSize: 12, marginTop: 4 },

@@ -177,10 +177,18 @@ Code: `src/lib/supabase.ts` (small client over Supabase's REST API, no extra pac
   button (or holding the card) lets you choose another recipe or remove it.
 - **Meal prep:** the *Meal prep* strip along the bottom of a planned meal (on a batch it shows
   *Cook 8 servings · 2 left*). Choose how many servings to cook, how many people eat, and which
-  breakfasts, lunches and dinners of the next 4 days eat the leftovers. A batch keeps 4 days (the
-  cooking day included): each of those days shows an *In your fridge* card with the batch's
-  servings, "3 left · good until Mon" (red "eat by today" on its last day) and *Finished*, and
-  *Add meal* lists the batches in the fridge at the top, so leftover meals can be added any time.
+  breakfasts, lunches and dinners of the next 7 days eat the leftovers.
+- **How long it keeps** follows food-safety advice for food cooled and kept in the fridge (4 °C or
+  below): most cooked leftovers 3 days after the cooking day (USDA/FSIS say 3–4), dishes with
+  rice 1 day (the UK NHS/FSA say eat cooked rice within a day). *Keeps until …* in the meal prep
+  setup changes it for that batch. These are general guidelines; how food was cooled and stored
+  matters too.
+- Every day the batch keeps shows an *In your fridge* card: its servings, "3 left · good until
+  Mon" (red "eat by today" on the last day, "past its good-until day" after), *Finished*, and a
+  tap to change it. Two batches of the same dish say which day each was cooked, and the one to
+  eat first is listed first. *Add meal* lists the batches in the fridge at the top.
+- Planning leftovers after the good-until day is allowed but asks first ("Lentil Soup keeps until
+  Mon. Plan it for Tue anyway?"); those squares in the grid have a red dashed border.
   Bowls show the servings: full ones are planned, empty ones are left. You can only pick as many
   meals as the servings cover. The cooking meal gets a *Meal prep* label and opens at the batch size, so
   cooking mode has the right amounts; leftover meals say *Leftovers · From Sunday* and add

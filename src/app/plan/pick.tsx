@@ -3,17 +3,21 @@ import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { RecipeBrowser } from '@/components/recipe-browser';
+import { confirm } from '@/components/ui';
 import { Spacing, useTheme } from '@/constants/theme';
 import {
   batchesFor,
   batchUse,
   eatFromBatch,
   fromDateKey,
+  goodUntil,
   MEAL_LABELS,
   MEALS,
+  pastGood,
+  type Batch,
   type Meal,
 } from '@/lib/plan';
-import type { Category } from '@/lib/recipe';
+import type { Category, Recipe } from '@/lib/recipe';
 import { usePlan } from '@/store/plan';
 import { useRecipes } from '@/store/recipes';
 
@@ -37,6 +41,20 @@ export default function PickMealScreen() {
     return recipe ? [{ batch: b, recipe }] : [];
   });
   const label = MEAL_LABELS[meal];
+  const weekday = (d: string) => fromDateKey(d).toLocaleDateString(undefined, { weekday: 'short' });
+  // After its good-until day: ask first, so nobody eats food that's gone off by accident.
+  const eatFrom = async (batch: Batch, recipe: Recipe) => {
+    if (pastGood(batch, day)) {
+      const ok = await confirm(
+        'Past its good-until day',
+        `${recipe.title} keeps until ${weekday(goodUntil(batch))}. Plan it for ${weekday(day)} anyway?`,
+        'Plan anyway',
+      );
+      if (!ok) return;
+    }
+    saveBatch(eatFromBatch(batch, day, meal));
+    router.back();
+  };
   const dayLabel = fromDateKey(day).toLocaleDateString(undefined, {
     weekday: 'short',
     month: 'short',
@@ -55,10 +73,7 @@ export default function PickMealScreen() {
               {leftovers.map(({ batch, recipe }) => (
                 <Pressable
                   key={batch.id}
-                  onPress={() => {
-                    saveBatch(eatFromBatch(batch, day, meal));
-                    router.back();
-                  }}
+                  onPress={() => void eatFrom(batch, recipe)}
                   accessibilityRole="button"
                   accessibilityLabel={`Leftovers: ${recipe.title}`}
                   style={({ pressed }) => [
@@ -69,6 +84,7 @@ export default function PickMealScreen() {
                       opacity: pressed ? 0.8 : 1,
                     },
                   ]}>
+                  {/* Two batches of the same dish are told apart by the day they were cooked. */}
                   {recipe.photoUri ? (
                     <Image
                       source={{ uri: recipe.photoUri }}
@@ -83,9 +99,21 @@ export default function PickMealScreen() {
                   <View style={styles.flex}>
                     <Text style={[styles.title, { color: c.text }]} numberOfLines={1}>
                       {recipe.title}
+                      {leftovers.some(
+                        (o) => o.batch.id !== batch.id && o.recipe.id === recipe.id,
+                      ) ? (
+                        <Text style={[styles.cooked, { color: c.textSecondary }]}>
+                          {' '}
+                          · cooked {weekday(batch.cookDay)}
+                        </Text>
+                      ) : null}
                     </Text>
-                    <Text style={[styles.left, { color: c.prep }]}>
-                      🥡 {batchUse(batch).left} left
+                    <Text
+                      style={[styles.left, { color: pastGood(batch, day) ? c.danger : c.prep }]}>
+                      {batchUse(batch).left} left ·{' '}
+                      {pastGood(batch, day)
+                        ? `past its good-until day (${weekday(goodUntil(batch))})`
+                        : `good until ${weekday(goodUntil(batch))}`}
                     </Text>
                   </View>
                 </Pressable>
@@ -126,5 +154,6 @@ const styles = StyleSheet.create({
   icon: { fontSize: 22 },
   flex: { flex: 1, minWidth: 0 },
   title: { fontSize: 16, fontWeight: '700' },
+  cooked: { fontSize: 13, fontWeight: '600' },
   left: { fontSize: 13, fontWeight: '700', marginTop: 2 },
 });

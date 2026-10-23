@@ -45,43 +45,38 @@ function usePending(days: string[]) {
  */
 export function PlanShoppingBar({ week, today }: { week: string[]; today: string }) {
   const c = useTheme();
-  const { plan } = usePlan();
   const weekLeft = useMemo(() => shopRangeDays(week, today, 'week'), [week, today]);
-  const planned = plannedMeals(plan, weekLeft).length;
   const pending = usePending(weekLeft);
   const [open, setOpen] = useState(false);
   const [note, setNote] = useState<string>();
 
-  if (!planned && !note) return null;
-  const allAdded = !pending.meals.length;
+  // Only when something is missing (and briefly after adding, to say so).
+  const missing = pending.items.length;
+  if (!missing && !note && !open) return null;
+  const added = !missing;
 
   return (
     <>
       <View style={[styles.bar, { backgroundColor: c.text }]}>
         <Ionicons
-          name={allAdded ? 'checkmark-circle' : 'cart-outline'}
+          name={added ? 'checkmark-circle' : 'cart-outline'}
           size={24}
           color={c.background}
         />
         <View style={styles.flex}>
           <Text style={[styles.barTitle, { color: c.background }]} numberOfLines={1}>
-            {note ??
-              (allAdded
-                ? 'All on your shopping list'
-                : pending.items.length
-                  ? `Missing ${pending.items.length} ingredient${pending.items.length === 1 ? '' : 's'}`
-                  : 'Nothing missing')}
+            {note ?? `Missing ${missing} ingredient${missing === 1 ? '' : 's'}`}
           </Text>
         </View>
         <Pressable
-          onPress={() => (allAdded ? router.navigate('/shopping') : setOpen(true))}
+          onPress={() => (added ? router.navigate('/shopping') : setOpen(true))}
           accessibilityRole="button"
           style={({ pressed }) => [
             styles.barButton,
             { backgroundColor: c.accent, opacity: pressed ? 0.85 : 1 },
           ]}>
           <Text style={[styles.barButtonText, { color: c.accentText }]}>
-            {allAdded ? 'Open list' : 'Review'}
+            {added ? 'Open list' : 'Review'}
           </Text>
         </Pressable>
       </View>

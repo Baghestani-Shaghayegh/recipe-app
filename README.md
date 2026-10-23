@@ -176,9 +176,11 @@ Code: `src/lib/supabase.ts` (small client over Supabase's REST API, no extra pac
   on that meal's category; tap one to plan it. Tap a planned meal to open the recipe; its ⋯
   button (or holding the card) lets you choose another recipe or remove it.
 - **Meal prep:** the *Meal prep* strip along the bottom of a planned meal (on a batch it shows
-  *Cook 8 servings · 2 left*). Leftover meals can also be added later: *Add meal* on another day
-  lists batches that still have servings left at the top. Choose how many servings to cook, how
-  many people eat, and which breakfasts, lunches and dinners of the next 7 days eat the leftovers.
+  *Cook 8 servings · 2 left*). Choose how many servings to cook, how many people eat, and which
+  breakfasts, lunches and dinners of the next 4 days eat the leftovers. A batch keeps 4 days (the
+  cooking day included): each of those days shows an *In your fridge* card with the batch's
+  servings, "3 left · good until Mon" (red "eat by today" on its last day) and *Finished*, and
+  *Add meal* lists the batches in the fridge at the top, so leftover meals can be added any time.
   Bowls show the servings: full ones are planned, empty ones are left. You can only pick as many
   meals as the servings cover. The cooking meal gets a *Meal prep* label and opens at the batch size, so
   cooking mode has the right amounts; leftover meals say *Leftovers · From Sunday* and add

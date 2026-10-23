@@ -51,6 +51,7 @@ export default function PickMealScreen() {
           category: MEAL_CATEGORY[meal],
           header: leftovers.length ? (
             <View style={styles.leftovers}>
+              <Text style={[styles.heading, { color: c.text }]}>🥡 In your fridge</Text>
               {leftovers.map(({ batch, recipe }) => (
                 <Pressable
                   key={batch.id}
@@ -111,6 +112,7 @@ export default function PickMealScreen() {
 
 const styles = StyleSheet.create({
   leftovers: { gap: Spacing.two },
+  heading: { fontSize: 15, fontWeight: '700' },
   leftover: {
     flexDirection: 'row',
     alignItems: 'center',

@@ -6,7 +6,7 @@ import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-n
 
 import { ActionSheet, type SheetAction } from '@/components/action-sheet';
 import { DayNutrition } from '@/components/day-nutrition';
-import { Bowls, FinishedSheet, MealPrepSheet } from '@/components/meal-prep';
+import { FinishedSheet, FridgeCard, MealPrepSheet } from '@/components/meal-prep';
 import { PlanShoppingBar } from '@/components/plan-shopping';
 import { Features } from '@/constants/features';
 import { MaxContentWidth, Spacing, useTheme } from '@/constants/theme';
@@ -15,6 +15,7 @@ import {
   batchUse,
   cookingBatch,
   dateKey,
+  fridgeBatches,
   fromDateKey,
   leftoverBatch,
   MEAL_LABELS,
@@ -44,7 +45,7 @@ export default function PlanScreen() {
   const [weekOffset, setWeekOffset] = useState(0);
   const [selected, setSelected] = useState(() => dateKey(new Date()));
   const [menu, setMenu] = useState<{ meal: Meal; recipe: Recipe }>();
-  const [prep, setPrep] = useState<{ meal: Meal; recipe: Recipe; batch?: Batch }>();
+  const [prep, setPrep] = useState<{ day: string; meal: Meal; recipe: Recipe; batch?: Batch }>();
   const [finishing, setFinishing] = useState<Batch>();
 
   const today = new Date();
@@ -76,7 +77,11 @@ export default function PlanScreen() {
       params: batch ? { id: recipe.id, servings: String(batch.servings) } : { id: recipe.id },
     });
   };
-  const cookedToday = batches.filter((b) => b.cookDay === day && byId.has(b.recipeId));
+  // Meal prep batches still good on this day, wherever they were cooked.
+  const inFridge = fridgeBatches(batches, plan, day).flatMap((batch) => {
+    const recipe = byId.get(batch.recipeId);
+    return recipe ? [{ batch, recipe }] : [];
+  });
 
   const menuActions = (meal: Meal, recipe: Recipe): SheetAction[] => {
     const cook = cookingBatch(batches, plan, day, meal);
@@ -196,6 +201,15 @@ export default function PlanScreen() {
 
         {showNutrition ? <DayNutrition total={dayTotal} /> : null}
 
+        <FridgeCard
+          batches={inFridge}
+          today={todayKey}
+          onEdit={(batch, recipe) =>
+            setPrep({ day: batch.cookDay, meal: batch.cookMeal, recipe, batch })
+          }
+          onFinish={setFinishing}
+        />
+
         {MEALS.map((meal) => {
           const recipe = byId.get(plan[day]?.[meal] ?? '');
           const cook = cookingBatch(batches, plan, day, meal);
@@ -219,31 +233,12 @@ export default function PlanScreen() {
               }
               onPress={() => openRecipe(recipe, meal)}
               onMenu={() => setMenu({ meal, recipe })}
-              onPrep={leftover ? undefined : () => setPrep({ meal, recipe, batch: cook })}
+              onPrep={leftover ? undefined : () => setPrep({ day, meal, recipe, batch: cook })}
             />
           ) : (
             <MealCard key={meal} meal={meal} onPress={() => pick(meal)} />
           );
         })}
-
-        {cookedToday.map((b) => (
-          <View key={b.id} style={styles.batch}>
-            <Bowls
-              title={byId.get(b.recipeId)!.title}
-              servings={b.servings}
-              used={batchUse(b).used}
-            />
-            <Pressable
-              onPress={() => setFinishing(b)}
-              accessibilityRole="button"
-              style={({ pressed }) => [
-                styles.finished,
-                { borderColor: c.border, backgroundColor: c.card, opacity: pressed ? 0.7 : 1 },
-              ]}>
-              <Text style={[styles.finishedText, { color: c.text }]}>Finished it</Text>
-            </Pressable>
-          </View>
-        ))}
       </ScrollView>
 
       <PlanShoppingBar week={week} today={todayKey} />
@@ -256,7 +251,7 @@ export default function PlanScreen() {
       {prep ? (
         <MealPrepSheet
           recipe={prep.recipe}
-          day={day}
+          day={prep.day}
           meal={prep.meal}
           batch={prep.batch}
           onClose={() => setPrep(undefined)}
@@ -450,9 +445,6 @@ const styles = StyleSheet.create({
   mealRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   tag: { borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2 },
   tagText: { fontSize: 11, fontWeight: '700' },
-  batch: { gap: Spacing.two },
-  finished: { borderWidth: 1.5, borderRadius: 12, paddingVertical: 11, alignItems: 'center' },
-  finishedText: { fontSize: 15, fontWeight: '700' },
   title: { fontSize: 16, fontWeight: '600' },
   add: { fontWeight: '500' },
   facts: { fontSize: 13 },

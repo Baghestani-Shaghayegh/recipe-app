@@ -235,19 +235,33 @@ export function afterMealChange(
   return { plan: next, batches: kept };
 }
 
-/** How many days after cooking a batch can still be eaten from it (the meal prep grid's span). */
-export const BATCH_DAYS = 7;
+/**
+ * How many days a batch keeps in the fridge, the cooking day included (cooked food keeps about
+ * 3–4 days). It's also the meal prep grid's span.
+ */
+export const BATCH_DAYS = 4;
+
+/** The last day a batch is good for. */
+export const goodUntil = (batch: Pick<Batch, 'cookDay'>) =>
+  dateKey(addDays(fromDateKey(batch.cookDay), BATCH_DAYS - 1));
+
+/** Batches in the fridge on `day`: cooked that day or before, and still good. */
+export function fridgeBatches(batches: Batch[], plan: MealPlan, day: string): Batch[] {
+  return batches.filter(
+    (b) => plan[b.cookDay]?.[b.cookMeal] === b.recipeId && b.cookDay <= day && day <= goodUntil(b),
+  );
+}
 
 /**
  * Batches a meal can be eaten from: cooked before it (same day counts if it's a later meal),
- * no more than a week earlier, with enough left for another meal.
+ * still good, with enough left for another meal.
  */
 export function batchesFor(batches: Batch[], plan: MealPlan, day: string, meal: Meal): Batch[] {
   return batches.filter((b) => {
     if (plan[b.cookDay]?.[b.cookMeal] !== b.recipeId) return false;
     const after =
       b.cookDay < day || (b.cookDay === day && MEALS.indexOf(b.cookMeal) < MEALS.indexOf(meal));
-    const soon = day <= dateKey(addDays(fromDateKey(b.cookDay), BATCH_DAYS - 1));
+    const soon = day <= goodUntil(b);
     const already = b.eats.some((e) => e.day === day && e.meal === meal);
     return after && soon && !already && batchUse(b).left >= b.people;
   });

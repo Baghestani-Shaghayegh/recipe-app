@@ -248,8 +248,13 @@ export function MealPrepSheet({
                           taken ? `${weekday(d)} ${MEAL_LABELS[m]}: ${taken.title}` : undefined
                         }
                         // Can't be picked (before the cooking meal, or another recipe is there):
-                        // left empty rather than shown as a box.
-                        style={[styles.cell, styles.unavailable]}
+                        // a faded box that doesn't respond to taps.
+                        accessibilityState={{ disabled: true }}
+                        style={[
+                          styles.cell,
+                          styles.unavailable,
+                          { borderColor: c.border, backgroundColor: c.chip },
+                        ]}
                       />
                     );
                   }
@@ -383,7 +388,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   cookIcon: { fontSize: 15 },
-  unavailable: { borderWidth: 0 },
+  unavailable: { opacity: 0.45 },
   freed: { fontSize: 14, textAlign: 'center' },
   cta: { borderRadius: 16, paddingVertical: 16, alignItems: 'center' },
   ctaText: { fontSize: 16, fontWeight: '700' },

@@ -138,9 +138,7 @@ export function RecipeBrowser({ pick }: { pick?: RecipePick }) {
   const filters = (
     <View style={styles.filters}>
       {pick ? (
-        <View style={[styles.banner, { backgroundColor: c.chip }]}>
-          <Text style={[styles.bannerText, { color: c.text }]}>{pick.banner}</Text>
-        </View>
+        <Text style={[styles.bannerText, { color: c.textSecondary }]}>{pick.banner}</Text>
       ) : null}
       {pick?.header}
       <TextInput
@@ -332,8 +330,7 @@ const styles = StyleSheet.create({
   pantryLink: { fontSize: 15, fontWeight: '600' },
   pantryNote: { borderRadius: 14, padding: Spacing.four, gap: Spacing.three },
   pantryLine: { fontSize: 13, fontWeight: '600', marginTop: -Spacing.one },
-  banner: { borderRadius: 12, paddingHorizontal: Spacing.three, paddingVertical: 10 },
-  bannerText: { fontSize: 15, lineHeight: 21 },
+  bannerText: { fontSize: 14, lineHeight: 20 },
   gridRow: { gap: GRID_GAP },
   filler: { flex: 1 },
   search: {

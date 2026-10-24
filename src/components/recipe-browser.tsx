@@ -216,7 +216,7 @@ export function RecipeBrowser({ pick }: { pick?: RecipePick }) {
         }
         ListHeaderComponent={filters}
         ListEmptyComponent={
-          pantryEmpty ? null : recipes.length === 0 ? (
+          pantryEmpty ? undefined : recipes.length === 0 ? (
             <View style={styles.empty}>
               <Text style={[styles.emptyTitle, { color: c.text }]}>No recipes yet</Text>
               <Text style={[styles.emptyText, { color: c.textSecondary }]}>
@@ -237,7 +237,7 @@ export function RecipeBrowser({ pick }: { pick?: RecipePick }) {
           )
         }
         ListFooterComponent={
-          pick ? null : (
+          pick ? undefined : (
             <View>
               {Features.accounts ? (
                 <Pressable onPress={() => router.push('/account')} accessibilityRole="link">

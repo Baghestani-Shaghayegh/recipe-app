@@ -12,7 +12,8 @@ type IconName = React.ComponentProps<typeof Ionicons>['name'];
 // tabBarIcon takes a render function, not a component, so this returns a plain function.
 function icon(name: IconName) {
   return function renderIcon({ color, size }: { color: ColorValue; size: number }) {
-    return <Ionicons name={name} color={color} size={size} />;
+    // The tab bar always passes a colour string.
+    return <Ionicons name={name} color={color as string} size={size} />;
   };
 }
 

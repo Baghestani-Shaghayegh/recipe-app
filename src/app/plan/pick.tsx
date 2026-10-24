@@ -8,6 +8,7 @@ import { Spacing, useTheme } from '@/constants/theme';
 import {
   batchesFor,
   batchUse,
+  dateKey,
   eatFromBatch,
   fromDateKey,
   goodUntil,
@@ -30,7 +31,11 @@ const MEAL_CATEGORY: Record<Meal, Category> = {
 
 /** "Add meal" on the Plan tab: your recipes, and tapping one plans it for that meal. */
 export default function PickMealScreen() {
-  const { day, meal: mealParam } = useLocalSearchParams<{ day: string; meal: string }>();
+  const params = useLocalSearchParams<{ day?: string; meal?: string }>();
+  // Opened without a day (a bare link, or the web build rendering the page): today.
+  const day =
+    params.day && /^\d{4}-\d{2}-\d{2}$/.test(params.day) ? params.day : dateKey(new Date());
+  const mealParam = params.meal;
   const meal: Meal = MEALS.includes(mealParam as Meal) ? (mealParam as Meal) : 'dinner';
   const c = useTheme();
   const { setMeal, plan, batches, saveBatch } = usePlan();

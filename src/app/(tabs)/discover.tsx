@@ -10,7 +10,7 @@ import {
   StyleSheet,
   Text,
   View,
-  type ViewToken,
+  type ListViewToken,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -131,10 +131,13 @@ function FeedView({ filters }: { filters: FeedFilters }) {
   const active = activeId && visible.some((p) => p.id === activeId) ? activeId : visible[0]?.id;
 
   // FlatList needs this callback to stay the same for the list's whole life.
-  const onViewable = useCallback(({ viewableItems }: { viewableItems: ViewToken<FeedPost>[] }) => {
-    const first = viewableItems.find((v) => v.isViewable);
-    if (first?.item) setActiveId(first.item.id);
-  }, []);
+  const onViewable = useCallback(
+    ({ viewableItems }: { viewableItems: ListViewToken[] }) => {
+      const first = viewableItems.find((v) => v.isViewable);
+      if (first?.item) setActiveId((first.item as FeedPost).id);
+    },
+    [],
+  );
 
   const renderItem = useCallback(
     ({ item }: { item: FeedPost }) => (

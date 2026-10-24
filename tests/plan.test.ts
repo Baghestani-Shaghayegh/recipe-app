@@ -12,7 +12,6 @@ import {
   leftoverBatch,
   saveBatch,
   dateKey,
-  fridgeBatches,
   fromDateKey,
   goodUntil,
   keepDaysFor,
@@ -204,16 +203,6 @@ test('a later meal can be eaten from a batch that still has servings left', () =
   assert.equal(more.plan['2026-10-21'].dinner, 'soup');
 });
 
-test('a batch is in the fridge from the day it is cooked until it goes off', () => {
-  const { plan, batches } = saveBatch({}, [], soupBatch); // cooked Mon 19
-  assert.equal(goodUntil(soupBatch), '2026-10-22');
-  const inFridge = (day: string) => fridgeBatches(batches, plan, day).length;
-  assert.deepEqual(
-    ['2026-10-18', '2026-10-19', '2026-10-22', '2026-10-23'].map(inFridge),
-    [0, 1, 1, 0],
-  );
-});
-
 test('how long a batch keeps follows food safety advice', () => {
   const dish = (title: string, ...names: string[]) => ({
     title,
@@ -237,18 +226,8 @@ test('two batches of the same dish: the one to eat first comes first', () => {
   let state = saveBatch({}, [], newer);
   state = saveBatch(state.plan, state.batches, older);
   assert.deepEqual(
-    fridgeBatches(state.batches, state.plan, '2026-10-21').map((b) => b.id),
-    ['old', 'new'],
-  );
-  assert.deepEqual(
     batchesFor(state.batches, state.plan, '2026-10-21', 'dinner').map((b) => b.id),
     ['old', 'new'],
   );
 });
 
-test('a batch stays in the fridge until its last planned meal, even past its good-until day', () => {
-  const late = { ...soupBatch, eats: [{ day: '2026-10-24', meal: 'lunch' as const }] };
-  const { plan, batches } = saveBatch({}, [], late);
-  assert.equal(fridgeBatches(batches, plan, '2026-10-24').length, 1);
-  assert.equal(fridgeBatches(batches, plan, '2026-10-25').length, 0);
-});

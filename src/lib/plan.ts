@@ -263,21 +263,6 @@ export const pastGood = (batch: Pick<Batch, 'cookDay' | 'keepDays'>, day: string
   day > goodUntil(batch);
 
 /**
- * Batches in the fridge on `day`: cooked that day or before, and still good (or still planned
- * to be eaten, so it shows until then).
- */
-export function fridgeBatches(batches: Batch[], plan: MealPlan, day: string): Batch[] {
-  return batches
-    .filter(
-      (b) =>
-        plan[b.cookDay]?.[b.cookMeal] === b.recipeId &&
-        b.cookDay <= day &&
-        (day <= goodUntil(b) || b.eats.some((e) => e.day >= day)),
-    )
-    .sort((a, b) => goodUntil(a).localeCompare(goodUntil(b)));
-}
-
-/**
  * Batches a meal can be eaten from: cooked before it (same day counts if it's a later meal),
  * within the week after, with enough left for another meal; the one to eat first comes first.
  * Ones past their good-until day are included (the screen asks first).

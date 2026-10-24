@@ -183,10 +183,10 @@ Code: `src/lib/supabase.ts` (small client over Supabase's REST API, no extra pac
   rice 1 day (the UK NHS/FSA say eat cooked rice within a day). *Keeps until …* in the meal prep
   setup changes it for that batch. These are general guidelines; how food was cooled and stored
   matters too.
-- Every day the batch keeps shows an *In your fridge* card: its servings, "3 left · good until
-  Mon" (red "eat by today" on the last day, "too old to eat" after), *Finished*, and a
-  tap to change it. Two batches of the same dish say which day each was cooked, and the one to
-  eat first is listed first. *Add meal* lists the batches in the fridge at the top.
+- *Add meal* opens on an *In your fridge* tab (next to *Recipes*) when there are leftovers to eat:
+  one card per batch with the day it was cooked, its servings and "4 left · eat by Tue" (red
+  "Too old to eat" after). Two batches of the same dish say which day each was cooked, and the
+  one to eat first is listed first.
 - Planning leftovers after the good-until day is allowed but asks first ("Lentil Soup keeps until
   Mon. Plan it for Tue anyway?"); those squares in the grid have a red dashed border.
   Bowls show the servings: full ones are planned, empty ones are left. You can only pick as many

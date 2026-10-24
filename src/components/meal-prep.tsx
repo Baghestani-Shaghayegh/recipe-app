@@ -1,6 +1,4 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
-import { Image } from 'expo-image';
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
@@ -16,7 +14,6 @@ import {
   goodUntil,
   keepDaysFor,
   MEAL_LABELS,
-  pastGood,
   MEALS,
   slotKey,
   type Batch,
@@ -428,136 +425,4 @@ const styles = StyleSheet.create({
   cta: { borderRadius: 16, paddingVertical: 16, alignItems: 'center' },
   ctaText: { fontSize: 16, fontWeight: '700' },
   ghost: { paddingVertical: 12, alignItems: 'center' },
-});
-
-/**
- * "In your fridge": the meal prep batches still good on `day`, with how much is left and until
- * when. Tapping one changes it; Finished is for a batch that ran out early.
- */
-export function FridgeCard({
-  batches,
-  day,
-  today,
-  onEdit,
-  onFinish,
-}: {
-  batches: { batch: Batch; recipe: Recipe }[];
-  /** The day on screen. */
-  day: string;
-  today: string;
-  onEdit: (batch: Batch, recipe: Recipe) => void;
-  onFinish: (batch: Batch) => void;
-}) {
-  const c = useTheme();
-  if (!batches.length) return null;
-  return (
-    <View style={[fridge.card, { backgroundColor: c.card, borderColor: c.border }]}>
-      <View style={fridge.head}>
-        <MaterialCommunityIcons name="snowflake" size={18} color={c.prep} />
-        <Text style={[fridge.title, { color: c.text }]}>In your fridge</Text>
-      </View>
-      {batches.map(({ batch, recipe }, i) => {
-        const { used, left } = batchUse(batch);
-        const until = goodUntil(batch);
-        const status = keepStatus(batch, day, today);
-        // Two batches of the same dish are told apart by the day they were cooked.
-        const twin = batches.some((o) => o.batch.id !== batch.id && o.recipe.id === recipe.id);
-        return (
-          <View
-            key={batch.id}
-            style={[fridge.row, i > 0 && { borderTopWidth: 1, borderTopColor: c.border }]}>
-            <Pressable
-              onPress={() => onEdit(batch, recipe)}
-              accessibilityRole="button"
-              accessibilityLabel={`${recipe.title}, ${Math.max(0, left)} left`}
-              style={({ pressed }) => [fridge.main, { opacity: pressed ? 0.7 : 1 }]}>
-              {recipe.photoUri ? (
-                <Image source={{ uri: recipe.photoUri }} style={fridge.thumb} contentFit="cover" />
-              ) : (
-                <View style={[fridge.thumb, fridge.center, { backgroundColor: c.prepSoft }]}>
-                  <Text style={fridge.emoji}>🍲</Text>
-                </View>
-              )}
-              <View style={fridge.text}>
-                <Text style={[fridge.name, { color: c.text }]} numberOfLines={1}>
-                  {recipe.title}
-                  {twin ? (
-                    <Text style={[fridge.cooked, { color: c.textSecondary }]}>
-                      {' '}
-                      · cooked {weekday(batch.cookDay)}
-                    </Text>
-                  ) : null}
-                </Text>
-                <View style={fridge.mini}>
-                  {Array.from({ length: Math.min(batch.servings, 16) }, (_, n) => (
-                    <View
-                      key={n}
-                      style={[
-                        fridge.serving,
-                        n < used
-                          ? { backgroundColor: c.prep }
-                          : { borderWidth: 1.5, borderStyle: 'dashed', borderColor: c.prepLine },
-                      ]}
-                    />
-                  ))}
-                </View>
-                <Text
-                  style={[
-                    fridge.meta,
-                    status === 'good'
-                      ? { color: c.textSecondary }
-                      : { color: c.danger, fontWeight: '700' },
-                  ]}>
-                  {Math.max(0, left)} left ·{' '}
-                  {status === 'past'
-                    ? 'too old to eat'
-                    : status === 'today'
-                      ? 'eat by today'
-                      : status === 'last'
-                        ? `last day ${weekday(until)}`
-                        : `good until ${weekday(until)}`}
-                </Text>
-              </View>
-            </Pressable>
-            <Pressable
-              onPress={() => onFinish(batch)}
-              accessibilityRole="button"
-              accessibilityLabel={`${recipe.title} is finished`}
-              style={({ pressed }) => [
-                fridge.finish,
-                { borderColor: c.prep, opacity: pressed ? 0.7 : 1 },
-              ]}>
-              <Text style={[fridge.finishText, { color: c.prep }]}>Finished</Text>
-            </Pressable>
-          </View>
-        );
-      })}
-    </View>
-  );
-}
-
-/** How a batch stands on `day`: fine, its last day (today, or another day), or gone off. */
-function keepStatus(batch: Batch, day: string, today: string) {
-  if (pastGood(batch, day)) return 'past';
-  if (goodUntil(batch) === day) return day === today ? 'today' : 'last';
-  return 'good';
-}
-
-const fridge = StyleSheet.create({
-  card: { borderWidth: 1, borderRadius: 20, paddingHorizontal: Spacing.four, paddingVertical: 12 },
-  head: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: Spacing.one },
-  title: { fontSize: 15, fontWeight: '700' },
-  row: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two, paddingVertical: 10 },
-  main: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: Spacing.three },
-  thumb: { width: 44, height: 44, borderRadius: 12 },
-  center: { alignItems: 'center', justifyContent: 'center' },
-  emoji: { fontSize: 20 },
-  text: { flex: 1, minWidth: 0 },
-  name: { fontSize: 15, fontWeight: '700' },
-  cooked: { fontSize: 13, fontWeight: '600' },
-  mini: { flexDirection: 'row', flexWrap: 'wrap', gap: 3, marginTop: 5 },
-  serving: { width: 12, height: 12, borderRadius: 4 },
-  meta: { fontSize: 12, marginTop: 4 },
-  finish: { borderWidth: 1.5, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 },
-  finishText: { fontSize: 13, fontWeight: '700' },
 });

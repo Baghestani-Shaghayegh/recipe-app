@@ -6,7 +6,7 @@ import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-n
 
 import { ActionSheet, type SheetAction } from '@/components/action-sheet';
 import { DayNutrition } from '@/components/day-nutrition';
-import { FinishedSheet, FridgeCard, MealPrepSheet } from '@/components/meal-prep';
+import { FinishedSheet, MealPrepSheet } from '@/components/meal-prep';
 import { PlanShoppingBar } from '@/components/plan-shopping';
 import { Features } from '@/constants/features';
 import { MaxContentWidth, Spacing, useTheme } from '@/constants/theme';
@@ -15,7 +15,6 @@ import {
   batchUse,
   cookingBatch,
   dateKey,
-  fridgeBatches,
   fromDateKey,
   leftoverBatch,
   MEAL_LABELS,
@@ -77,12 +76,6 @@ export default function PlanScreen() {
       params: batch ? { id: recipe.id, servings: String(batch.servings) } : { id: recipe.id },
     });
   };
-  // Meal prep batches still good on this day, wherever they were cooked.
-  const inFridge = fridgeBatches(batches, plan, day).flatMap((batch) => {
-    const recipe = byId.get(batch.recipeId);
-    return recipe ? [{ batch, recipe }] : [];
-  });
-
   const menuActions = (meal: Meal, recipe: Recipe): SheetAction[] => {
     const cook = cookingBatch(batches, plan, day, meal);
     const leftover = leftoverBatch(batches, plan, day, meal);
@@ -200,16 +193,6 @@ export default function PlanScreen() {
         </Text>
 
         {showNutrition ? <DayNutrition total={dayTotal} /> : null}
-
-        <FridgeCard
-          batches={inFridge}
-          day={day}
-          today={todayKey}
-          onEdit={(batch, recipe) =>
-            setPrep({ day: batch.cookDay, meal: batch.cookMeal, recipe, batch })
-          }
-          onFinish={setFinishing}
-        />
 
         {MEALS.map((meal) => {
           const recipe = byId.get(plan[day]?.[meal] ?? '');

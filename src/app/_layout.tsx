@@ -36,6 +36,9 @@ export default function RootLayout() {
                 <FeedProvider>
                   <Stack
                     screenOptions={{
+                      // A solid header: on iOS 26 the default see-through one lets screens slide
+                      // under it, cutting off their top.
+                      headerStyle: { backgroundColor: c.background },
                       headerShadowVisible: false,
                       headerTintColor: c.accent,
                       headerTitleStyle: { color: c.text },

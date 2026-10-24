@@ -182,7 +182,7 @@ export function MealPrepSheet({
     // After its good-until day: ask first, so no one eats food that's gone off by accident.
     if (d > until) {
       const ok = await confirm(
-        'Past its good-until day',
+        'Too old to eat',
         `${recipe.title} keeps until ${weekday(until)}. Plan it for ${weekday(d)} anyway?`,
         'Plan anyway',
       );
@@ -292,7 +292,7 @@ export function MealPrepSheet({
                       disabled={!on && full}
                       accessibilityRole="checkbox"
                       accessibilityState={{ checked: on, disabled: !on && full }}
-                      accessibilityLabel={`${weekday(d)} ${MEAL_LABELS[m]}${d > until ? ', past its good-until day' : ''}`}
+                      accessibilityLabel={`${weekday(d)} ${MEAL_LABELS[m]}${d > until ? ', too old to eat' : ''}`}
                       style={[
                         styles.cell,
                         on
@@ -506,7 +506,7 @@ export function FridgeCard({
                   ]}>
                   {Math.max(0, left)} left ·{' '}
                   {status === 'past'
-                    ? `past its good-until day (${weekday(until)})`
+                    ? 'too old to eat'
                     : status === 'today'
                       ? 'eat by today'
                       : status === 'last'

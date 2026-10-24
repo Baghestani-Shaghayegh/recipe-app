@@ -184,7 +184,7 @@ Code: `src/lib/supabase.ts` (small client over Supabase's REST API, no extra pac
   setup changes it for that batch. These are general guidelines; how food was cooled and stored
   matters too.
 - Every day the batch keeps shows an *In your fridge* card: its servings, "3 left · good until
-  Mon" (red "eat by today" on the last day, "past its good-until day" after), *Finished*, and a
+  Mon" (red "eat by today" on the last day, "too old to eat" after), *Finished*, and a
   tap to change it. Two batches of the same dish say which day each was cooked, and the one to
   eat first is listed first. *Add meal* lists the batches in the fridge at the top.
 - Planning leftovers after the good-until day is allowed but asks first ("Lentil Soup keeps until

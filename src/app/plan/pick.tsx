@@ -46,7 +46,7 @@ export default function PickMealScreen() {
   const eatFrom = async (batch: Batch, recipe: Recipe) => {
     if (pastGood(batch, day)) {
       const ok = await confirm(
-        'Past its good-until day',
+        'Too old to eat',
         `${recipe.title} keeps until ${weekday(goodUntil(batch))}. Plan it for ${weekday(day)} anyway?`,
         'Plan anyway',
       );
@@ -112,7 +112,7 @@ export default function PickMealScreen() {
                       style={[styles.left, { color: pastGood(batch, day) ? c.danger : c.prep }]}>
                       {batchUse(batch).left} left ·{' '}
                       {pastGood(batch, day)
-                        ? `past its good-until day (${weekday(goodUntil(batch))})`
+                        ? 'too old to eat'
                         : `good until ${weekday(goodUntil(batch))}`}
                     </Text>
                   </View>

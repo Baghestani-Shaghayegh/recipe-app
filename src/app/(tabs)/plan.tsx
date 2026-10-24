@@ -76,24 +76,15 @@ export default function PlanScreen() {
       params: batch ? { id: recipe.id, servings: String(batch.servings) } : { id: recipe.id },
     });
   };
-  const menuActions = (meal: Meal, recipe: Recipe): SheetAction[] => {
-    const cook = cookingBatch(batches, plan, day, meal);
-    const leftover = leftoverBatch(batches, plan, day, meal);
+  // The same for every meal, leftovers included. A batch is finished from its meal prep sheet.
+  const menuActions = (meal: Meal): SheetAction[] => {
     const close = (run: () => void) => () => {
       setMenu(undefined);
       run();
     };
     // Opening the recipe is a tap on the card, and meal prep is the tag on it.
     return [
-      ...(cook || leftover
-        ? [
-            {
-              label: 'Finished it',
-              onPress: close(() => afterMenu(() => setFinishing(cook ?? leftover))),
-            },
-          ]
-        : []),
-      ...(leftover ? [] : [{ label: 'Choose another recipe', onPress: close(() => pick(meal)) }]),
+      { label: 'Choose another recipe', onPress: close(() => pick(meal)) },
       {
         label: `Remove from ${MEAL_LABELS[meal].toLowerCase()}`,
         danger: true,
@@ -230,7 +221,7 @@ export default function PlanScreen() {
       <ActionSheet
         visible={!!menu}
         onClose={() => setMenu(undefined)}
-        actions={menu ? menuActions(menu.meal, menu.recipe) : []}
+        actions={menu ? menuActions(menu.meal) : []}
       />
       {prep ? (
         <MealPrepSheet
@@ -239,6 +230,7 @@ export default function PlanScreen() {
           meal={prep.meal}
           batch={prep.batch}
           onClose={() => setPrep(undefined)}
+          onFinish={(batch) => afterMenu(() => setFinishing(batch))}
         />
       ) : null}
       {finishing && byId.has(finishing.recipeId) ? (

@@ -139,6 +139,7 @@ export function MealPrepSheet({
   meal,
   batch,
   onClose,
+  onFinish,
 }: {
   recipe: Recipe;
   day: string;
@@ -146,6 +147,8 @@ export function MealPrepSheet({
   /** The batch being changed; a new one when missing. */
   batch?: Batch;
   onClose: () => void;
+  /** "Finished it" on a saved batch: it ran out early, or went off. */
+  onFinish?: (batch: Batch) => void;
 }) {
   const c = useTheme();
   const { plan, batches, saveBatch } = usePlan();
@@ -323,6 +326,14 @@ export function MealPrepSheet({
             ]}>
             <Text style={[styles.ctaText, { color: c.accentText }]}>Save meal prep</Text>
           </Pressable>
+          {batch && onFinish ? (
+            <Pressable
+              onPress={() => close(() => onFinish(batch))}
+              accessibilityRole="button"
+              style={styles.ghost}>
+              <Text style={[styles.ctaText, { color: c.text }]}>Finished it</Text>
+            </Pressable>
+          ) : null}
         </View>
       )}
     </BottomSheet>

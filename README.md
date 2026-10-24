@@ -192,7 +192,7 @@ Code: `src/lib/supabase.ts` (small client over Supabase's REST API, no extra pac
   Bowls show the servings: full ones are planned, empty ones are left. You can only pick as many
   meals as the servings cover. The cooking meal gets a *Meal prep* label and opens at the batch size, so
   cooking mode has the right amounts; leftover meals say *Leftovers · From Sunday* and add
-  nothing to the shopping list. *Finished it* (under the bowls, or ⋯ on a leftover meal) is for a
+  nothing to the shopping list. *Finished it* (in the meal prep sheet, under Save) is for a
   batch that ran out early: its leftover meals from today on are freed up. Saved as
   `batches.v1`; logic in `src/lib/plan.ts`, screens in `src/components/meal-prep.tsx`.
 - From a recipe page: ⋯ → *Add to meal plan*, pick a day in the next two weeks and a meal.

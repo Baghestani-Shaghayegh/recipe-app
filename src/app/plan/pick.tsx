@@ -1,10 +1,11 @@
 import { Image } from 'expo-image';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
+import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { RecipeBrowser } from '@/components/recipe-browser';
 import { confirm } from '@/components/ui';
-import { Spacing, useTheme } from '@/constants/theme';
+import { MaxContentWidth, Spacing, useTheme } from '@/constants/theme';
 import {
   batchesFor,
   batchUse,
@@ -66,107 +67,173 @@ export default function PickMealScreen() {
     day: 'numeric',
   });
 
+  // With leftovers in the fridge, those come first: eating them is what keeps food from waste.
+  const [tab, setTab] = useState<'fridge' | 'recipes'>(leftovers.length ? 'fridge' : 'recipes');
+  const showFridge = tab === 'fridge' && leftovers.length > 0;
+
+  const banner = (
+    <>
+      Tap a recipe to add it to{' '}
+      <Text style={{ fontWeight: '700' }}>
+        {label} · {dayLabel}
+      </Text>
+    </>
+  );
+
+  const tabs = leftovers.length ? (
+    <View style={[styles.tabs, { backgroundColor: c.chip }]} accessibilityRole="tablist">
+      {(['recipes', 'fridge'] as const).map((t) => {
+        const on = (t === 'fridge') === showFridge;
+        return (
+          <Pressable
+            key={t}
+            onPress={() => setTab(t)}
+            accessibilityRole="tab"
+            accessibilityState={{ selected: on }}
+            style={[styles.tab, on && { backgroundColor: c.card }]}>
+            <Text
+              numberOfLines={1}
+              style={[styles.tabText, { color: on ? c.text : c.textSecondary }]}>
+              {t === 'fridge' ? '🥡 In your fridge' : 'Recipes'}
+            </Text>
+            {t === 'fridge' ? (
+              <View style={[styles.badge, { backgroundColor: c.prep }]}>
+                <Text style={styles.badgeText}>{leftovers.length}</Text>
+              </View>
+            ) : null}
+          </Pressable>
+        );
+      })}
+    </View>
+  ) : undefined;
+
   return (
     <>
       <Stack.Screen options={{ title: `Choose ${label.toLowerCase()}`, headerBackTitle: 'Plan' }} />
-      <RecipeBrowser
-        pick={{
-          category: MEAL_CATEGORY[meal],
-          // One panel with a row of batches you swipe through, so it stays short however many
-          // there are.
-          header: leftovers.length ? (
-            <View style={[styles.fridge, { backgroundColor: c.prepSoft }]}>
-              <View style={styles.fridgeHead}>
-                <Text style={[styles.heading, { color: c.text }]}>🥡 In your fridge</Text>
-                <Text style={[styles.count, { color: c.prep }]}>{leftovers.length}</Text>
-              </View>
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.row}>
-                {leftovers.map(({ batch, recipe }) => {
-                  const old = pastGood(batch, day);
-                  return (
-                    <Pressable
-                      key={batch.id}
-                      onPress={() => void eatFrom(batch, recipe)}
-                      accessibilityRole="button"
-                      accessibilityLabel={`Leftovers: ${recipe.title}`}
-                      style={({ pressed }) => [
-                        styles.tile,
-                        {
-                          backgroundColor: c.card,
-                          borderColor: old ? c.danger : c.border,
-                          opacity: pressed ? 0.8 : 1,
-                        },
-                      ]}>
-                      {recipe.photoUri ? (
-                        <Image
-                          source={{ uri: recipe.photoUri }}
-                          style={styles.photo}
-                          contentFit="cover"
-                        />
-                      ) : (
-                        <View style={[styles.photo, styles.center, { backgroundColor: c.chip }]}>
-                          <Text style={styles.icon}>🍲</Text>
-                        </View>
-                      )}
-                      <Text style={[styles.title, { color: c.text }]} numberOfLines={1}>
-                        {recipe.title}
-                      </Text>
-                      {/* The day it was cooked, which also tells two batches of a dish apart. */}
-                      <Text style={[styles.cooked, { color: c.textSecondary }]}>
-                        Cooked {weekday(batch.cookDay)}
-                      </Text>
-                      <Text
-                        style={[styles.left, { color: old ? c.danger : c.prep }]}
-                        numberOfLines={1}>
-                        {old
-                          ? 'Too old to eat'
-                          : `${batchUse(batch).left} left · eat by ${weekday(goodUntil(batch))}`}
-                      </Text>
-                    </Pressable>
-                  );
-                })}
-              </ScrollView>
-            </View>
-          ) : undefined,
-          banner: (
-            <>
-              Tap a recipe to add it to{' '}
-              <Text style={{ fontWeight: '700' }}>
-                {label} · {dayLabel}
-              </Text>
-            </>
-          ),
-          onPick: (recipe) => {
-            setMeal(day, meal, recipe.id);
-            router.back();
-          },
-        }}
-      />
+      {showFridge ? (
+        <ScrollView
+          style={{ backgroundColor: c.background }}
+          contentContainerStyle={styles.fridgeList}>
+          <Text style={[styles.banner, { color: c.textSecondary }]}>{banner}</Text>
+          {tabs}
+          {leftovers.map(({ batch, recipe }) => {
+            const old = pastGood(batch, day);
+            const { left } = batchUse(batch);
+            const squares = Math.min(batch.servings, MAX_SQUARES);
+            return (
+              <Pressable
+                key={batch.id}
+                onPress={() => void eatFrom(batch, recipe)}
+                accessibilityRole="button"
+                accessibilityLabel={`Leftovers: ${recipe.title}, ${left} left`}
+                style={({ pressed }) => [
+                  styles.card,
+                  {
+                    backgroundColor: c.card,
+                    borderColor: old ? c.danger : c.border,
+                    opacity: pressed ? 0.8 : 1,
+                  },
+                ]}>
+                {recipe.photoUri ? (
+                  <Image source={{ uri: recipe.photoUri }} style={styles.thumb} contentFit="cover" />
+                ) : (
+                  <View style={[styles.thumb, styles.center, { backgroundColor: c.prepSoft }]}>
+                    <Text style={styles.icon}>🍲</Text>
+                  </View>
+                )}
+                <View style={styles.info}>
+                  <Text style={[styles.title, { color: c.text }]} numberOfLines={1}>
+                    {recipe.title}
+                  </Text>
+                  {/* The day it was cooked, which also tells two batches of a dish apart. */}
+                  <Text style={[styles.cooked, { color: c.textSecondary }]}>
+                    Cooked {weekday(batch.cookDay)}
+                  </Text>
+                  {/* Filled: servings left. Dashed: already planned or eaten. */}
+                  <View style={styles.squares}>
+                    {Array.from({ length: squares }, (_, i) => (
+                      <View
+                        key={i}
+                        style={[
+                          styles.square,
+                          i < left
+                            ? { backgroundColor: old ? c.danger : c.prep }
+                            : { borderWidth: 1.5, borderStyle: 'dashed', borderColor: c.prepLine },
+                        ]}
+                      />
+                    ))}
+                  </View>
+                  <Text style={[styles.left, { color: old ? c.danger : c.prep }]} numberOfLines={1}>
+                    {old
+                      ? 'Too old to eat'
+                      : `${left} left · eat by ${weekday(goodUntil(batch))}`}
+                  </Text>
+                </View>
+              </Pressable>
+            );
+          })}
+        </ScrollView>
+      ) : null}
+      {/* Kept mounted on the fridge tab, so search and filters are still there when you come back. */}
+      <View style={[styles.flex, showFridge && styles.hidden]}>
+        <RecipeBrowser
+          pick={{
+            category: MEAL_CATEGORY[meal],
+            header: tabs,
+            banner,
+            onPick: (recipe) => {
+              setMeal(day, meal, recipe.id);
+              router.back();
+            },
+          }}
+        />
+      </View>
     </>
   );
 }
 
-const TILE = 148;
+const MAX_SQUARES = 16;
 
 const styles = StyleSheet.create({
-  fridge: { borderRadius: 18, paddingTop: Spacing.three, paddingBottom: Spacing.three, gap: 10 },
-  fridgeHead: {
+  flex: { flex: 1 },
+  hidden: { display: 'none' },
+  fridgeList: {
+    padding: Spacing.four,
+    paddingBottom: Spacing.six,
+    gap: Spacing.three,
+    width: '100%',
+    maxWidth: MaxContentWidth,
+    alignSelf: 'center',
+  },
+  banner: { fontSize: 14, lineHeight: 20 },
+  tabs: { flexDirection: 'row', borderRadius: 12, padding: 3 },
+  tab: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: Spacing.three + 2,
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 8,
+    borderRadius: 10,
   },
-  heading: { fontSize: 15, fontWeight: '700' },
-  count: { fontSize: 13, fontWeight: '700' },
-  row: { gap: 10, paddingHorizontal: Spacing.three + 2 },
-  tile: { width: TILE, borderWidth: 1, borderRadius: 14, padding: 8, gap: 4 },
-  photo: { width: '100%', aspectRatio: 1.5, borderRadius: 10 },
+  tabText: { fontSize: 15, fontWeight: '600', flexShrink: 1 },
+  badge: { borderRadius: 999, minWidth: 20, paddingHorizontal: 6, alignItems: 'center' },
+  badgeText: { color: '#fff', fontSize: 12, fontWeight: '700', lineHeight: 18 },
+  card: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.three,
+    borderWidth: 1,
+    borderRadius: 16,
+    padding: Spacing.three,
+  },
+  thumb: { width: 72, height: 72, borderRadius: 12 },
   center: { alignItems: 'center', justifyContent: 'center' },
-  icon: { fontSize: 28 },
-  title: { fontSize: 14, fontWeight: '700', lineHeight: 18, marginTop: 2 },
-  cooked: { fontSize: 12, fontWeight: '600' },
-  left: { fontSize: 12, fontWeight: '700' },
+  icon: { fontSize: 32 },
+  info: { flex: 1, minWidth: 0, gap: 3 },
+  title: { fontSize: 16, fontWeight: '700' },
+  cooked: { fontSize: 13, fontWeight: '500' },
+  squares: { flexDirection: 'row', flexWrap: 'wrap', gap: 3, marginTop: 2 },
+  square: { width: 11, height: 11, borderRadius: 3 },
+  left: { fontSize: 13, fontWeight: '700', marginTop: 1 },
 });

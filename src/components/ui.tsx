@@ -1,4 +1,5 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { useRef } from 'react';
 import {
   Alert,
   Platform,
@@ -79,6 +80,7 @@ export function Field({
   ...props
 }: TextInputProps & { label: string; hint?: string }) {
   const c = useTheme();
+  const input = useRef<React.ComponentRef<typeof TextInput>>(null);
   // One-line boxes with something in them get a ✕ that empties them.
   const clearable =
     !props.multiline && props.editable !== false && !!props.value && !!props.onChangeText;
@@ -88,6 +90,7 @@ export function Field({
       {hint ? <Text style={[styles.hint, { color: c.textSecondary }]}>{hint}</Text> : null}
       <View>
         <TextInput
+          ref={input}
           placeholderTextColor={c.textSecondary}
           style={[
             styles.input,
@@ -100,7 +103,12 @@ export function Field({
         />
         {clearable ? (
           <Pressable
-            onPress={() => props.onChangeText!('')}
+            // On touch down, before anything can take the focus (and the keyboard) away; the
+            // cursor goes back into the box, so you can type the new value straight away.
+            onPressIn={() => {
+              props.onChangeText!('');
+              input.current?.focus();
+            }}
             hitSlop={8}
             accessibilityRole="button"
             accessibilityLabel={`Clear ${label}`}

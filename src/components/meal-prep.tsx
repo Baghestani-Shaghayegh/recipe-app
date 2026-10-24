@@ -1,4 +1,5 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { Image } from 'expo-image';
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
@@ -451,7 +452,10 @@ export function FridgeCard({
   if (!batches.length) return null;
   return (
     <View style={[fridge.card, { backgroundColor: c.card, borderColor: c.border }]}>
-      <Text style={[fridge.title, { color: c.text }]}>🥡 In your fridge</Text>
+      <View style={fridge.head}>
+        <MaterialCommunityIcons name="snowflake" size={18} color={c.prep} />
+        <Text style={[fridge.title, { color: c.text }]}>In your fridge</Text>
+      </View>
       {batches.map(({ batch, recipe }, i) => {
         const { used, left } = batchUse(batch);
         const until = goodUntil(batch);
@@ -541,7 +545,8 @@ function keepStatus(batch: Batch, day: string, today: string) {
 
 const fridge = StyleSheet.create({
   card: { borderWidth: 1, borderRadius: 20, paddingHorizontal: Spacing.four, paddingVertical: 12 },
-  title: { fontSize: 15, fontWeight: '700', marginBottom: Spacing.one },
+  head: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: Spacing.one },
+  title: { fontSize: 15, fontWeight: '700' },
   row: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two, paddingVertical: 10 },
   main: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: Spacing.three },
   thumb: { width: 44, height: 44, borderRadius: 12 },

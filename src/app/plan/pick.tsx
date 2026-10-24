@@ -1,3 +1,4 @@
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { Image } from 'expo-image';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
@@ -91,10 +92,17 @@ export default function PickMealScreen() {
             accessibilityRole="tab"
             accessibilityState={{ selected: on }}
             style={[styles.tab, on && { backgroundColor: c.card }]}>
+            {t === 'fridge' ? (
+              <MaterialCommunityIcons
+                name="snowflake"
+                size={17}
+                color={on ? c.prep : c.textSecondary}
+              />
+            ) : null}
             <Text
               numberOfLines={1}
               style={[styles.tabText, { color: on ? c.text : c.textSecondary }]}>
-              {t === 'fridge' ? '🥡 In your fridge' : 'Recipes'}
+              {t === 'fridge' ? 'In your fridge' : 'Recipes'}
             </Text>
             {t === 'fridge' ? (
               <View style={[styles.badge, { backgroundColor: c.prep }]}>

@@ -1,7 +1,9 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Animated,
   Easing,
+  Keyboard,
+  LayoutAnimation,
   Modal,
   PanResponder,
   Platform,
@@ -44,6 +46,34 @@ export function BottomSheet({
   // 0 = off screen, 1 = open. `drag` follows a finger pulling the sheet down.
   const [progress] = useState(() => new Animated.Value(0));
   const [drag] = useState(() => new Animated.Value(0));
+  // How far the keyboard covers the sheet: it moves up by that much, so the box you type in
+  // and the buttons under it stay in sight. Measured, so it's 0 where the system already
+  // makes room.
+  const wrap = useRef<React.ComponentRef<typeof View>>(null);
+  const [lift, setLift] = useState(0);
+
+  useEffect(() => {
+    if (!visible) return;
+    const ios = Platform.OS === 'ios';
+    const glide = (duration?: number) => {
+      if (ios)
+        LayoutAnimation.configureNext({ duration: duration || 250, update: { type: 'keyboard' } });
+    };
+    const shown = Keyboard.addListener(ios ? 'keyboardWillShow' : 'keyboardDidShow', (e) => {
+      wrap.current?.measureInWindow((_x, y, _w, h) => {
+        glide(e.duration);
+        setLift(Math.max(0, y + h - e.endCoordinates.screenY));
+      });
+    });
+    const hidden = Keyboard.addListener(ios ? 'keyboardWillHide' : 'keyboardDidHide', (e) => {
+      glide(e.duration);
+      setLift(0);
+    });
+    return () => {
+      shown.remove();
+      hidden.remove();
+    };
+  }, [visible]);
 
   const slideOut = useCallback<CloseSheet>(
     (after) =>
@@ -97,7 +127,7 @@ export function BottomSheet({
       animationType="none"
       onShow={slideIn}
       onRequestClose={() => slideOut()}>
-      <View style={styles.backdropWrap}>
+      <View ref={wrap} style={[styles.backdropWrap, { paddingBottom: lift }]}>
         <Animated.View style={[styles.backdrop, { opacity: progress }]}>
           <Pressable style={styles.fill} onPress={() => slideOut()} accessibilityLabel="Dismiss" />
         </Animated.View>
@@ -106,7 +136,8 @@ export function BottomSheet({
             styles.sheet,
             {
               backgroundColor: c.card,
-              paddingBottom: Spacing.four + insets.bottom,
+              // Above the keyboard there's no home indicator to keep clear of.
+              paddingBottom: Spacing.four + (lift ? 0 : insets.bottom),
               transform: [{ translateY }],
             },
           ]}>

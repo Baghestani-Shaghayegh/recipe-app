@@ -1,3 +1,4 @@
+import Ionicons from '@expo/vector-icons/Ionicons';
 import {
   Alert,
   Platform,
@@ -78,20 +79,36 @@ export function Field({
   ...props
 }: TextInputProps & { label: string; hint?: string }) {
   const c = useTheme();
+  // One-line boxes with something in them get a ✕ that empties them.
+  const clearable =
+    !props.multiline && props.editable !== false && !!props.value && !!props.onChangeText;
   return (
     <View style={styles.field}>
       <Text style={[styles.label, { color: c.text }]}>{label}</Text>
       {hint ? <Text style={[styles.hint, { color: c.textSecondary }]}>{hint}</Text> : null}
-      <TextInput
-        placeholderTextColor={c.textSecondary}
-        style={[
-          styles.input,
-          { color: c.text, backgroundColor: c.card, borderColor: c.border },
-          props.multiline && styles.multiline,
-          style,
-        ]}
-        {...props}
-      />
+      <View>
+        <TextInput
+          placeholderTextColor={c.textSecondary}
+          style={[
+            styles.input,
+            { color: c.text, backgroundColor: c.card, borderColor: c.border },
+            props.multiline && styles.multiline,
+            clearable && styles.inputWithClear,
+            style,
+          ]}
+          {...props}
+        />
+        {clearable ? (
+          <Pressable
+            onPress={() => props.onChangeText!('')}
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel={`Clear ${label}`}
+            style={styles.clear}>
+            <Ionicons name="close-circle" size={20} color={c.textSecondary} />
+          </Pressable>
+        ) : null}
+      </View>
     </View>
   );
 }
@@ -175,5 +192,15 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   multiline: { minHeight: 110, textAlignVertical: 'top' },
+  inputWithClear: { paddingRight: 40 },
+  clear: {
+    position: 'absolute',
+    right: 0,
+    top: 0,
+    bottom: 0,
+    width: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   sectionTitle: { fontSize: 20, fontWeight: '700', marginBottom: Spacing.two },
 });

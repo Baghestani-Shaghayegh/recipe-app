@@ -12,6 +12,7 @@ import {
   leftoverBatch,
   saveBatch,
   dateKey,
+  dayName,
   fromDateKey,
   goodUntil,
   keepDaysFor,
@@ -231,3 +232,12 @@ test('two batches of the same dish: the one to eat first comes first', () => {
   );
 });
 
+test('day names: today, tomorrow, then the weekday', () => {
+  const now = new Date(2026, 9, 24); // Saturday
+  assert.equal(dayName('2026-10-24', now), 'Today');
+  assert.equal(dayName('2026-10-25', now), 'Tomorrow');
+  assert.equal(
+    dayName('2026-10-28', now),
+    new Date(2026, 9, 28).toLocaleDateString(undefined, { weekday: 'long' }),
+  );
+});

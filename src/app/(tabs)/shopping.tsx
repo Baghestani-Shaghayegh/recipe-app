@@ -5,7 +5,7 @@ import { Tabs } from 'expo-router/js-tabs';
 import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
-import { Toast } from '@/components/toast';
+import { Toast, type ToastMessage } from '@/components/toast';
 import { Button, Chip, SectionTitle } from '@/components/ui';
 import { Features } from '@/constants/features';
 import { MaxContentWidth, Spacing, useTheme } from '@/constants/theme';
@@ -34,7 +34,7 @@ export default function ShoppingScreen() {
   } = useShopping();
   const { unmarkShopped } = usePlan();
   const [text, setText] = useState('');
-  const [note, setNote] = useState<string>();
+  const [note, setNote] = useState<ToastMessage>();
 
   // Meals added from the plan and Make next recipes make one list: each ingredient once, with
   // the amounts added up, and nothing that's in the pantry.
@@ -101,7 +101,11 @@ export default function ShoppingScreen() {
     if (!left.length) return setNote('Nothing left to buy.');
     try {
       await Clipboard.setStringAsync(shoppingListText(left, STORE_SECTIONS));
-      setNote('Copied! Paste it into a message or your notes.');
+      setNote({
+        title: 'Copied the list',
+        detail: 'Paste it into a message or your notes',
+        done: true,
+      });
     } catch {
       setNote('Couldn’t copy the list.');
     }
@@ -110,11 +114,12 @@ export default function ShoppingScreen() {
   const finishShopping = () => {
     const added = tickedFood.length ? addToPantry(tickedFood.join('\n')) : 0;
     clearChecked();
-    setNote(
-      added
-        ? `Added ${added} item${added === 1 ? '' : 's'} to your pantry.`
-        : 'Cleared ticked items.',
-    );
+    setNote({
+      title: added
+        ? `Added ${added} item${added === 1 ? '' : 's'} to your pantry`
+        : 'Cleared ticked items',
+      done: true,
+    });
   };
 
   const headerRight = () => (

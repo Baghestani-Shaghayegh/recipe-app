@@ -16,12 +16,13 @@ import {
 
 import { ActionSheet, type SheetAction } from '@/components/action-sheet';
 import { AddToPlanSheet } from '@/components/add-to-plan-sheet';
-import { Toast } from '@/components/toast';
+import { Toast, type ToastMessage } from '@/components/toast';
 import { NutritionPanel } from '@/components/nutrition-panel';
 import { Button, Chip, confirm, SectionTitle } from '@/components/ui';
 import { Features } from '@/constants/features';
 import { MaxContentWidth, Spacing, useTheme } from '@/constants/theme';
 import { isStaple, pantryHas } from '@/lib/pantry';
+import { dayName, MEAL_LABELS } from '@/lib/plan';
 import { recipeToText, sharedPayload } from '@/lib/share';
 import { findSubstitutions } from '@/lib/substitutions';
 import { deleteRecipePhoto } from '@/lib/photos';
@@ -45,7 +46,7 @@ export default function RecipeDetailScreen() {
     return Number.isFinite(n) && n > 0 ? n : undefined;
   });
   const [units, setUnits] = useState<UnitSystem>('original');
-  const [shareNote, setShareNote] = useState<string>();
+  const [shareNote, setShareNote] = useState<ToastMessage>();
   const [menuOpen, setMenuOpen] = useState(false);
   const [planning, setPlanning] = useState(false);
   const account = useAccount();
@@ -92,7 +93,7 @@ export default function RecipeDetailScreen() {
     } catch {
       // No share sheet (e.g. some browsers): copy the text instead.
       await Clipboard.setStringAsync(message).catch(() => undefined);
-      setShareNote('Copied the recipe. Paste it into a message.');
+      setShareNote({ title: 'Copied the recipe', detail: 'Paste it into a message', done: true });
     }
   };
 
@@ -106,7 +107,7 @@ export default function RecipeDetailScreen() {
       await Share.share({ message, title: recipe.title });
     } catch {
       await Clipboard.setStringAsync(message).catch(() => undefined);
-      setShareNote('Copied the link. Paste it into a message.');
+      setShareNote({ title: 'Copied the link', detail: 'Paste it into a message', done: true });
     }
   };
 
@@ -159,7 +160,7 @@ export default function RecipeDetailScreen() {
       onPress: () => {
         setMenuOpen(false);
         markCooked(recipe.id);
-        setShareNote('Nice! Marked as cooked today.');
+        setShareNote({ title: 'Marked as cooked today', done: true });
       },
     },
     ...(Features.accounts && account.session
@@ -202,7 +203,18 @@ export default function RecipeDetailScreen() {
             recipe={recipe}
             visible={planning}
             onClose={() => setPlanning(false)}
-            onPlanned={setShareNote}
+            onPlanned={(day, meal) =>
+              setShareNote({
+                title: 'Added to your plan',
+                detail: `${MEAL_LABELS[meal]} · ${dayName(day)}`,
+                done: true,
+                action: {
+                  label: 'View',
+                  onPress: () =>
+                    router.navigate({ pathname: '/plan', params: { day, at: String(Date.now()) } }),
+                },
+              })
+            }
           />
         ) : null}
 

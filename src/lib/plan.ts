@@ -29,6 +29,13 @@ export function fromDateKey(key: string): Date {
   return new Date(y, m - 1, d);
 }
 
+/** "Today", "Tomorrow", or the weekday ("Wednesday") for a day key. */
+export function dayName(key: string, today = new Date()): string {
+  if (key === dateKey(today)) return 'Today';
+  if (key === dateKey(addDays(today, 1))) return 'Tomorrow';
+  return fromDateKey(key).toLocaleDateString(undefined, { weekday: 'long' });
+}
+
 export function addDays(d: Date, days: number): Date {
   // Built from parts (not milliseconds) so daylight saving changes can't shift the date.
   return new Date(d.getFullYear(), d.getMonth(), d.getDate() + days);

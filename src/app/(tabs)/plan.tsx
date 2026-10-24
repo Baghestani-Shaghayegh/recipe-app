@@ -1,6 +1,6 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Image } from 'expo-image';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
@@ -20,6 +20,7 @@ import {
   MEAL_LABELS,
   MEALS,
   plannedMeals,
+  startOfWeek,
   weekDays,
   type Batch,
   type Meal,
@@ -37,6 +38,8 @@ const afterMenu = (run: () => void) => setTimeout(run, Platform.OS === 'ios' ? 3
 const short = (d: Date) => d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 
 /** Pick a day at the top, then plan its breakfast, lunch and dinner. */
+const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+
 export default function PlanScreen() {
   const c = useTheme();
   const { recipes } = useRecipes();
@@ -48,6 +51,18 @@ export default function PlanScreen() {
   const [finishing, setFinishing] = useState<Batch>();
 
   const today = new Date();
+  // Opened for a day (View on "Added to your plan"): go to its week and select it. `at` makes
+  // each such visit count, even for the same day as last time.
+  const params = useLocalSearchParams<{ day?: string; at?: string }>();
+  const asked = params.day && /^\d{4}-\d{2}-\d{2}$/.test(params.day) ? params.day : undefined;
+  const [opened, setOpened] = useState<string>();
+  if (asked && `${asked}|${params.at}` !== opened) {
+    setOpened(`${asked}|${params.at}`);
+    setSelected(asked);
+    const weeks =
+      (startOfWeek(fromDateKey(asked)).getTime() - startOfWeek(today).getTime()) / WEEK_MS;
+    setWeekOffset(Math.round(weeks));
+  }
   const todayKey = dateKey(today);
   const days = weekDays(addDays(today, weekOffset * 7));
   const week = days.map(dateKey);

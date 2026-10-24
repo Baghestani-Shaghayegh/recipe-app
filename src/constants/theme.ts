@@ -23,6 +23,9 @@ export const Colors = {
     proteinTrack: '#E6F0DA',
     fat: '#D99A1E',
     fatTrack: '#FAEFD6',
+    // The pop-up message at the bottom of the screen.
+    toast: '#2A2420',
+    success: '#3FA36B',
   },
   dark: {
     text: '#F5F0EB',
@@ -44,6 +47,8 @@ export const Colors = {
     proteinTrack: '#2A3320',
     fat: '#F2B84B',
     fatTrack: '#3A3020',
+    toast: '#3A332E',
+    success: '#3FA36B',
   },
 } as const;
 

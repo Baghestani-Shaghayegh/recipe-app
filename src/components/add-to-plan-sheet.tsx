@@ -28,7 +28,8 @@ export function AddToPlanSheet({
   recipe: Recipe;
   visible: boolean;
   onClose: () => void;
-  onPlanned: (message: string) => void;
+  /** After planning: e.g. to say so, with a way to the Plan. */
+  onPlanned: (day: string, meal: Meal) => void;
 }) {
   const c = useTheme();
   const { plan, setMeal } = usePlan();
@@ -82,13 +83,7 @@ export function AddToPlanSheet({
                 disabled={same}
                 onPress={() => {
                   setMeal(day, meal, recipe.id);
-                  const when =
-                    day === dateKey(today)
-                      ? 'today'
-                      : days
-                          .find((d) => dateKey(d) === day)!
-                          .toLocaleDateString(undefined, { weekday: 'long' });
-                  close(() => onPlanned(`Planned for ${MEAL_LABELS[meal].toLowerCase()} ${when}.`));
+                  close(() => onPlanned(day, meal));
                 }}
                 accessibilityRole="button"
                 style={({ pressed }) => [

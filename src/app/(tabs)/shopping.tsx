@@ -2,9 +2,10 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import * as Clipboard from 'expo-clipboard';
 import { router } from 'expo-router';
 import { Tabs } from 'expo-router/js-tabs';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
+import { Toast } from '@/components/toast';
 import { Button, Chip, SectionTitle } from '@/components/ui';
 import { Features } from '@/constants/features';
 import { MaxContentWidth, Spacing, useTheme } from '@/constants/theme';
@@ -74,12 +75,6 @@ export default function ShoppingScreen() {
     items.filter((i) => isChecked(i.key)).length +
     extras.filter((e) => isChecked(extraKey(e.id))).length;
 
-  useEffect(() => {
-    if (!note) return;
-    const t = setTimeout(() => setNote(undefined), 2500);
-    return () => clearTimeout(t);
-  }, [note]);
-
   // Something already on the list isn't added a second time.
   const add = () => {
     if (!text.trim()) return;
@@ -131,137 +126,138 @@ export default function ShoppingScreen() {
   const nothingPlanned = !queue.length && !foodExtras.length && !ownExtras.length;
 
   return (
-    <ScrollView
-      style={{ backgroundColor: c.background }}
-      contentContainerStyle={styles.content}
-      keyboardShouldPersistTaps="handled">
-      <Tabs.Screen options={{ headerRight }} />
+    <View style={[styles.screen, { backgroundColor: c.background }]}>
+      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+        <Tabs.Screen options={{ headerRight }} />
 
-      <View style={styles.addRow}>
-        <TextInput
-          value={text}
-          onChangeText={setText}
-          onSubmitEditing={add}
-          submitBehavior="submit"
-          returnKeyType="done"
-          placeholder="Add an item, e.g. paper towels"
-          placeholderTextColor={c.textSecondary}
-          style={[styles.input, { color: c.text, backgroundColor: c.card, borderColor: c.border }]}
-        />
-        <Button label="Add" onPress={add} disabled={!text.trim()} />
-      </View>
-
-      {note ? <Text style={[styles.note, { color: c.textSecondary }]}>{note}</Text> : null}
-
-      {queue.length && !Features.makeNextTab ? (
-        <View style={styles.forRecipes}>
-          <Text style={[styles.note, { color: c.textSecondary }]}>Shopping for:</Text>
-          <View style={styles.chips}>
-            {queue.map((r) => (
-              <Chip
-                key={r.id}
-                label={`${r.title}  ✕`}
-                onPress={() => stopShopping(r.id)}
-                accessibilityLabel={`Stop shopping for ${r.title}`}
-              />
-            ))}
-          </View>
-        </View>
-      ) : queue.length ? (
-        <Pressable onPress={() => router.navigate('/next')} accessibilityRole="link">
-          <Text style={[styles.note, { color: c.textSecondary }]}>
-            For {queue.length} recipe{queue.length === 1 ? '' : 's'} from Make next:{' '}
-            <Text style={{ color: c.accent }}>{queue.map((r) => r.title).join(', ')}</Text>
-            {pantry.length ? '. Things in your pantry are left out.' : '.'}
-          </Text>
-        </Pressable>
-      ) : null}
-
-      {nothingPlanned ? (
-        <View style={styles.empty}>
-          <Text style={[styles.emptyTitle, { color: c.text }]}>Your list is empty</Text>
-          <Text style={[styles.emptyText, { color: c.textSecondary }]}>
-            {Features.mealPlan
-              ? 'Plan your meals and tap Review on the Plan tab, or tap “+ Shopping list” on a recipe. Everything it needs shows up here, minus what’s already in your pantry.'
-              : 'Tap “+ Shopping list” on a recipe and everything it needs shows up here, minus what’s already in your pantry.'}
-          </Text>
-          <Button
-            label="Find something to cook"
-            variant="secondary"
-            onPress={() => router.navigate(Features.cookTab ? '/cook' : '/')}
+        <View style={styles.addRow}>
+          <TextInput
+            value={text}
+            onChangeText={setText}
+            onSubmitEditing={add}
+            submitBehavior="submit"
+            returnKeyType="done"
+            placeholder="Add an item, e.g. paper towels"
+            placeholderTextColor={c.textSecondary}
+            style={[
+              styles.input,
+              { color: c.text, backgroundColor: c.card, borderColor: c.border },
+            ]}
           />
+          <Button label="Add" onPress={add} disabled={!text.trim()} />
         </View>
-      ) : null}
 
-      {queue.length && !items.length ? (
-        <Text style={[styles.emptyText, { color: c.textSecondary }]}>
-          You already have everything for these recipes.
-        </Text>
-      ) : null}
+        {queue.length && !Features.makeNextTab ? (
+          <View style={styles.forRecipes}>
+            <Text style={[styles.note, { color: c.textSecondary }]}>Shopping for:</Text>
+            <View style={styles.chips}>
+              {queue.map((r) => (
+                <Chip
+                  key={r.id}
+                  label={`${r.title}  ✕`}
+                  onPress={() => stopShopping(r.id)}
+                  accessibilityLabel={`Stop shopping for ${r.title}`}
+                />
+              ))}
+            </View>
+          </View>
+        ) : queue.length ? (
+          <Pressable onPress={() => router.navigate('/next')} accessibilityRole="link">
+            <Text style={[styles.note, { color: c.textSecondary }]}>
+              For {queue.length} recipe{queue.length === 1 ? '' : 's'} from Make next:{' '}
+              <Text style={{ color: c.accent }}>{queue.map((r) => r.title).join(', ')}</Text>
+              {pantry.length ? '. Things in your pantry are left out.' : '.'}
+            </Text>
+          </Pressable>
+        ) : null}
 
-      {STORE_SECTIONS.map((section) => {
-        const sectionItems = items.filter((i) => i.section === section);
-        const sectionExtras = foodExtras.filter((e) => e.section === section);
-        if (!sectionItems.length && !sectionExtras.length) return null;
-        return (
-          <View key={section} style={styles.section}>
-            <SectionTitle>{SECTION_LABELS[section]}</SectionTitle>
-            {sectionItems.map((item) => (
-              <ItemRow
-                key={item.key}
-                label={item.name}
-                detail={`for ${item.recipes.join(', ')}`}
-                checked={isChecked(item.key)}
-                onToggle={() => toggleChecked(item.key)}
-              />
-            ))}
-            {sectionExtras.map((e) => (
+        {nothingPlanned ? (
+          <View style={styles.empty}>
+            <Text style={[styles.emptyTitle, { color: c.text }]}>Your list is empty</Text>
+            <Text style={[styles.emptyText, { color: c.textSecondary }]}>
+              {Features.mealPlan
+                ? 'Plan your meals and tap Review on the Plan tab, or tap “+ Shopping list” on a recipe. Everything it needs shows up here, minus what’s already in your pantry.'
+                : 'Tap “+ Shopping list” on a recipe and everything it needs shows up here, minus what’s already in your pantry.'}
+            </Text>
+            <Button
+              label="Find something to cook"
+              variant="secondary"
+              onPress={() => router.navigate(Features.cookTab ? '/cook' : '/')}
+            />
+          </View>
+        ) : null}
+
+        {queue.length && !items.length ? (
+          <Text style={[styles.emptyText, { color: c.textSecondary }]}>
+            You already have everything for these recipes.
+          </Text>
+        ) : null}
+
+        {STORE_SECTIONS.map((section) => {
+          const sectionItems = items.filter((i) => i.section === section);
+          const sectionExtras = foodExtras.filter((e) => e.section === section);
+          if (!sectionItems.length && !sectionExtras.length) return null;
+          return (
+            <View key={section} style={styles.section}>
+              <SectionTitle>{SECTION_LABELS[section]}</SectionTitle>
+              {sectionItems.map((item) => (
+                <ItemRow
+                  key={item.key}
+                  label={item.name}
+                  detail={`for ${item.recipes.join(', ')}`}
+                  checked={isChecked(item.key)}
+                  onToggle={() => toggleChecked(item.key)}
+                />
+              ))}
+              {sectionExtras.map((e) => (
+                <ItemRow
+                  key={e.id}
+                  label={e.name}
+                  detail={e.recipes?.length ? `for ${e.recipes.join(', ')}` : undefined}
+                  checked={isChecked(extraKey(e.id))}
+                  onToggle={() => toggleChecked(extraKey(e.id))}
+                  onRemove={() => removeExtra(e.id)}
+                />
+              ))}
+            </View>
+          );
+        })}
+
+        {ownExtras.length ? (
+          <View style={styles.section}>
+            <SectionTitle>Added by you</SectionTitle>
+            {ownExtras.map((e) => (
               <ItemRow
                 key={e.id}
                 label={e.name}
-                detail={e.recipes?.length ? `for ${e.recipes.join(', ')}` : undefined}
                 checked={isChecked(extraKey(e.id))}
                 onToggle={() => toggleChecked(extraKey(e.id))}
                 onRemove={() => removeExtra(e.id)}
               />
             ))}
           </View>
-        );
-      })}
+        ) : null}
 
-      {ownExtras.length ? (
-        <View style={styles.section}>
-          <SectionTitle>Added by you</SectionTitle>
-          {ownExtras.map((e) => (
-            <ItemRow
-              key={e.id}
-              label={e.name}
-              checked={isChecked(extraKey(e.id))}
-              onToggle={() => toggleChecked(extraKey(e.id))}
-              onRemove={() => removeExtra(e.id)}
+        {tickedCount ? (
+          <View style={styles.section}>
+            <Button
+              label={
+                tickedFood.length
+                  ? `Done: put ${tickedFood.length} ticked in pantry`
+                  : `Clear ${tickedCount} ticked`
+              }
+              onPress={finishShopping}
             />
-          ))}
-        </View>
-      ) : null}
-
-      {tickedCount ? (
-        <View style={styles.section}>
-          <Button
-            label={
-              tickedFood.length
-                ? `Done: put ${tickedFood.length} ticked in pantry`
-                : `Clear ${tickedCount} ticked`
-            }
-            onPress={finishShopping}
-          />
-          {tickedFood.length && tickedCount > tickedFood.length ? (
-            <Text style={[styles.note, { color: c.textSecondary }]}>
-              Ticked items you added yourself are just removed.
-            </Text>
-          ) : null}
-        </View>
-      ) : null}
-    </ScrollView>
+            {tickedFood.length && tickedCount > tickedFood.length ? (
+              <Text style={[styles.note, { color: c.textSecondary }]}>
+                Ticked items you added yourself are just removed.
+              </Text>
+            ) : null}
+          </View>
+        ) : null}
+      </ScrollView>
+      <Toast message={note} onHide={() => setNote(undefined)} />
+    </View>
   );
 }
 
@@ -322,6 +318,7 @@ function ItemRow({
 }
 
 const styles = StyleSheet.create({
+  screen: { flex: 1 },
   forRecipes: { gap: Spacing.two },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two },
   headerButton: { fontSize: 17, fontWeight: '600', paddingHorizontal: Spacing.four },

@@ -16,6 +16,7 @@ import {
 
 import { ActionSheet, type SheetAction } from '@/components/action-sheet';
 import { AddToPlanSheet } from '@/components/add-to-plan-sheet';
+import { Toast } from '@/components/toast';
 import { NutritionPanel } from '@/components/nutrition-panel';
 import { Button, Chip, confirm, SectionTitle } from '@/components/ui';
 import { Features } from '@/constants/features';
@@ -192,226 +193,232 @@ export default function RecipeDetailScreen() {
   const canCook = Features.cookingMode && recipe.steps.length > 0;
 
   return (
-    <ScrollView style={{ backgroundColor: c.background }} contentContainerStyle={styles.content}>
-      <Stack.Screen options={{ title: recipe.title, headerRight: headerButtons }} />
-      <ActionSheet visible={menuOpen} actions={menuActions} onClose={() => setMenuOpen(false)} />
-      {Features.mealPlan ? (
-        <AddToPlanSheet
-          recipe={recipe}
-          visible={planning}
-          onClose={() => setPlanning(false)}
-          onPlanned={setShareNote}
-        />
-      ) : null}
-
-      {recipe.photoUri ? (
-        <Image source={{ uri: recipe.photoUri }} style={styles.photo} contentFit="cover" />
-      ) : null}
-
-      <View style={styles.block}>
-        <Text style={[styles.title, { color: c.text }]}>{recipe.title}</Text>
-        {recipe.category || recipe.tags.length ? (
-          <Text style={[styles.meta, { color: c.textSecondary }]}>
-            {[recipe.category, ...recipe.tags.map((t) => `#${t}`)].filter(Boolean).join('  ·  ')}
-          </Text>
+    <View style={[styles.screen, { backgroundColor: c.background }]}>
+      <ScrollView contentContainerStyle={styles.content}>
+        <Stack.Screen options={{ title: recipe.title, headerRight: headerButtons }} />
+        <ActionSheet visible={menuOpen} actions={menuActions} onClose={() => setMenuOpen(false)} />
+        {Features.mealPlan ? (
+          <AddToPlanSheet
+            recipe={recipe}
+            visible={planning}
+            onClose={() => setPlanning(false)}
+            onPlanned={setShareNote}
+          />
         ) : null}
-      </View>
 
-      {Features.favoritesAndRatings ? (
-        <View style={styles.ratingRow}>
-          <Pressable
-            onPress={() => patchRecipe(recipe.id, { favorite: !recipe.favorite })}
-            hitSlop={8}
-            accessibilityRole="button"
-            accessibilityState={{ selected: !!recipe.favorite }}
-            accessibilityLabel={recipe.favorite ? 'Remove from favorites' : 'Add to favorites'}>
-            <Text style={[styles.heart, { color: recipe.favorite ? c.accent : c.textSecondary }]}>
-              {recipe.favorite ? '♥' : '♡'}
-            </Text>
-          </Pressable>
-          <View style={styles.stars}>
-            {Array.from({ length: MAX_RATING }, (_, i) => i + 1).map((n) => (
-              <Pressable
-                key={n}
-                onPress={() => patchRecipe(recipe.id, { rating: nextRating(recipe.rating, n) })}
-                hitSlop={4}
-                accessibilityRole="button"
-                accessibilityLabel={`Rate ${n} of ${MAX_RATING}`}>
-                <Text
-                  style={[
-                    styles.star,
-                    { color: n <= (recipe.rating ?? 0) ? c.accent : c.textSecondary },
-                  ]}>
-                  {n <= (recipe.rating ?? 0) ? '★' : '☆'}
-                </Text>
-              </Pressable>
-            ))}
-          </View>
-        </View>
-      ) : null}
-
-      {facts.length ? (
-        <View style={[styles.facts, { backgroundColor: c.card, borderColor: c.border }]}>
-          {facts.map(([label, value]) => (
-            <View key={label} style={styles.fact}>
-              <Text style={[styles.factLabel, { color: c.textSecondary }]}>{label}</Text>
-              <Text style={[styles.factValue, { color: c.text }]}>{value}</Text>
-            </View>
-          ))}
-        </View>
-      ) : null}
-
-      <View style={styles.block}>
-        <View style={styles.buttons}>
-          {canCook ? (
-            <View style={styles.flex}>
-              <Button
-                label="Start cooking"
-                onPress={() =>
-                  router.push({
-                    pathname: '/recipe/cook',
-                    params: {
-                      id: recipe.id,
-                      ...(servings !== undefined && { servings: String(servings) }),
-                      units,
-                    },
-                  })
-                }
-              />
-            </View>
-          ) : null}
-          <View style={styles.flex}>
-            <Button
-              label={listLabel}
-              variant={canCook || inMakeNext ? 'secondary' : 'primary'}
-              onPress={() => toggleMakeNext(recipe.id)}
-            />
-          </View>
-        </View>
-        {shareNote ? (
-          <Text style={[styles.meta, { color: c.textSecondary }]}>{shareNote}</Text>
+        {recipe.photoUri ? (
+          <Image source={{ uri: recipe.photoUri }} style={styles.photo} contentFit="cover" />
         ) : null}
-        {timesCooked.length ? (
-          <Text style={[styles.meta, { color: c.textSecondary }]}>
-            Cooked {timesCooked.length === 1 ? 'once' : `${timesCooked.length} times`} · last on{' '}
-            {lastCooked}
-          </Text>
-        ) : null}
-      </View>
 
-      {recipe.ingredients.length ? (
         <View style={styles.block}>
-          <SectionTitle>Ingredients</SectionTitle>
-          {counted.length ? (
+          <Text style={[styles.title, { color: c.text }]}>{recipe.title}</Text>
+          {recipe.category || recipe.tags.length ? (
             <Text style={[styles.meta, { color: c.textSecondary }]}>
-              You have {haveCount} of {counted.length} in your pantry
+              {[recipe.category, ...recipe.tags.map((t) => `#${t}`)].filter(Boolean).join('  ·  ')}
             </Text>
           ) : null}
-          {Features.unitSwitch ? (
-            <View style={styles.unitRow}>
-              {UNIT_SYSTEMS.map((u) => (
-                <Chip
-                  key={u.id}
-                  label={u.label}
-                  selected={units === u.id}
-                  onPress={() => setUnits(u.id)}
-                />
+        </View>
+
+        {Features.favoritesAndRatings ? (
+          <View style={styles.ratingRow}>
+            <Pressable
+              onPress={() => patchRecipe(recipe.id, { favorite: !recipe.favorite })}
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityState={{ selected: !!recipe.favorite }}
+              accessibilityLabel={recipe.favorite ? 'Remove from favorites' : 'Add to favorites'}>
+              <Text style={[styles.heart, { color: recipe.favorite ? c.accent : c.textSecondary }]}>
+                {recipe.favorite ? '♥' : '♡'}
+              </Text>
+            </Pressable>
+            <View style={styles.stars}>
+              {Array.from({ length: MAX_RATING }, (_, i) => i + 1).map((n) => (
+                <Pressable
+                  key={n}
+                  onPress={() => patchRecipe(recipe.id, { rating: nextRating(recipe.rating, n) })}
+                  hitSlop={4}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Rate ${n} of ${MAX_RATING}`}>
+                  <Text
+                    style={[
+                      styles.star,
+                      { color: n <= (recipe.rating ?? 0) ? c.accent : c.textSecondary },
+                    ]}>
+                    {n <= (recipe.rating ?? 0) ? '★' : '☆'}
+                  </Text>
+                </Pressable>
               ))}
             </View>
-          ) : null}
-          {Features.scaleServings && baseServings !== undefined && servings !== undefined ? (
-            <View style={styles.stepper}>
-              <Text style={[styles.meta, { color: c.textSecondary }]}>Servings</Text>
-              <Pressable
-                onPress={() => setChosenServings(Math.max(MIN_SERVINGS, servings - 1))}
-                disabled={servings <= MIN_SERVINGS}
-                hitSlop={8}
-                accessibilityRole="button"
-                accessibilityLabel="Fewer servings"
-                style={[styles.stepButton, { borderColor: c.border, backgroundColor: c.card }]}>
-                <Text style={[styles.stepButtonText, { color: c.text }]}>−</Text>
-              </Pressable>
-              <Text style={[styles.servings, { color: c.text }]} accessibilityLiveRegion="polite">
-                {servings}
-              </Text>
-              <Pressable
-                onPress={() => setChosenServings(Math.min(MAX_SERVINGS, servings + 1))}
-                disabled={servings >= MAX_SERVINGS}
-                hitSlop={8}
-                accessibilityRole="button"
-                accessibilityLabel="More servings"
-                style={[styles.stepButton, { borderColor: c.border, backgroundColor: c.card }]}>
-                <Text style={[styles.stepButtonText, { color: c.text }]}>+</Text>
-              </Pressable>
-              {servings !== baseServings ? (
-                <Pressable onPress={() => setChosenServings(undefined)} hitSlop={8}>
-                  <Text style={[styles.meta, { color: c.accent }]}>Reset to {baseServings}</Text>
-                </Pressable>
-              ) : null}
-            </View>
-          ) : null}
-          {recipe.ingredients.map((ing, i) => {
-            const status = ingredientStatus(ing.name);
-            return (
-              <View key={i} style={styles.row}>
-                <Text
-                  style={[styles.bullet, { color: status === 'have' ? c.accent : c.textSecondary }]}
-                  accessibilityLabel={
-                    status === 'have' ? 'In pantry' : status === 'missing' ? 'Missing' : undefined
-                  }>
-                  {status === 'have' ? '✓' : status === 'missing' ? '○' : '•'}
-                </Text>
-                <View style={styles.flex}>
-                  <Text style={[styles.body, { color: c.text }]}>
-                    {scaleIngredientText(ing, factor, units)}
-                  </Text>
-                  {Features.substitutions && status === 'missing' && findSubstitutions(ing.name) ? (
-                    <Text style={[styles.swap, { color: c.textSecondary }]}>
-                      No {ing.name.split(',')[0]}? Try: {findSubstitutions(ing.name)!.join('; ')}
-                    </Text>
-                  ) : null}
-                </View>
+          </View>
+        ) : null}
+
+        {facts.length ? (
+          <View style={[styles.facts, { backgroundColor: c.card, borderColor: c.border }]}>
+            {facts.map(([label, value]) => (
+              <View key={label} style={styles.fact}>
+                <Text style={[styles.factLabel, { color: c.textSecondary }]}>{label}</Text>
+                <Text style={[styles.factValue, { color: c.text }]}>{value}</Text>
               </View>
-            );
-          })}
-        </View>
-      ) : null}
+            ))}
+          </View>
+        ) : null}
 
-      {Features.nutrition ? <NutritionPanel recipe={recipe} /> : null}
-
-      {recipe.steps.length ? (
         <View style={styles.block}>
-          <SectionTitle>Steps</SectionTitle>
-          {recipe.steps.map((step, i) => (
-            <View key={i} style={styles.row}>
-              <Text style={[styles.stepNumber, { color: c.accent }]}>{i + 1}</Text>
-              <Text style={[styles.body, { color: c.text }]}>
-                {convertTemperatures(step, units)}
-              </Text>
+          <View style={styles.buttons}>
+            {canCook ? (
+              <View style={styles.flex}>
+                <Button
+                  label="Start cooking"
+                  onPress={() =>
+                    router.push({
+                      pathname: '/recipe/cook',
+                      params: {
+                        id: recipe.id,
+                        ...(servings !== undefined && { servings: String(servings) }),
+                        units,
+                      },
+                    })
+                  }
+                />
+              </View>
+            ) : null}
+            <View style={styles.flex}>
+              <Button
+                label={listLabel}
+                variant={canCook || inMakeNext ? 'secondary' : 'primary'}
+                onPress={() => toggleMakeNext(recipe.id)}
+              />
             </View>
-          ))}
+          </View>
+          {timesCooked.length ? (
+            <Text style={[styles.meta, { color: c.textSecondary }]}>
+              Cooked {timesCooked.length === 1 ? 'once' : `${timesCooked.length} times`} · last on{' '}
+              {lastCooked}
+            </Text>
+          ) : null}
         </View>
-      ) : null}
 
-      {recipe.notes ? (
-        <View style={styles.block}>
-          <SectionTitle>Notes</SectionTitle>
-          <Text style={[styles.body, { color: c.text }]}>{recipe.notes}</Text>
-        </View>
-      ) : null}
+        {recipe.ingredients.length ? (
+          <View style={styles.block}>
+            <SectionTitle>Ingredients</SectionTitle>
+            {counted.length ? (
+              <Text style={[styles.meta, { color: c.textSecondary }]}>
+                You have {haveCount} of {counted.length} in your pantry
+              </Text>
+            ) : null}
+            {Features.unitSwitch ? (
+              <View style={styles.unitRow}>
+                {UNIT_SYSTEMS.map((u) => (
+                  <Chip
+                    key={u.id}
+                    label={u.label}
+                    selected={units === u.id}
+                    onPress={() => setUnits(u.id)}
+                  />
+                ))}
+              </View>
+            ) : null}
+            {Features.scaleServings && baseServings !== undefined && servings !== undefined ? (
+              <View style={styles.stepper}>
+                <Text style={[styles.meta, { color: c.textSecondary }]}>Servings</Text>
+                <Pressable
+                  onPress={() => setChosenServings(Math.max(MIN_SERVINGS, servings - 1))}
+                  disabled={servings <= MIN_SERVINGS}
+                  hitSlop={8}
+                  accessibilityRole="button"
+                  accessibilityLabel="Fewer servings"
+                  style={[styles.stepButton, { borderColor: c.border, backgroundColor: c.card }]}>
+                  <Text style={[styles.stepButtonText, { color: c.text }]}>−</Text>
+                </Pressable>
+                <Text style={[styles.servings, { color: c.text }]} accessibilityLiveRegion="polite">
+                  {servings}
+                </Text>
+                <Pressable
+                  onPress={() => setChosenServings(Math.min(MAX_SERVINGS, servings + 1))}
+                  disabled={servings >= MAX_SERVINGS}
+                  hitSlop={8}
+                  accessibilityRole="button"
+                  accessibilityLabel="More servings"
+                  style={[styles.stepButton, { borderColor: c.border, backgroundColor: c.card }]}>
+                  <Text style={[styles.stepButtonText, { color: c.text }]}>+</Text>
+                </Pressable>
+                {servings !== baseServings ? (
+                  <Pressable onPress={() => setChosenServings(undefined)} hitSlop={8}>
+                    <Text style={[styles.meta, { color: c.accent }]}>Reset to {baseServings}</Text>
+                  </Pressable>
+                ) : null}
+              </View>
+            ) : null}
+            {recipe.ingredients.map((ing, i) => {
+              const status = ingredientStatus(ing.name);
+              return (
+                <View key={i} style={styles.row}>
+                  <Text
+                    style={[
+                      styles.bullet,
+                      { color: status === 'have' ? c.accent : c.textSecondary },
+                    ]}
+                    accessibilityLabel={
+                      status === 'have' ? 'In pantry' : status === 'missing' ? 'Missing' : undefined
+                    }>
+                    {status === 'have' ? '✓' : status === 'missing' ? '○' : '•'}
+                  </Text>
+                  <View style={styles.flex}>
+                    <Text style={[styles.body, { color: c.text }]}>
+                      {scaleIngredientText(ing, factor, units)}
+                    </Text>
+                    {Features.substitutions &&
+                    status === 'missing' &&
+                    findSubstitutions(ing.name) ? (
+                      <Text style={[styles.swap, { color: c.textSecondary }]}>
+                        No {ing.name.split(',')[0]}? Try: {findSubstitutions(ing.name)!.join('; ')}
+                      </Text>
+                    ) : null}
+                  </View>
+                </View>
+              );
+            })}
+          </View>
+        ) : null}
 
-      {recipe.sourceUrl ? (
-        <Pressable onPress={() => Linking.openURL(recipe.sourceUrl!)} accessibilityRole="link">
-          <Text style={[styles.link, { color: c.accent }]} numberOfLines={1}>
-            Source: {recipe.sourceUrl}
-          </Text>
-        </Pressable>
-      ) : null}
-    </ScrollView>
+        {Features.nutrition ? <NutritionPanel recipe={recipe} /> : null}
+
+        {recipe.steps.length ? (
+          <View style={styles.block}>
+            <SectionTitle>Steps</SectionTitle>
+            {recipe.steps.map((step, i) => (
+              <View key={i} style={styles.row}>
+                <Text style={[styles.stepNumber, { color: c.accent }]}>{i + 1}</Text>
+                <Text style={[styles.body, { color: c.text }]}>
+                  {convertTemperatures(step, units)}
+                </Text>
+              </View>
+            ))}
+          </View>
+        ) : null}
+
+        {recipe.notes ? (
+          <View style={styles.block}>
+            <SectionTitle>Notes</SectionTitle>
+            <Text style={[styles.body, { color: c.text }]}>{recipe.notes}</Text>
+          </View>
+        ) : null}
+
+        {recipe.sourceUrl ? (
+          <Pressable onPress={() => Linking.openURL(recipe.sourceUrl!)} accessibilityRole="link">
+            <Text style={[styles.link, { color: c.accent }]} numberOfLines={1}>
+              Source: {recipe.sourceUrl}
+            </Text>
+          </Pressable>
+        ) : null}
+      </ScrollView>
+      <Toast message={shareNote} onHide={() => setShareNote(undefined)} />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  screen: { flex: 1 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   headerRow: {
     flexDirection: 'row',

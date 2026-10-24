@@ -77,25 +77,6 @@ export function RecipeBrowser({ pick }: { pick?: RecipePick }) {
       ),
     };
   }, [recipes, query, category, maxMinutes, tags, favoritesOnly, diets, matchPantry, pantry]);
-  const hasFilters =
-    !!query ||
-    !!category ||
-    maxMinutes !== undefined ||
-    tags.length > 0 ||
-    favoritesOnly ||
-    diets.length > 0 ||
-    matchPantry;
-
-  const clearFilters = () => {
-    setQuery('');
-    setCategory(undefined);
-    setMaxMinutes(undefined);
-    setTags([]);
-    setFavoritesOnly(false);
-    setDiets([]);
-    setMatchPantry(false);
-  };
-
   const filterGroups: FilterGroup[] = [
     categoryGroup(category, setCategory),
     timeGroup(maxMinutes, setMaxMinutes),
@@ -182,13 +163,6 @@ export function RecipeBrowser({ pick }: { pick?: RecipePick }) {
           <Text style={[styles.emptyText, { color: c.text }]}>Your pantry is empty.</Text>
           <Button label="Fill my pantry" onPress={() => router.push('/pantry')} />
         </View>
-      ) : null}
-      {hasFilters ? (
-        <Pressable onPress={clearFilters} accessibilityRole="button">
-          <Text style={[styles.clear, { color: c.accent }]}>
-            Clear filters · {visible.length} of {recipes.length}
-          </Text>
-        </Pressable>
       ) : null}
     </View>
   );
@@ -341,7 +315,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   footerLink: { fontSize: 14, textAlign: 'center', paddingVertical: Spacing.four },
-  clear: { fontSize: 14, fontWeight: '600' },
   empty: { alignItems: 'center', gap: Spacing.three, paddingVertical: Spacing.six },
   emptyTitle: { fontSize: 20, fontWeight: '700' },
   emptyText: { fontSize: 15, textAlign: 'center' },

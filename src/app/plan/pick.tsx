@@ -123,7 +123,7 @@ export default function PickMealScreen() {
                         numberOfLines={1}>
                         {old
                           ? 'Too old to eat'
-                          : `${batchUse(batch).left} left · until ${weekday(goodUntil(batch))}`}
+                          : `${batchUse(batch).left} left · eat by ${weekday(goodUntil(batch))}`}
                       </Text>
                     </Pressable>
                   );

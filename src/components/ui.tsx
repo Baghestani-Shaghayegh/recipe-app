@@ -1,5 +1,5 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { useRef } from 'react';
+import { useContext, useEffect, useRef, useState } from 'react';
 import {
   Alert,
   Platform,
@@ -11,6 +11,7 @@ import {
   type TextInputProps,
 } from 'react-native';
 
+import { SheetKeyboard } from '@/components/bottom-sheet';
 import { Spacing, useTheme } from '@/constants/theme';
 
 export function Chip({
@@ -81,9 +82,27 @@ export function Field({
 }: TextInputProps & { label: string; hint?: string }) {
   const c = useTheme();
   const input = useRef<React.ComponentRef<typeof TextInput>>(null);
-  // One-line boxes with something in them get a ✕ that empties them.
+  const [focused, setFocused] = useState(false);
+  // Leaving the box hides the ✕ a moment later, so a tap on the ✕ itself (which can take the
+  // focus first) still lands on it.
+  const blurTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  useEffect(() => () => clearTimeout(blurTimer.current), []);
+  // While typing in a one-line box with something in it: a ✕ that empties it.
   const clearable =
-    !props.multiline && props.editable !== false && !!props.value && !!props.onChangeText;
+    focused &&
+    !props.multiline &&
+    props.editable !== false &&
+    !!props.value &&
+    !!props.onChangeText;
+  // A number box in a sheet on iPhone gets a Done bar on the keyboard (see SheetKeyboard).
+  const sheet = useContext(SheetKeyboard);
+  const numeric = /number-pad|decimal-pad|numeric|phone-pad/.test(props.keyboardType ?? '');
+  const wantDone = Platform.OS === 'ios' && numeric && focused;
+  useEffect(() => {
+    if (!sheet || !wantDone) return;
+    sheet.wantDone(true);
+    return () => sheet.wantDone(false);
+  }, [sheet, wantDone]);
   return (
     <View style={styles.field}>
       <Text style={[styles.label, { color: c.text }]}>{label}</Text>
@@ -100,6 +119,15 @@ export function Field({
             style,
           ]}
           {...props}
+          onFocus={(e) => {
+            clearTimeout(blurTimer.current);
+            setFocused(true);
+            props.onFocus?.(e);
+          }}
+          onBlur={(e) => {
+            blurTimer.current = setTimeout(() => setFocused(false), 250);
+            props.onBlur?.(e);
+          }}
         />
         {clearable ? (
           <Pressable

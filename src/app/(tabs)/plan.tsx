@@ -110,7 +110,9 @@ export default function PlanScreen() {
 
   return (
     <View style={[styles.screen, { backgroundColor: c.background }]}>
-      <ScrollView contentContainerStyle={styles.content}>
+      {/* "handled": with the Daily goals keyboard up, a tap on its ✕ or Save reaches them,
+          instead of only closing the keyboard (sheets are inside this list in React). */}
+      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <View style={styles.weekBar}>
           <Pressable
             onPress={() => goToWeek(weekOffset - 1)}

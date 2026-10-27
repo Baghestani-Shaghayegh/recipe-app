@@ -35,13 +35,10 @@ export function Bowls({
   title,
   servings,
   used,
-  empty,
 }: {
   title: string;
   servings: number;
   used: number;
-  /** Every bowl empty (the batch is finished). */
-  empty?: boolean;
 }) {
   const c = useTheme();
   const left = servings - used;
@@ -53,16 +50,16 @@ export function Bowls({
         <Text style={[styles.bowlTitle, { color: c.text }]} numberOfLines={1}>
           {title}
         </Text>
-        {empty ? null : (
+        {
           <View style={[styles.pill, { backgroundColor: short ? c.danger : c.prep }]}>
             <Text style={styles.pillText}>{short ? `${-left} short` : `${left} left`}</Text>
           </View>
-        )}
+        }
       </View>
       <View style={styles.bowls}>
         {Array.from({ length: count }, (_, i) => {
-          const eaten = !empty && i < Math.min(used, servings);
-          const over = !empty && i >= servings;
+          const eaten = i < Math.min(used, servings);
+          const over = i >= servings;
           return (
             // Eight to a row: each bowl takes an eighth of the width, with its gap inside.
             <View key={i} style={styles.bowlSlot}>
@@ -437,18 +434,62 @@ export function FinishedSheet({
 }) {
   const c = useTheme();
   const { finishBatch } = usePlan();
-  const freed = batch.eats
-    .filter((e) => e.day >= today)
-    .map((e) => `${weekday(e.day)} ${MEAL_LABELS[e.meal].toLowerCase()}`);
+  // Its leftover meals from today on get cleared; shown on the batch's days from today.
+  const freed = new Set(
+    batch.eats.filter((e) => e.day >= today).map((e) => slotKey(e.day, e.meal)),
+  );
+  const days = Array.from({ length: BATCH_DAYS }, (_, i) =>
+    dateKey(addDays(fromDateKey(batch.cookDay), i)),
+  ).filter((d) => d >= today);
   return (
     <BottomSheet visible title={`${recipe.title} is finished?`} onClose={onClose}>
       {(close) => (
         <View style={styles.sheet}>
-          <Bowls title={recipe.title} servings={batch.servings} used={0} empty />
-          {freed.length ? (
-            <Text style={[styles.freed, { color: c.textSecondary }]}>
-              Frees up {freed.join(', ')}
-            </Text>
+          {freed.size ? (
+            <>
+              <Text style={[styles.freed, { color: c.text }]}>
+                Frees up {freed.size} meal{freed.size === 1 ? '' : 's'}
+              </Text>
+              <View style={styles.grid}>
+                <View style={styles.gridRow}>
+                  <View style={styles.rowLabel} />
+                  {days.map((d) => (
+                    <Text key={d} style={[styles.colLabel, { color: c.textSecondary }]}>
+                      {weekday(d)}
+                    </Text>
+                  ))}
+                </View>
+                {MEALS.map((m) => (
+                  <View key={m} style={styles.gridRow}>
+                    <Text style={[styles.rowLabel, { color: c.textSecondary }]} numberOfLines={1}>
+                      {MEAL_LABELS[m]}
+                    </Text>
+                    {days.map((d) => {
+                      const cooking = d === batch.cookDay && m === batch.cookMeal;
+                      const clears = freed.has(slotKey(d, m));
+                      return (
+                        <View
+                          key={d}
+                          accessibilityLabel={
+                            clears ? `${weekday(d)} ${MEAL_LABELS[m]}: freed up` : undefined
+                          }
+                          style={[
+                            styles.cell,
+                            styles.smallCell,
+                            clears
+                              ? { backgroundColor: c.dangerSoft, borderColor: c.danger }
+                              : cooking
+                                ? { backgroundColor: c.prepSoft, borderColor: c.prep }
+                                : { borderColor: c.border },
+                          ]}>
+                          {cooking ? <Text style={styles.smallIcon}>🥡</Text> : null}
+                        </View>
+                      );
+                    })}
+                  </View>
+                ))}
+              </View>
+            </>
           ) : null}
           <Pressable
             onPress={() => {
@@ -542,7 +583,9 @@ const styles = StyleSheet.create({
   },
   cookIcon: { fontSize: 15 },
   unavailable: { opacity: 0.45 },
-  freed: { fontSize: 14, textAlign: 'center' },
+  freed: { fontSize: 16, fontWeight: '600', textAlign: 'center' },
+  smallCell: { height: 26, borderRadius: 7 },
+  smallIcon: { fontSize: 12 },
   cta: { borderRadius: 16, paddingVertical: 16, alignItems: 'center' },
   ctaText: { fontSize: 16, fontWeight: '700' },
   ghost: { paddingVertical: 12, alignItems: 'center' },

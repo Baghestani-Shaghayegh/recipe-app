@@ -54,7 +54,7 @@ export default function PickMealScreen() {
     if (pastGood(batch, day)) {
       const ok = await confirm(
         'Too old to eat',
-        `${recipe.title} keeps until ${weekday(goodUntil(batch))}. Plan it for ${weekday(day)} anyway?`,
+        `${recipe.title} should be eaten by ${weekday(goodUntil(batch))}. Plan it for ${weekday(day)} anyway?`,
         'Plan anyway',
       );
       if (!ok) return;
@@ -143,7 +143,11 @@ export default function PickMealScreen() {
                   },
                 ]}>
                 {recipe.photoUri ? (
-                  <Image source={{ uri: recipe.photoUri }} style={styles.thumb} contentFit="cover" />
+                  <Image
+                    source={{ uri: recipe.photoUri }}
+                    style={styles.thumb}
+                    contentFit="cover"
+                  />
                 ) : (
                   <View style={[styles.thumb, styles.center, { backgroundColor: c.prepSoft }]}>
                     <Text style={styles.icon}>🍲</Text>
@@ -172,9 +176,7 @@ export default function PickMealScreen() {
                     ))}
                   </View>
                   <Text style={[styles.left, { color: old ? c.danger : c.prep }]} numberOfLines={1}>
-                    {old
-                      ? 'Too old to eat'
-                      : `${left} left · eat by ${weekday(goodUntil(batch))}`}
+                    {old ? 'Too old to eat' : `${left} left · eat by ${weekday(goodUntil(batch))}`}
                   </Text>
                 </View>
               </Pressable>

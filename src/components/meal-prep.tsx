@@ -93,12 +93,15 @@ function Stepper({
   value,
   min,
   max = MAX_SERVINGS,
+  unit,
   onChange,
 }: {
   label: string;
   value: number;
   min: number;
   max?: number;
+  /** Shown after the number, e.g. "days" for "3 days". */
+  unit?: [one: string, many: string];
   onChange: (n: number) => void;
 }) {
   const c = useTheme();
@@ -115,7 +118,10 @@ function Stepper({
           style={[styles.stepButton, { backgroundColor: c.chip, opacity: value <= min ? 0.4 : 1 }]}>
           <Ionicons name="remove" size={20} color={c.accent} />
         </Pressable>
-        <Text style={[styles.stepValue, { color: c.text }]}>{value}</Text>
+        <Text style={[styles.stepValue, { color: c.text }]}>
+          {value}
+          {unit ? ` ${value === 1 ? unit[0] : unit[1]}` : ''}
+        </Text>
         <Pressable
           onPress={() => step(1)}
           disabled={value >= max}
@@ -160,6 +166,8 @@ export function MealPrepSheet({
   );
   // Days after cooking it keeps in the fridge: food-safety advice by default (see keepDaysFor).
   const [keepDays, setKeepDays] = useState(batch?.keepDays ?? keepDaysFor(recipe));
+  // The app works out the day; Change is there for what only the cook knows (e.g. it sat out).
+  const [changingKeep, setChangingKeep] = useState(false);
   const until = goodUntil({ cookDay: day, keepDays });
   const [eats, setEats] = useState<string[]>(() =>
     (batch?.eats ?? []).map((e) => slotKey(e.day, e.meal)),
@@ -184,7 +192,7 @@ export function MealPrepSheet({
     if (d > until) {
       const ok = await confirm(
         'Too old to eat',
-        `${recipe.title} keeps until ${weekday(until)}. Plan it for ${weekday(d)} anyway?`,
+        `${recipe.title} should be eaten by ${weekday(until)}. Plan it for ${weekday(d)} anyway?`,
         'Plan anyway',
       );
       if (!ok) return;
@@ -227,13 +235,28 @@ export function MealPrepSheet({
               max={Math.max(1, Math.floor(servings / meals))}
               onChange={setPeople}
             />
-            <Stepper
-              label={`Keeps until ${weekday(until)}`}
-              value={keepDays}
-              min={0}
-              max={BATCH_DAYS - 1}
-              onChange={setKeepDays}
-            />
+            {changingKeep ? (
+              <Stepper
+                label={`Eat by ${weekday(until)}`}
+                value={keepDays}
+                min={0}
+                max={BATCH_DAYS - 1}
+                unit={['day', 'days']}
+                onChange={setKeepDays}
+              />
+            ) : (
+              <View style={[styles.stepper, { borderBottomColor: c.border }]}>
+                <Text style={[styles.stepLabel, { color: c.text }]}>Eat by {weekday(until)}</Text>
+                <Pressable
+                  onPress={() => setChangingKeep(true)}
+                  hitSlop={10}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Change: eat by ${weekday(until)}`}
+                  style={styles.keepChange}>
+                  <Text style={[styles.keepChangeText, { color: c.accent }]}>Change</Text>
+                </Pressable>
+              </View>
+            )}
           </View>
 
           <Text style={[styles.gridTitle, { color: c.textSecondary }]}>EAT IT ON</Text>
@@ -417,6 +440,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   stepValue: { fontSize: 18, fontWeight: '700', minWidth: 24, textAlign: 'center' },
+  // As tall as the − and + buttons, so the row doesn't jump when Change opens them.
+  keepChange: { height: 36, justifyContent: 'center' },
+  keepChangeText: { fontSize: 16, fontWeight: '600' },
   gridTitle: { fontSize: 12, fontWeight: '700', letterSpacing: 0.5, marginTop: Spacing.one },
   grid: { gap: 4 },
   gridRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },

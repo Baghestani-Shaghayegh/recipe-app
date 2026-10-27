@@ -247,18 +247,28 @@ export function afterMealChange(
 /** How many days after cooking the meal prep grid and leftovers reach. */
 export const BATCH_DAYS = 7;
 
+const RICE = new RegExp(
+  [
+    // "rice", unless it's a rice product that isn't cooked rice.
+    String.raw`\brice\b(?!\s*(?:vinegar|noodles?|vermicelli|paper|flour|wine|cakes?|crackers?|milk|syrup|bran|sticks?)\b)`,
+    String.raw`\b(?:basmati|arborio|carnaroli|biryani|biriyani|pilaf|pilau|pulao|polo|chelo|chelow|tahdig|risotto|paella|sushi|onigiri|congee|jambalaya|arancini|kedgeree|jollof|bibimbap|nasi)\b`,
+  ].join('|'),
+);
+
 /**
  * How long cooked food keeps in the fridge (at 4 °C or below, cooled and covered within two
- * hours), in days after the cooking day. Most leftovers: 3–4 days (USDA/FSIS), so 3. Cooked
- * rice: within a day (UK NHS/FSA), so 1. People can change it for each batch.
+ * hours), in days after the cooking day, from official food-safety advice:
+ * - cooked rice: eat within a day (UK NHS / Food Standards Agency: rice can carry Bacillus
+ *   cereus spores that survive cooking), so 1;
+ * - other cooked leftovers (meat, chicken, fish, soups, stews, eggs, pasta, vegetables):
+ *   3–4 days (USDA / FSIS), so 3, the safer end.
+ * Rice is found by name in the title or ingredients (rice, basmati, arborio…) or by dish
+ * (biryani, polo, risotto, paella, sushi…), but not rice vinegar, rice noodles, rice paper,
+ * rice flour or rice wine, which aren't cooked rice. People can still change it for a batch.
  */
 export function keepDaysFor(recipe: { title: string; ingredients: { name: string }[] }): number {
-  const words = [recipe.title, ...recipe.ingredients.map((i) => i.name)].join(' ').toLowerCase();
-  return /\brice\b|\bbiryani\b|\bpilaf\b|\bpilau\b|\bpolo\b|\brisotto\b|\bpaella\b|\bsushi\b/.test(
-    words,
-  )
-    ? 1
-    : 3;
+  const words = [recipe.title, ...recipe.ingredients.map((i) => i.name)].join(' \n ').toLowerCase();
+  return RICE.test(words) ? 1 : 3;
 }
 
 /** The last day a batch is good for. */

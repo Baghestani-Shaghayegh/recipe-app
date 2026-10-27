@@ -178,17 +178,19 @@ Code: `src/lib/supabase.ts` (small client over Supabase's REST API, no extra pac
 - **Meal prep:** the *Meal prep* strip along the bottom of a planned meal (on a batch it shows
   *Cook 8 servings · 2 left*). Choose how many servings to cook, how many people eat, and which
   breakfasts, lunches and dinners of the next 7 days eat the leftovers.
-- **How long it keeps** follows food-safety advice for food cooled and kept in the fridge (4 °C or
-  below): most cooked leftovers 3 days after the cooking day (USDA/FSIS say 3–4), dishes with
-  rice 1 day (the UK NHS/FSA say eat cooked rice within a day). *Keeps until …* in the meal prep
-  setup changes it for that batch. These are general guidelines; how food was cooled and stored
-  matters too.
+- **How long it keeps** is worked out by the app from fixed food-safety rules, for food cooled
+  and kept in the fridge (4 °C or below): dishes with cooked rice 1 day after the cooking day
+  (the UK NHS/FSA say eat cooked rice within a day), everything else 3 days (USDA/FSIS say
+  3–4). Rice is found by name (rice, basmati, arborio…) or dish (biryani, polo, risotto,
+  paella, sushi…), but not rice noodles, vinegar, paper, flour or wine. The meal prep setup
+  shows *Eat by Tue*; *Change* next to it opens − / + for what only the cook knows (e.g. it
+  sat out). These are general guidelines; how food was cooled and stored matters too.
 - *Add meal* opens on an *In your fridge* tab (next to *Recipes*) when there are leftovers to eat:
   one card per batch with the day it was cooked, its servings and "4 left · eat by Tue" (red
   "Too old to eat" after). Two batches of the same dish say which day each was cooked, and the
   one to eat first is listed first.
-- Planning leftovers after the good-until day is allowed but asks first ("Lentil Soup keeps until
-  Mon. Plan it for Tue anyway?"); those squares in the grid have a red dashed border.
+- Planning leftovers after the good-until day is allowed but asks first ("Lentil Soup should be
+  eaten by Mon. Plan it for Tue anyway?"); those squares in the grid have a red dashed border.
   Bowls show the servings: full ones are planned, empty ones are left. You can only pick as many
   meals as the servings cover. The cooking meal gets a *Meal prep* label and opens at the batch size, so
   cooking mode has the right amounts; leftover meals say *Leftovers · From Sunday* and add

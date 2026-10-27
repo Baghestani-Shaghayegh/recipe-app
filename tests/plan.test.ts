@@ -212,6 +212,25 @@ test('how long a batch keeps follows food safety advice', () => {
   assert.equal(keepDaysFor(dish('Lentil Soup', 'red lentils', 'onion')), 3);
   assert.equal(keepDaysFor(dish('Chicken Curry', 'chicken', 'basmati rice')), 1);
   assert.equal(keepDaysFor(dish('Zereshk Polo')), 1);
+  // Cooked rice by dish or by kind of rice.
+  for (const title of [
+    'Chicken Biryani',
+    'Mushroom Risotto',
+    'Seafood Paella',
+    'Salmon Sushi',
+    'Jollof',
+    'Kedgeree',
+  ]) {
+    assert.equal(keepDaysFor(dish(title)), 1, title);
+  }
+  assert.equal(keepDaysFor(dish('Stuffed Peppers', 'arborio', 'peppers')), 1);
+  assert.equal(keepDaysFor(dish('Egg Fried Rice', 'eggs', 'cooked rice')), 1);
+  // Rice products that aren't cooked rice: the usual 3 days.
+  assert.equal(keepDaysFor(dish('Pad Thai', 'rice noodles', 'tofu', 'tamarind')), 3);
+  assert.equal(keepDaysFor(dish('Cucumber Salad', 'rice vinegar', 'cucumber')), 3);
+  assert.equal(keepDaysFor(dish('Summer Rolls', 'rice paper', 'prawns')), 3);
+  assert.equal(keepDaysFor(dish('Mochi', 'glutinous rice flour', 'sugar')), 3);
+  assert.equal(keepDaysFor(dish('Beef Stew', 'beef', 'carrots', 'red wine')), 3);
   assert.equal(goodUntil({ cookDay: '2026-10-23', keepDays: 1 }), '2026-10-24');
 });
 

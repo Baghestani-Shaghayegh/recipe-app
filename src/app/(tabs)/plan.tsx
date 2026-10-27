@@ -435,7 +435,8 @@ const styles = StyleSheet.create({
   emoji: { fontSize: 28 },
   cardText: { flex: 1, minWidth: 0, gap: 2 },
   meal: { fontSize: 12, fontWeight: '700', letterSpacing: 0.5, textTransform: 'uppercase' },
-  mealRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  // The Leftovers badge sits at the right end of the row, by the ⋯ button.
+  mealRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 6 },
   tag: { borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2 },
   tagText: { fontSize: 11, fontWeight: '700' },
   title: { fontSize: 16, fontWeight: '600' },

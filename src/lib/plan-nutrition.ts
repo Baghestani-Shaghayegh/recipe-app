@@ -5,8 +5,13 @@ import type { Recipe } from './recipe';
 /** Daily targets. Any can be left out. */
 export type Goals = { kcal?: number; protein?: number; fat?: number };
 
-/** Typical daily amounts, used for any goal that isn't set (fat is the usual daily value). */
-export const TYPICAL_GOALS: Required<Goals> = { kcal: 2000, protein: 100, fat: 78 };
+/**
+ * Used for any goal that isn't set: the US FDA Daily Values on nutrition labels (adults and
+ * children 4+, based on 2,000 calories a day): fat 78 g, protein 50 g. They're reference
+ * amounts, not personal advice; needs depend on age, size and activity (protein's RDA is
+ * 0.8 g per kg of body weight), which is why each can be changed.
+ */
+export const TYPICAL_GOALS: Required<Goals> = { kcal: 2000, protein: 50, fat: 78 };
 
 /** The goals with typical amounts filled in where none is set. */
 export function dailyGoals(goals: Goals): Required<Goals> {

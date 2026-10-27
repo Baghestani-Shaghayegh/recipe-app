@@ -53,5 +53,5 @@ test('parseGoal and goalProgress', () => {
 
 test('goals not set use typical daily amounts', () => {
   assert.deepEqual(dailyGoals({}), TYPICAL_GOALS);
-  assert.deepEqual(dailyGoals({ kcal: 1600, fat: 50 }), { kcal: 1600, protein: 100, fat: 50 });
+  assert.deepEqual(dailyGoals({ kcal: 1600, fat: 50 }), { kcal: 1600, protein: 50, fat: 50 });
 });

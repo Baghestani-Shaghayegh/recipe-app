@@ -1,4 +1,4 @@
-import { createContext, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Animated,
   Easing,
@@ -16,12 +16,6 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Spacing, useTheme } from '@/constants/theme';
-
-/**
- * Lets a number box in a sheet ask for a Done bar on top of the keyboard: the iPhone number
- * keyboard has no key that closes it.
- */
-export const SheetKeyboard = createContext<{ wantDone: (on: boolean) => void } | null>(null);
 
 /** Slides the sheet down, then runs `after` (e.g. opening another screen). */
 export type CloseSheet = (after?: () => void) => void;
@@ -57,8 +51,6 @@ export function BottomSheet({
   // makes room.
   const wrap = useRef<React.ComponentRef<typeof View>>(null);
   const [lift, setLift] = useState(0);
-  const [doneBar, setDoneBar] = useState(false);
-  const keyboard = useMemo(() => ({ wantDone: setDoneBar }), []);
 
   useEffect(() => {
     if (!visible) return;
@@ -160,19 +152,8 @@ export function BottomSheet({
             <View style={[styles.grab, { backgroundColor: c.border }]} />
           </View>
           {title ? <Text style={[styles.title, { color: c.text }]}>{title}</Text> : null}
-          <SheetKeyboard.Provider value={keyboard}>{children(slideOut)}</SheetKeyboard.Provider>
+          {children(slideOut)}
         </Animated.View>
-        {doneBar && lift > 0 ? (
-          <View style={[styles.doneBar, { backgroundColor: c.chip, borderTopColor: c.border }]}>
-            <Pressable
-              onPress={() => Keyboard.dismiss()}
-              hitSlop={10}
-              accessibilityRole="button"
-              accessibilityLabel="Done, close the keyboard">
-              <Text style={[styles.doneText, { color: c.accent }]}>Done</Text>
-            </Pressable>
-          </View>
-        ) : null}
       </View>
     </Modal>
   );
@@ -201,13 +182,4 @@ const styles = StyleSheet.create({
   },
   grab: { width: 40, height: 5, borderRadius: 3 },
   title: { fontSize: 19, fontWeight: '700', marginBottom: Spacing.one },
-  doneBar: {
-    width: '100%',
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    paddingVertical: 10,
-    paddingHorizontal: Spacing.four,
-    borderTopWidth: StyleSheet.hairlineWidth,
-  },
-  doneText: { fontSize: 17, fontWeight: '600' },
 });

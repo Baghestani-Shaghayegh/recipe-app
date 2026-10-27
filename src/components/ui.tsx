@@ -1,5 +1,5 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { useContext, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   Alert,
   Platform,
@@ -11,7 +11,6 @@ import {
   type TextInputProps,
 } from 'react-native';
 
-import { SheetKeyboard } from '@/components/bottom-sheet';
 import { Spacing, useTheme } from '@/constants/theme';
 
 export function Chip({
@@ -94,15 +93,6 @@ export function Field({
     props.editable !== false &&
     !!props.value &&
     !!props.onChangeText;
-  // A number box in a sheet on iPhone gets a Done bar on the keyboard (see SheetKeyboard).
-  const sheet = useContext(SheetKeyboard);
-  const numeric = /number-pad|decimal-pad|numeric|phone-pad/.test(props.keyboardType ?? '');
-  const wantDone = Platform.OS === 'ios' && numeric && focused;
-  useEffect(() => {
-    if (!sheet || !wantDone) return;
-    sheet.wantDone(true);
-    return () => sheet.wantDone(false);
-  }, [sheet, wantDone]);
   return (
     <View style={styles.field}>
       <Text style={[styles.label, { color: c.text }]}>{label}</Text>

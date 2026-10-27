@@ -320,14 +320,7 @@ function MealCard({
           </View>
         )}
         <View style={styles.cardText}>
-          <View style={styles.mealRow}>
-            <Text style={[styles.meal, { color: c.accent }]}>{MEAL_LABELS[meal]}</Text>
-            {prep?.kind === 'leftover' ? (
-              <View style={[styles.tag, { backgroundColor: c.prepSoft }]}>
-                <Text style={[styles.tagText, { color: c.prep }]}>Leftovers</Text>
-              </View>
-            ) : null}
-          </View>
+          <Text style={[styles.meal, { color: c.accent }]}>{MEAL_LABELS[meal]}</Text>
           <Text
             style={[
               styles.title,
@@ -338,9 +331,17 @@ function MealCard({
             {recipe ? recipe.title : 'Add meal'}
           </Text>
           {facts ? (
-            <Text style={[styles.facts, { color: c.textSecondary }]} numberOfLines={1}>
-              {facts}
-            </Text>
+            // Leftovers: the badge on the same line as the day they're from.
+            <View style={styles.factsRow}>
+              <Text style={[styles.facts, { color: c.textSecondary }]} numberOfLines={1}>
+                {facts}
+              </Text>
+              {prep?.kind === 'leftover' ? (
+                <View style={[styles.tag, { backgroundColor: c.prepSoft }]}>
+                  <Text style={[styles.tagText, { color: c.prep }]}>Leftovers</Text>
+                </View>
+              ) : null}
+            </View>
           ) : null}
         </View>
         {onMenu ? (
@@ -348,7 +349,9 @@ function MealCard({
             onPress={onMenu}
             hitSlop={10}
             accessibilityRole="button"
-            accessibilityLabel={`More for ${MEAL_LABELS[meal].toLowerCase()}`}>
+            accessibilityLabel={`More for ${MEAL_LABELS[meal].toLowerCase()}`}
+            // Top right of the card.
+            style={styles.more}>
             <Ionicons name="ellipsis-horizontal" size={22} color={c.textSecondary} />
           </Pressable>
         ) : (
@@ -435,11 +438,11 @@ const styles = StyleSheet.create({
   emoji: { fontSize: 28 },
   cardText: { flex: 1, minWidth: 0, gap: 2 },
   meal: { fontSize: 12, fontWeight: '700', letterSpacing: 0.5, textTransform: 'uppercase' },
-  // The Leftovers badge sits at the right end of the row, by the ⋯ button.
-  mealRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 6 },
+  factsRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  more: { alignSelf: 'flex-start' },
   tag: { borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2 },
   tagText: { fontSize: 11, fontWeight: '700' },
   title: { fontSize: 16, fontWeight: '600' },
   add: { fontWeight: '500' },
-  facts: { fontSize: 13 },
+  facts: { fontSize: 13, flexShrink: 1 },
 });

@@ -94,9 +94,12 @@ function Stepper({
   min,
   max = MAX_SERVINGS,
   unit,
+  info,
   onChange,
 }: {
   label: string;
+  /** Next to the label, e.g. an ⓘ button. */
+  info?: React.ReactNode;
   value: number;
   min: number;
   max?: number;
@@ -108,7 +111,10 @@ function Stepper({
   const step = (d: number) => onChange(Math.min(max, Math.max(min, value + d)));
   return (
     <View style={[styles.stepper, { borderBottomColor: c.border }]}>
-      <Text style={[styles.stepLabel, { color: c.text }]}>{label}</Text>
+      <View style={styles.stepLabelRow}>
+        <Text style={[styles.stepLabel, { color: c.text }]}>{label}</Text>
+        {info}
+      </View>
       <View style={styles.stepControls}>
         <Pressable
           onPress={() => step(-1)}
@@ -168,6 +174,21 @@ export function MealPrepSheet({
   const [keepDays, setKeepDays] = useState(batch?.keepDays ?? keepDaysFor(recipe));
   // The app works out the day; Change is there for what only the cook knows (e.g. it sat out).
   const [changingKeep, setChangingKeep] = useState(false);
+  const [keepInfo, setKeepInfo] = useState(false);
+  const infoButton = (
+    <Pressable
+      onPress={() => setKeepInfo((on) => !on)}
+      hitSlop={10}
+      accessibilityRole="button"
+      accessibilityState={{ expanded: keepInfo }}
+      accessibilityLabel="What eat by means">
+      <Ionicons
+        name={keepInfo ? 'information-circle' : 'information-circle-outline'}
+        size={20}
+        color={c.textSecondary}
+      />
+    </Pressable>
+  );
   const until = goodUntil({ cookDay: day, keepDays });
   const [eats, setEats] = useState<string[]>(() =>
     (batch?.eats ?? []).map((e) => slotKey(e.day, e.meal)),
@@ -238,6 +259,7 @@ export function MealPrepSheet({
             {changingKeep ? (
               <Stepper
                 label={`Eat by ${weekday(until)}`}
+                info={infoButton}
                 value={keepDays}
                 min={0}
                 max={BATCH_DAYS - 1}
@@ -246,7 +268,10 @@ export function MealPrepSheet({
               />
             ) : (
               <View style={[styles.stepper, { borderBottomColor: c.border }]}>
-                <Text style={[styles.stepLabel, { color: c.text }]}>Eat by {weekday(until)}</Text>
+                <View style={styles.stepLabelRow}>
+                  <Text style={[styles.stepLabel, { color: c.text }]}>Eat by {weekday(until)}</Text>
+                  {infoButton}
+                </View>
                 <Pressable
                   onPress={() => setChangingKeep(true)}
                   hitSlop={10}
@@ -257,6 +282,17 @@ export function MealPrepSheet({
                 </Pressable>
               </View>
             )}
+            {keepInfo ? (
+              <View style={[styles.keepInfo, { backgroundColor: c.chip }]}>
+                <Text style={[styles.keepInfoText, { color: c.text }]}>
+                  The last day it’s safe to eat, worked out from official food-safety advice for
+                  cooked food kept in the fridge.
+                </Text>
+                <Text style={[styles.keepInfoText, { color: c.textSecondary }]}>
+                  It’s a guide and can be wrong. If it looks, smells or tastes off, throw it out.
+                </Text>
+              </View>
+            ) : null}
           </View>
 
           <Text style={[styles.gridTitle, { color: c.textSecondary }]}>EAT IT ON</Text>
@@ -431,6 +467,9 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
   stepLabel: { fontSize: 16, fontWeight: '600' },
+  stepLabelRow: { flexDirection: 'row', alignItems: 'center', gap: 6, flexShrink: 1 },
+  keepInfo: { borderRadius: 12, padding: Spacing.three, gap: Spacing.one, marginTop: Spacing.two },
+  keepInfoText: { fontSize: 14, lineHeight: 20 },
   stepControls: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three },
   stepButton: {
     width: 36,

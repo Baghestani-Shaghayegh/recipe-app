@@ -32,12 +32,15 @@ export function BottomSheet({
   title,
   closeLabel = 'Close',
   onClose,
+  overlay,
   children,
 }: {
   visible: boolean;
   title?: string;
   closeLabel?: string;
   onClose: () => void;
+  /** Laid over the whole sheet, e.g. a small pop-up card. */
+  overlay?: React.ReactNode;
   children: (close: CloseSheet) => React.ReactNode;
 }) {
   const c = useTheme();
@@ -153,6 +156,7 @@ export function BottomSheet({
           </View>
           {title ? <Text style={[styles.title, { color: c.text }]}>{title}</Text> : null}
           {children(slideOut)}
+          {overlay}
         </Animated.View>
       </View>
     </Modal>

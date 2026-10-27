@@ -239,7 +239,42 @@ export function MealPrepSheet({
   };
 
   return (
-    <BottomSheet visible title={`Meal prep: ${recipe.title}`} onClose={onClose}>
+    <BottomSheet
+      visible
+      title={`Meal prep: ${recipe.title}`}
+      onClose={onClose}
+      overlay={
+        keepInfo ? (
+          // What "Eat by" means: a card over the sheet, rather than a second pop-up window,
+          // which iPhone doesn't open reliably on top of a sheet.
+          <Pressable
+            onPress={() => setKeepInfo(false)}
+            accessibilityLabel="Close"
+            style={styles.infoBackdrop}>
+            <Pressable
+              accessibilityRole="alert"
+              style={[styles.infoCard, { backgroundColor: c.card }]}>
+              <Text style={[styles.infoTitle, { color: c.text }]}>Eat by {weekday(until)}</Text>
+              <Text style={[styles.infoText, { color: c.text }]}>
+                The last day it’s safe to eat, worked out from official food-safety advice for
+                cooked food kept in the fridge.
+              </Text>
+              <Text style={[styles.infoText, { color: c.textSecondary }]}>
+                It’s a guide and can be wrong. If it looks, smells or tastes off, throw it out.
+              </Text>
+              <Pressable
+                onPress={() => setKeepInfo(false)}
+                accessibilityRole="button"
+                style={({ pressed }) => [
+                  styles.infoButton,
+                  { backgroundColor: c.chip, opacity: pressed ? 0.7 : 1 },
+                ]}>
+                <Text style={[styles.infoButtonText, { color: c.text }]}>Got it</Text>
+              </Pressable>
+            </Pressable>
+          </Pressable>
+        ) : undefined
+      }>
       {(close) => (
         <View style={styles.sheet}>
           <View>
@@ -282,17 +317,6 @@ export function MealPrepSheet({
                 </Pressable>
               </View>
             )}
-            {keepInfo ? (
-              <View style={[styles.keepInfo, { backgroundColor: c.chip }]}>
-                <Text style={[styles.keepInfoText, { color: c.text }]}>
-                  The last day it’s safe to eat, worked out from official food-safety advice for
-                  cooked food kept in the fridge.
-                </Text>
-                <Text style={[styles.keepInfoText, { color: c.textSecondary }]}>
-                  It’s a guide and can be wrong. If it looks, smells or tastes off, throw it out.
-                </Text>
-              </View>
-            ) : null}
           </View>
 
           <Text style={[styles.gridTitle, { color: c.textSecondary }]}>EAT IT ON</Text>
@@ -468,8 +492,29 @@ const styles = StyleSheet.create({
   },
   stepLabel: { fontSize: 16, fontWeight: '600' },
   stepLabelRow: { flexDirection: 'row', alignItems: 'center', gap: 6, flexShrink: 1 },
-  keepInfo: { borderRadius: 12, padding: Spacing.three, gap: Spacing.one, marginTop: Spacing.two },
-  keepInfoText: { fontSize: 14, lineHeight: 20 },
+  infoBackdrop: {
+    ...StyleSheet.absoluteFill,
+    backgroundColor: 'rgba(0,0,0,0.35)',
+    borderTopLeftRadius: 22,
+    borderTopRightRadius: 22,
+    justifyContent: 'center',
+    padding: Spacing.five,
+  },
+  infoCard: {
+    borderRadius: 18,
+    padding: Spacing.four,
+    gap: Spacing.two,
+    boxShadow: '0 12px 40px rgba(0, 0, 0, 0.3)',
+  },
+  infoTitle: { fontSize: 17, fontWeight: '700' },
+  infoText: { fontSize: 15, lineHeight: 21 },
+  infoButton: {
+    borderRadius: 12,
+    paddingVertical: 12,
+    alignItems: 'center',
+    marginTop: Spacing.two,
+  },
+  infoButtonText: { fontSize: 15, fontWeight: '700' },
   stepControls: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three },
   stepButton: {
     width: 36,

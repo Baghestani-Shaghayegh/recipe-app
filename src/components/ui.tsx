@@ -82,8 +82,8 @@ export function Field({
   const c = useTheme();
   const input = useRef<React.ComponentRef<typeof TextInput>>(null);
   const [focused, setFocused] = useState(false);
-  // Leaving the box hides the ✕ a moment later, so a tap on the ✕ itself (which can take the
-  // focus first) still lands on it.
+  // Leaving the box hides the ✕ right away. In a browser a click takes the focus before it
+  // lands, so there the ✕ stays a moment longer, or a click on it would miss.
   const blurTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   useEffect(() => () => clearTimeout(blurTimer.current), []);
   // While typing in a one-line box with something in it: a ✕ that empties it.
@@ -115,7 +115,8 @@ export function Field({
             props.onFocus?.(e);
           }}
           onBlur={(e) => {
-            blurTimer.current = setTimeout(() => setFocused(false), 250);
+            if (Platform.OS === 'web') blurTimer.current = setTimeout(() => setFocused(false), 250);
+            else setFocused(false);
             props.onBlur?.(e);
           }}
         />

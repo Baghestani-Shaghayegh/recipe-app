@@ -476,12 +476,14 @@ export function FinishedSheet({
                           style={[
                             styles.cell,
                             styles.smallCell,
+                            // Ticked like in Eat it on, so they read as the planned leftovers.
                             clears
-                              ? { backgroundColor: c.dangerSoft, borderColor: c.danger }
+                              ? { backgroundColor: c.prep, borderColor: c.prep }
                               : cooking
                                 ? { backgroundColor: c.prepSoft, borderColor: c.prep }
                                 : { borderColor: c.border },
                           ]}>
+                          {clears ? <Ionicons name="checkmark" size={15} color="#fff" /> : null}
                           {cooking ? <Text style={styles.smallIcon}>🥡</Text> : null}
                         </View>
                       );

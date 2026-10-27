@@ -326,6 +326,7 @@ function MealCard({
               styles.title,
               { color: recipe ? c.text : c.textSecondary },
               !recipe && styles.add,
+              onMenu && styles.besideMore,
             ]}
             numberOfLines={2}>
             {recipe ? recipe.title : 'Add meal'}
@@ -438,8 +439,12 @@ const styles = StyleSheet.create({
   emoji: { fontSize: 28 },
   cardText: { flex: 1, minWidth: 0, gap: 2 },
   meal: { fontSize: 12, fontWeight: '700', letterSpacing: 0.5, textTransform: 'uppercase' },
-  factsRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  more: { alignSelf: 'flex-start' },
+  // The Leftovers badge at the right end, under the ⋯.
+  factsRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 6 },
+  // Pinned to the card's top-right corner, so the Leftovers badge lines up under it.
+  more: { position: 'absolute', top: Spacing.three, right: Spacing.three },
+  // Keeps a long name clear of the ⋯.
+  besideMore: { paddingRight: Spacing.five },
   tag: { borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2 },
   tagText: { fontSize: 11, fontWeight: '700' },
   title: { fontSize: 16, fontWeight: '600' },

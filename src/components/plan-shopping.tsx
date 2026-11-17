@@ -113,19 +113,11 @@ function ReviewSheet({
   const ranges: ShopRange[] = week.includes(today) ? ['today', 'next3', 'week'] : ['week'];
   const [range, setRange] = useState<ShopRange>('week');
   const days = useMemo(() => shopRangeDays(week, today, range), [week, today, range]);
-  const { meals, recipes, items, have } = usePending(days);
+  const { meals, items, have } = usePending(days);
   // Everything starts ticked; these are the ones you untick.
   const [skipped, setSkipped] = useState<string[]>([]);
   const [showHave, setShowHave] = useState(false);
   const chosen = items.filter((i) => !skipped.includes(i.key));
-
-  const forLine = (titles: string[]) =>
-    titles
-      .map((t) => {
-        const n = recipes.filter((r) => r.title === t).length;
-        return n > 1 ? `${t} ×${n}` : t;
-      })
-      .join(', ');
 
   const add = (close: (after?: () => void) => void) => {
     // The list is made from these meals' recipes, so it stays merged and checks the pantry.
@@ -196,7 +188,7 @@ function ReviewSheet({
                           <Text
                             style={[styles.itemFor, { color: c.textSecondary }]}
                             numberOfLines={1}>
-                            {forLine(item.recipes)}
+                            {[...new Set(item.recipes)].join(', ')}
                           </Text>
                         </View>
                       </Pressable>

@@ -7,13 +7,7 @@ import { BottomSheet } from '@/components/bottom-sheet';
 import { Segmented } from '@/components/ui';
 import { Spacing, useTheme } from '@/constants/theme';
 import { SECTION_LABELS, STORE_SECTIONS } from '@/lib/foods';
-import {
-  dateKey,
-  leftoverBatch,
-  plannedMeals,
-  shopRangeDays,
-  type ShopRange,
-} from '@/lib/plan';
+import { dateKey, leftoverBatch, plannedMeals, shopRangeDays, type ShopRange } from '@/lib/plan';
 import {
   buildShoppingList,
   mealsShopping,
@@ -73,8 +67,8 @@ function usePending(days: string[]) {
       ...buildShoppingList(listSources, pantry).map((i) => i.key),
       ...extras.map((e) => shoppingKey(e.name)),
     ]);
-    const { items, have } = mealsShopping(mealRecipes, pantry);
-    return { meals, items: items.filter((i) => !onList.has(i.key)), have };
+    const { items } = mealsShopping(mealRecipes, pantry);
+    return { meals, items: items.filter((i) => !onList.has(i.key)) };
   }, [plan, batches, recipes, pantry, makeNext, planned, extras, days]);
 }
 
@@ -152,7 +146,7 @@ function ReviewSheet({
   const ranges: ShopRange[] = week.includes(today) ? ['today', 'next3', 'week'] : ['week'];
   const [range, setRange] = useState<ShopRange>('week');
   const days = useMemo(() => shopRangeDays(week, today, range), [week, today, range]);
-  const { meals, items, have } = usePending(days);
+  const { meals, items } = usePending(days);
   // The days the empty messages are about, in words.
   const when =
     range === 'today'
@@ -165,7 +159,6 @@ function ReviewSheet({
   const planned = plannedMeals(plan, days);
   // Everything starts ticked; these are the ones you untick.
   const [skipped, setSkipped] = useState<string[]>([]);
-  const [showHave, setShowHave] = useState(false);
   const chosen = items.filter((i) => !skipped.includes(i.key));
 
   const add = (close: (after?: () => void) => void) => {
@@ -246,28 +239,6 @@ function ReviewSheet({
                 </View>
               );
             })}
-
-            {have.length ? (
-              <Pressable
-                onPress={() => setShowHave((s) => !s)}
-                accessibilityRole="button"
-                accessibilityState={{ expanded: showHave }}
-                style={[styles.have, { backgroundColor: c.chip }]}>
-                <View style={styles.haveRow}>
-                  <Text style={[styles.haveText, { color: c.text }]}>
-                    ✓ {have.length} thing{have.length === 1 ? '' : 's'} you already have
-                  </Text>
-                  <Text style={[styles.haveText, { color: c.accent }]}>
-                    {showHave ? 'Hide' : 'Show'}
-                  </Text>
-                </View>
-                {showHave ? (
-                  <Text style={[styles.itemFor, { color: c.textSecondary }]}>
-                    {have.join(', ')}
-                  </Text>
-                ) : null}
-              </Pressable>
-            ) : null}
           </ScrollView>
 
           <Pressable
@@ -334,9 +305,6 @@ const styles = StyleSheet.create({
   },
   itemName: { fontSize: 15, fontWeight: '500' },
   itemFor: { fontSize: 12, lineHeight: 17, marginTop: 1 },
-  have: { borderRadius: 12, padding: Spacing.three, marginTop: Spacing.three, gap: Spacing.one },
-  haveRow: { flexDirection: 'row', justifyContent: 'space-between', gap: Spacing.two },
-  haveText: { fontSize: 14, fontWeight: '600' },
   cta: { borderRadius: 16, paddingVertical: 16, alignItems: 'center' },
   ctaText: { fontSize: 16, fontWeight: '700' },
 });

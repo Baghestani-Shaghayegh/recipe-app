@@ -7,8 +7,15 @@ import { BottomSheet } from '@/components/bottom-sheet';
 import { Segmented } from '@/components/ui';
 import { Spacing, useTheme } from '@/constants/theme';
 import { SECTION_LABELS, STORE_SECTIONS } from '@/lib/foods';
-import { leftoverBatch, mealKey, plannedMeals, shopRangeDays, type ShopRange } from '@/lib/plan';
-import { mealsShopping } from '@/lib/shopping';
+import {
+  dateKey,
+  leftoverBatch,
+  mealKey,
+  plannedMeals,
+  shopRangeDays,
+  type ShopRange,
+} from '@/lib/plan';
+import { buildShoppingList, mealsShopping, shoppingKey, shoppingRecipes } from '@/lib/shopping';
 import { useKitchen } from '@/store/kitchen';
 import { usePlan } from '@/store/plan';
 import { useRecipes } from '@/store/recipes';
@@ -20,11 +27,16 @@ const RANGE_LABELS: Record<ShopRange, string> = {
   week: 'Rest of week',
 };
 
-/** The planned meals on `days` that aren't on the shopping list yet, with their recipes. */
+/**
+ * The planned meals on `days` that aren't on the shopping list yet, with their recipes, and what
+ * they still need: not in the pantry, and not on the list already (it has no amounts, so an
+ * ingredient another meal put there covers this one too).
+ */
 function usePending(days: string[]) {
   const { plan, shopped, batches } = usePlan();
   const { recipes } = useRecipes();
-  const { pantry } = useKitchen();
+  const { pantry, makeNext } = useKitchen();
+  const { planned, extras } = useShopping();
   return useMemo(() => {
     const byId = new Map(recipes.map((r) => [r.id, r]));
     // Leftovers from a meal prep batch need no shopping: the batch is bought for once.
@@ -35,8 +47,27 @@ function usePending(days: string[]) {
         !leftoverBatch(batches, plan, m.day, m.meal),
     );
     const mealRecipes = meals.map((m) => byId.get(m.recipeId)!);
-    return { meals, recipes: mealRecipes, ...mealsShopping(mealRecipes, pantry) };
-  }, [plan, shopped, batches, recipes, pantry, days]);
+    // What the Shopping tab shows: its recipes' ingredients and the items typed in.
+    const listSources = shoppingRecipes(
+      makeNext.map((m) => m.recipeId),
+      planned,
+      byId,
+      dateKey(new Date()),
+    );
+    const onList = new Set([
+      ...buildShoppingList(listSources, pantry).map((i) => i.key),
+      ...extras.map((e) => shoppingKey(e.name)),
+    ]);
+    const { items, have } = mealsShopping(mealRecipes, pantry);
+    const needed = items.filter((i) => !onList.has(i.key));
+    return {
+      meals,
+      recipes: mealRecipes,
+      items: needed,
+      have,
+      alreadyOnList: items.length - needed.length,
+    };
+  }, [plan, shopped, batches, recipes, pantry, makeNext, planned, extras, days]);
 }
 
 /**
@@ -113,7 +144,7 @@ function ReviewSheet({
   const ranges: ShopRange[] = week.includes(today) ? ['today', 'next3', 'week'] : ['week'];
   const [range, setRange] = useState<ShopRange>('week');
   const days = useMemo(() => shopRangeDays(week, today, range), [week, today, range]);
-  const { meals, items, have } = usePending(days);
+  const { meals, items, have, alreadyOnList } = usePending(days);
   // The days the empty messages are about, in words.
   const when =
     range === 'today'
@@ -163,7 +194,9 @@ function ReviewSheet({
               <Text style={[styles.empty, { color: c.textSecondary }]}>{emptyMessage}</Text>
             ) : !items.length ? (
               <Text style={[styles.empty, { color: c.textSecondary }]}>
-                You already have everything for {when}.
+                {alreadyOnList
+                  ? `Everything for ${when} is already on your shopping list.`
+                  : `You already have everything for ${when}.`}
               </Text>
             ) : null}
 

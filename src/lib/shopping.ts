@@ -123,7 +123,7 @@ export function shoppingParts(name: string): string[] {
 }
 
 /** An ingredient line per thing to buy ("parsley and chives" becomes parsley, chives). */
-function perThing(ingredients: Ingredient[]): Ingredient[] {
+export function perThing(ingredients: Ingredient[]): Ingredient[] {
   return ingredients.flatMap((ing) => {
     const parts = shoppingParts(ing.name);
     if (parts.length > 1) {

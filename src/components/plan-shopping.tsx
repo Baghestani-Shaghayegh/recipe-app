@@ -10,12 +10,17 @@ import { SECTION_LABELS, STORE_SECTIONS } from '@/lib/foods';
 import {
   dateKey,
   leftoverBatch,
-  mealKey,
   plannedMeals,
   shopRangeDays,
   type ShopRange,
 } from '@/lib/plan';
-import { buildShoppingList, mealsShopping, shoppingKey, shoppingRecipes } from '@/lib/shopping';
+import {
+  buildShoppingList,
+  mealsShopping,
+  perThing,
+  shoppingKey,
+  shoppingRecipes,
+} from '@/lib/shopping';
 import { useKitchen } from '@/store/kitchen';
 import { usePlan } from '@/store/plan';
 import { useRecipes } from '@/store/recipes';
@@ -28,12 +33,13 @@ const RANGE_LABELS: Record<ShopRange, string> = {
 };
 
 /**
- * The planned meals on `days` that aren't on the shopping list yet, with their recipes, and what
- * they still need: not in the pantry, and not on the list already (it has no amounts, so an
- * ingredient another meal put there covers this one too).
+ * The planned meals on `days` and what they still need, worked out from what's true now: not in
+ * the pantry, not on the shopping list already (it has no amounts, so an ingredient another
+ * meal put there covers this one too), and not unticked for that meal before. So something you
+ * bought, ran out of and took out of the pantry counts as missing again.
  */
 function usePending(days: string[]) {
-  const { plan, shopped, batches } = usePlan();
+  const { plan, batches } = usePlan();
   const { recipes } = useRecipes();
   const { pantry, makeNext } = useKitchen();
   const { planned, extras } = useShopping();
@@ -41,12 +47,21 @@ function usePending(days: string[]) {
     const byId = new Map(recipes.map((r) => [r.id, r]));
     // Leftovers from a meal prep batch need no shopping: the batch is bought for once.
     const meals = plannedMeals(plan, days).filter(
-      (m) =>
-        byId.has(m.recipeId) &&
-        !shopped.includes(mealKey(m)) &&
-        !leftoverBatch(batches, plan, m.day, m.meal),
+      (m) => byId.has(m.recipeId) && !leftoverBatch(batches, plan, m.day, m.meal),
     );
-    const mealRecipes = meals.map((m) => byId.get(m.recipeId)!);
+    // Each meal's recipe, without what was unticked for it when it was added.
+    const mealRecipes = meals.map((m) => {
+      const r = byId.get(m.recipeId)!;
+      const skip = planned
+        .filter((p) => p.day === m.day && p.recipeId === m.recipeId)
+        .flatMap((p) => p.skip);
+      return skip.length
+        ? {
+            ...r,
+            ingredients: perThing(r.ingredients).filter((i) => !skip.includes(shoppingKey(i.name))),
+          }
+        : r;
+    });
     // What the Shopping tab shows: its recipes' ingredients and the items typed in.
     const listSources = shoppingRecipes(
       makeNext.map((m) => m.recipeId),
@@ -59,15 +74,8 @@ function usePending(days: string[]) {
       ...extras.map((e) => shoppingKey(e.name)),
     ]);
     const { items, have } = mealsShopping(mealRecipes, pantry);
-    const needed = items.filter((i) => !onList.has(i.key));
-    return {
-      meals,
-      recipes: mealRecipes,
-      items: needed,
-      have,
-      alreadyOnList: items.length - needed.length,
-    };
-  }, [plan, shopped, batches, recipes, pantry, makeNext, planned, extras, days]);
+    return { meals, items: items.filter((i) => !onList.has(i.key)), have };
+  }, [plan, batches, recipes, pantry, makeNext, planned, extras, days]);
 }
 
 /**
@@ -138,13 +146,13 @@ function ReviewSheet({
   onAdded: (count: number) => void;
 }) {
   const c = useTheme();
-  const { plan, batches, markShopped } = usePlan();
-  const { addPlanned } = useShopping();
+  const { plan } = usePlan();
+  const { addPlanned, planned: onListMeals } = useShopping();
   // A week that hasn't started can only be shopped for as a whole.
   const ranges: ShopRange[] = week.includes(today) ? ['today', 'next3', 'week'] : ['week'];
   const [range, setRange] = useState<ShopRange>('week');
   const days = useMemo(() => shopRangeDays(week, today, range), [week, today, range]);
-  const { meals, items, have, alreadyOnList } = usePending(days);
+  const { meals, items, have } = usePending(days);
   // The days the empty messages are about, in words.
   const when =
     range === 'today'
@@ -154,14 +162,7 @@ function ReviewSheet({
         : week.includes(today)
           ? 'the rest of the week'
           : 'this week';
-  // Why there's nothing to add: no meals, only leftovers (bought when they were cooked), or
-  // added before (and maybe bought since, so not "on your list").
   const planned = plannedMeals(plan, days);
-  const emptyMessage = !planned.length
-    ? `No meals planned for ${when}.`
-    : planned.every((m) => leftoverBatch(batches, plan, m.day, m.meal))
-      ? `Only leftovers are planned for ${when}, so there’s nothing to buy.`
-      : `You’ve already added everything for ${when}.`;
   // Everything starts ticked; these are the ones you untick.
   const [skipped, setSkipped] = useState<string[]>([]);
   const [showHave, setShowHave] = useState(false);
@@ -169,8 +170,14 @@ function ReviewSheet({
 
   const add = (close: (after?: () => void) => void) => {
     // The list is made from these meals' recipes, so it stays merged and checks the pantry.
-    addPlanned(meals.map((m) => ({ day: m.day, recipeId: m.recipeId, skip: skipped })));
-    markShopped(meals.map(mealKey));
+    // Meals already on the list are only added again to remember what was unticked now.
+    const isOnList = (m: { day: string; recipeId: string }) =>
+      onListMeals.some((p) => p.day === m.day && p.recipeId === m.recipeId);
+    addPlanned(
+      meals
+        .filter((m) => skipped.length || !isOnList(m))
+        .map((m) => ({ day: m.day, recipeId: m.recipeId, skip: skipped })),
+    );
     close(() => onAdded(chosen.length));
   };
 
@@ -190,13 +197,9 @@ function ReviewSheet({
           ) : null}
 
           <ScrollView style={styles.list} contentContainerStyle={styles.listContent}>
-            {!meals.length ? (
-              <Text style={[styles.empty, { color: c.textSecondary }]}>{emptyMessage}</Text>
-            ) : !items.length ? (
+            {!items.length ? (
               <Text style={[styles.empty, { color: c.textSecondary }]}>
-                {alreadyOnList
-                  ? `Everything for ${when} is already on your shopping list.`
-                  : `You already have everything for ${when}.`}
+                {planned.length ? `Nothing to add for ${when}.` : `No meals planned for ${when}.`}
               </Text>
             ) : null}
 
@@ -269,17 +272,17 @@ function ReviewSheet({
 
           <Pressable
             onPress={() => add(close)}
-            disabled={!meals.length}
+            disabled={!items.length}
             accessibilityRole="button"
             style={({ pressed }) => [
               styles.cta,
-              { backgroundColor: c.accent, opacity: !meals.length ? 0.4 : pressed ? 0.85 : 1 },
+              { backgroundColor: c.accent, opacity: !items.length ? 0.4 : pressed ? 0.85 : 1 },
             ]}>
             <Text style={[styles.ctaText, { color: c.accentText }]}>
               {chosen.length
                 ? `Add ${chosen.length} item${chosen.length === 1 ? '' : 's'} to shopping list`
-                : meals.length
-                  ? 'Mark as shopped'
+                : items.length
+                  ? 'Done'
                   : 'Nothing to add'}
             </Text>
           </Pressable>

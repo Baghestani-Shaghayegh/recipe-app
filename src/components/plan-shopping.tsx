@@ -107,13 +107,30 @@ function ReviewSheet({
   onAdded: (count: number) => void;
 }) {
   const c = useTheme();
-  const { plan, markShopped } = usePlan();
+  const { plan, batches, markShopped } = usePlan();
   const { addPlanned } = useShopping();
   // A week that hasn't started can only be shopped for as a whole.
   const ranges: ShopRange[] = week.includes(today) ? ['today', 'next3', 'week'] : ['week'];
   const [range, setRange] = useState<ShopRange>('week');
   const days = useMemo(() => shopRangeDays(week, today, range), [week, today, range]);
   const { meals, items, have } = usePending(days);
+  // The days the empty messages are about, in words.
+  const when =
+    range === 'today'
+      ? 'today'
+      : range === 'next3'
+        ? 'the next 3 days'
+        : week.includes(today)
+          ? 'the rest of the week'
+          : 'this week';
+  // Why there's nothing to add: no meals, only leftovers (bought when they were cooked), or
+  // added before (and maybe bought since, so not "on your list").
+  const planned = plannedMeals(plan, days);
+  const emptyMessage = !planned.length
+    ? `No meals planned for ${when}.`
+    : planned.every((m) => leftoverBatch(batches, plan, m.day, m.meal))
+      ? `Only leftovers are planned for ${when}, so there’s nothing to buy.`
+      : `You’ve already added everything for ${when}.`;
   // Everything starts ticked; these are the ones you untick.
   const [skipped, setSkipped] = useState<string[]>([]);
   const [showHave, setShowHave] = useState(false);
@@ -143,14 +160,10 @@ function ReviewSheet({
 
           <ScrollView style={styles.list} contentContainerStyle={styles.listContent}>
             {!meals.length ? (
-              <Text style={[styles.empty, { color: c.textSecondary }]}>
-                {plannedMeals(plan, days).length
-                  ? 'Everything for these days is already on your shopping list.'
-                  : 'No meals planned for these days.'}
-              </Text>
+              <Text style={[styles.empty, { color: c.textSecondary }]}>{emptyMessage}</Text>
             ) : !items.length ? (
               <Text style={[styles.empty, { color: c.textSecondary }]}>
-                You already have everything for these meals.
+                You already have everything for {when}.
               </Text>
             ) : null}
 
